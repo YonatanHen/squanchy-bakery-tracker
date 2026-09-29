@@ -1,4 +1,5 @@
 .remember/
+.claude/settings.local.json
 .env
 docs/manually-written-docs/ASSIGNMENT.pdf
 decisions.md
