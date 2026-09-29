@@ -56,3 +56,9 @@ Break every feature into small steps, from planning through implementation.
 - Implement one step at a time (one TDD cycle per step).
 - Keep commits small: one step per commit.
 - If a step feels big, split it further.
+
+### 10. Personal permissions live in `settings.local.json`
+All personal preferences for allowed commands and permissions go in `.claude/settings.local.json`. This file is git-ignored.
+- Add allow/deny/ask rules there, never in the shared `.claude/settings.json`.
+- Read the file before editing and merge into the existing arrays. Never replace them.
+- Keep it out of git. If `.gitignore` loses the entry, add it back.
