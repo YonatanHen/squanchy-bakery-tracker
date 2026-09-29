@@ -1,0 +1,9 @@
+.remember/
+.env
+docs/manually-written-docs/ASSIGNMENT.pdf
+decisions.md
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
+dist/
