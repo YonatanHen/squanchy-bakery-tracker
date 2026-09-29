@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: squanchy
+      POSTGRES_PASSWORD: squanchy
+      POSTGRES_DB: squanchy_bakery
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U squanchy -d squanchy_bakery"]
+      interval: 2s
+      retries: 15
+
+volumes:
+  db-data:
