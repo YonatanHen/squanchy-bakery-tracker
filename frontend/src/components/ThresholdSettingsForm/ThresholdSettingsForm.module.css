@@ -27,10 +27,23 @@
   color: var(--label);
 }
 
-.column {
+.column,
+.nonUrgent,
+.urgent {
   font-size: 12px;
   font-weight: 600;
+}
+
+.column {
   color: var(--label);
+}
+
+.nonUrgent {
+  color: var(--warn-text);
+}
+
+.urgent {
+  color: var(--urgent-text);
 }
 
 .confirm {
