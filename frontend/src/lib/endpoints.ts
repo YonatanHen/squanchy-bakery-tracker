@@ -136,6 +136,18 @@ export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
 }
 
+/** A threshold profile with how many fridges use it; only the fields the Branches screen needs. */
+export interface ThresholdProfile {
+  id: number;
+  name: string;
+  fridges: number;
+}
+
+/** Get the threshold profiles. */
+export function listThresholdProfiles(): Promise<ThresholdProfile[]> {
+  return apiRequest<ThresholdProfile[]>("/threshold-settings");
+}
+
 /** Edit a branch; send only the changed fields. */
 export function updateBranch(id: number, changes: BranchChanges): Promise<Branch> {
   return apiRequest<Branch>(`/branches/${id}`, { method: "PATCH", body: changes });

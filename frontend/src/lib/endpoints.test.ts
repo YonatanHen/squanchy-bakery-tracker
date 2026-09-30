@@ -7,6 +7,7 @@ import {
   deleteReading,
   listAlerts,
   listReadings,
+  listThresholdProfiles,
   updateBranch,
   updateFridge,
   updateReading,
@@ -105,6 +106,16 @@ describe("branch and fridge deletes", () => {
     expect(calledUrl(0)).toBe("/api/v1/branches/2");
     expect(calledUrl(1)).toBe("/api/v1/fridges/3");
     expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(["DELETE", "DELETE"]);
+  });
+});
+
+describe("listThresholdProfiles", () => {
+  it("gets the threshold profiles for the fridge profile names", async () => {
+    const profiles = [{ id: 1, name: "default", fridges: 4 }];
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify(profiles), { status: 200 }));
+
+    expect(await listThresholdProfiles()).toEqual(profiles);
+    expect(calledUrl()).toBe("/api/v1/threshold-settings");
   });
 });
 
