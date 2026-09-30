@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
+from app.errors import FieldError
 from app.models import Status
 from app.services.ingest.normalizer import LOGGER_PATTERN, collapse_spaces, parse_temp, parse_time
 from app.services.ingest.registry import Registry
@@ -94,3 +95,15 @@ class ReadingIn(BaseModel):
         """Mark a reading with no temperature as ERR."""
         self.status = Status.ERR if self.temp is None else Status.OK
         return self
+
+
+class SaveResult(BaseModel):
+    """Outcome of an upload: saved rows, skipped duplicates, and the rejected rows to fix."""
+
+    inserted: int = 0
+    duplicates: int = 0
+    err_rows: int = 0
+    rejected: int = 0
+    renamed_fridges: list[str] = []
+    alerts: int = 0
+    errors: list[FieldError] = []
