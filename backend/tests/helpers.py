@@ -18,6 +18,17 @@ def xlsx_bytes(header, rows) -> bytes:
     return buffer.getvalue()
 
 
+def load_sample(session):
+    """Seed the 4 sample fridges and ingest the assignment's 16 rows through the Excel parser."""
+    from app.seed import SAMPLE_HEADER, SAMPLE_ROWS, seed_sample_fridges
+    from app.services.ingest.parsers.excel import ExcelParser
+    from app.services.ingest.service import ingest_rows
+
+    seed_sample_fridges(session)
+    rows = ExcelParser().parse(io.BytesIO(xlsx_bytes(SAMPLE_HEADER, SAMPLE_ROWS)))
+    return ingest_rows(session, rows)
+
+
 def add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512", metric=Metric.C) -> Fridge:
     """Create a fridge (and its branch if missing) with one logger."""
     existing = session.scalar(select(Branch).where(func.lower(Branch.name) == branch.lower()))
