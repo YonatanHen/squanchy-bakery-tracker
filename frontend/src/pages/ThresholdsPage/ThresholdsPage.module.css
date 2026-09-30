@@ -47,15 +47,6 @@
   color: var(--label);
 }
 
-.actions {
-  display: flex;
-  gap: var(--space-10);
-}
-
-.actions > * {
-  flex-grow: 1;
-}
-
 .page .signOut {
   width: 100%;
 }

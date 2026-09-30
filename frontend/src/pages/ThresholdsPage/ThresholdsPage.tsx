@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { Dialog } from "../../components/Dialog/Dialog";
+import { DialogActions } from "../../components/DialogActions/DialogActions";
 import { SignOutButton } from "../../components/SignOutButton/SignOutButton";
 import { ThresholdSettingsForm } from "../../components/ThresholdSettingsForm/ThresholdSettingsForm";
 import { ThresholdSettingsRow } from "../../components/ThresholdSettingsRow/ThresholdSettingsRow";
@@ -151,14 +152,7 @@ export function ThresholdsPage() {
         ))}
       <Dialog open={!!deleting} title={`Delete ${deleting?.name}?`} onClose={closeDelete}>
         <p className={styles.dialogText}>No fridge uses these settings.</p>
-        <div className={styles.actions}>
-          <Button variant="secondary" size="lg" onClick={closeDelete}>
-            Cancel
-          </Button>
-          <Button variant="danger" size="lg" disabled={busy} onClick={handleDelete}>
-            Delete
-          </Button>
-        </div>
+        <DialogActions confirmLabel="Delete" variant="danger" busy={busy} onCancel={closeDelete} onConfirm={handleDelete} />
       </Dialog>
       <p className={styles.note}>Move a fridge to other threshold settings from Branches → edit fridge.</p>
       <SignOutButton className={styles.signOut} />
