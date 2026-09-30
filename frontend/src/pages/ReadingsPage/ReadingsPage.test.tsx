@@ -97,6 +97,33 @@ describe("ReadingsPage list", () => {
   });
 });
 
+describe("ReadingsPage paging", () => {
+  it("shows the range and loads the next page from the next offset", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/readings", (url: URL) => page([DAIRY_OK], 61, Number(url.searchParams.get("offset")), 50)],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([])],
+    ]);
+    renderLoggedIn("/readings");
+    expect(await screen.findByText("1–1 of 61")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Next →" }));
+
+    expect(await screen.findByText("51–51 of 61")).toBeInTheDocument();
+    expect(paramsOf(fetchMock, "/api/v1/readings").at(-1)!.get("offset")).toBe("50");
+  });
+
+  it("links to adding a reading", async () => {
+    mockReadings();
+    renderLoggedIn("/readings");
+
+    const [link] = await screen.findAllByRole("link", { name: "+ Add a reading" });
+    await userEvent.click(link);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Add a reading" })).toBeInTheDocument();
+  });
+});
+
 describe("ReadingsPage filters", () => {
   it("reloads the first page with the applied branch and minimum temperature", async () => {
     const fetchMock = mockReadings();

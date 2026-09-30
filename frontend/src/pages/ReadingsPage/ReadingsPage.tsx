@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "../../components/Button/Button";
 import { DataTable, type Column } from "../../components/DataTable/DataTable";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
+import { Pager } from "../../components/Pager/Pager";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
 import { ReadingFilters } from "../../components/ReadingFilters/ReadingFilters";
 import { SegmentedToggle } from "../../components/SegmentedToggle/SegmentedToggle";
@@ -106,7 +108,12 @@ export function ReadingsPage() {
     <section className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Readings</h1>
-        <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
+        <div className={styles.actions}>
+          <Link to="/readings/new" className={`${styles.addLink} ${styles.desktopOnly}`}>
+            + Add a reading
+          </Link>
+          <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
+        </div>
       </div>
       <ReadingFilters branches={branches} unit={unit} value={filters} errors={fieldErrors} onApply={applyFilters} />
       {page && (
@@ -134,6 +141,16 @@ export function ReadingsPage() {
           </div>
         </>
       )}
+      <div className={styles.footer}>
+        {page && items.length > 0 && (
+          <div className={styles.pager}>
+            <Pager offset={page.offset} limit={page.limit} count={items.length} total={page.total} onPage={setOffset} />
+          </div>
+        )}
+        <Link to="/readings/new" className={`${styles.addLink} ${styles.phoneOnly}`}>
+          + Add a reading
+        </Link>
+      </div>
     </section>
   );
 }

@@ -20,6 +20,7 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/readings" element={<ReadingsPage />} />
+          <Route path="/readings/new" element={<PlaceholderPage title="Add a reading" />} />
           <Route path="/alerts" element={<PlaceholderPage title="Alerts" />} />
           <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
           <Route path="/branches" element={<PlaceholderPage title="Branches" />} />
