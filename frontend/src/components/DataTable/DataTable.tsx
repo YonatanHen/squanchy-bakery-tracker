@@ -1,6 +1,6 @@
 import type { Key, ReactNode } from "react";
-import type { Tone } from "./Card";
-import styles from "../styles/components/DataTable.module.css";
+import type { Tone } from "../Card/Card";
+import styles from "./DataTable.module.css";
 
 export interface Column<T> {
   key: string;

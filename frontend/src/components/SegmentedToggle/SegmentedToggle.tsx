@@ -1,4 +1,4 @@
-import styles from "../styles/components/SegmentedToggle.module.css";
+import styles from "./SegmentedToggle.module.css";
 
 interface ToggleOption<T extends string> {
   value: T;

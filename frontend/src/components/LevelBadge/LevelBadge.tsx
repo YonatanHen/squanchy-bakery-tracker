@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { AlertLevel } from "../lib/endpoints";
-import styles from "../styles/components/LevelBadge.module.css";
+import type { AlertLevel } from "../../lib/endpoints";
+import styles from "./LevelBadge.module.css";
 
 export type BadgeLevel = AlertLevel | "ERR";
 
