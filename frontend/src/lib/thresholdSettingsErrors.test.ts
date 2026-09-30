@@ -14,11 +14,9 @@ describe("thresholdSettingsErrors", () => {
     });
   });
 
-  it("keeps a non-urgent-not-below-urgent error on the non-urgent field", () => {
-    const errors = thresholdSettingsErrors([
-      { field: "deviation_non_urgent", message: "Must be lower than the urgent limit" },
-    ]);
+  it("keeps a min-not-below-max error on the min field", () => {
+    const errors = thresholdSettingsErrors([{ field: "min_temp", message: "Must be lower than the max limit" }]);
 
-    expect(errors).toEqual({ deviation_non_urgent: "Must be lower than the urgent limit" });
+    expect(errors).toEqual({ min_temp: "Must be lower than the max limit" });
   });
 });
