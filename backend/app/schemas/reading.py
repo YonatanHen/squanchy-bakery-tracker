@@ -42,6 +42,7 @@ class ReadingPatch(BaseModel):
     time: datetime | None = None
     temp: float | None = None
     logger_id: LoggerId | None = None
+    metric: Metric | None = None
 
     @field_validator("time", mode="before")
     @classmethod

@@ -2,9 +2,9 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Logger, Reader, Status
+from app.models import Alert, AlertLevel, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
-from tests.helpers import load_sample
+from tests.helpers import SAMPLE_REGISTRATION, load_sample
 
 
 def reading(session, logger_id, time) -> Reader:
@@ -98,6 +98,20 @@ def test_patch_moves_a_reading_to_another_logger(client, session, auth_headers):
     assert session.get(Logger, "TL-0388").fridge.avg_temp == pytest.approx(5.08, abs=0.01)
     alerts = [(a.level, a.description) for a in session.query(Alert).filter_by(reader_id=target.id)]
     assert alerts == [(AlertLevel.NON_URGENT, "No reading for 1h 45m before this reading")]
+
+
+def test_patch_changes_the_unit_of_a_reading(client, session, auth_headers):
+    """Haifa registered as °C by mistake: setting 38.3 to °F keeps the typed value and stores it as °F."""
+    registration = {**SAMPLE_REGISTRATION, "fridges": [{k: v for k, v in f.items() if k != "metric"} for f in SAMPLE_REGISTRATION["fridges"]]}
+    load_sample(session, registration)
+    target = reading(session, "TL-0231", datetime(2026, 9, 14, 6, 0))
+
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"metric": "F"}, headers=auth_headers)
+
+    assert response.status_code == 200
+    session.expire_all()
+    stored = session.get(Reader, target.id)
+    assert (stored.temp, stored.metric) == (38.3, Metric.F)
 
 
 def test_patch_to_a_time_the_new_logger_already_has_is_a_409(client, session, auth_headers):
