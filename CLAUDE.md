@@ -1,4 +1,58 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Squanchy Bakery Fridge Tracker
+
+Fridge temperature tracker: upload `.xlsx` logger readings, validate and save them, detect alerts, and view, edit and archive readings. Flask + PostgreSQL backend, React + TypeScript frontend. The assignment and the user's design decisions and ERD are in `docs/manually-written-docs/`.
+
+## Commands
+
+Paths are for Windows (`.venv/Scripts/python`); on macOS/Linux use `.venv/bin/python`.
+
+```bash
+# Everything in Docker: db, backend (seeds, then gunicorn), frontend (nginx) on http://localhost:8080
+docker compose up -d --build --wait
+
+# Database only, for local development (PostgreSQL on localhost:5432)
+docker compose up -d --wait db
+
+# Backend (from backend/; needs backend/.env, see backend/.env.example)
+.venv/Scripts/python -m pip install -r requirements.txt
+.venv/Scripts/python -m scripts.seed              # creates the tables and the admin user
+.venv/Scripts/python -m flask --app app run       # API on http://127.0.0.1:5000
+.venv/Scripts/python -m pytest                    # all backend tests
+.venv/Scripts/python -m pytest tests/test_upload.py::test_name -q
+
+# Frontend (from frontend/; the Vite dev server proxies /api to 127.0.0.1:5000)
+npm run dev
+npm test                                          # vitest run
+npx vitest run src/pages/ReadingsPage             # one file or folder
+npm run build                                     # tsc -b (strict type check) + vite build
+```
+
+- The backend tests need PostgreSQL: `TEST_DATABASE_URL` comes from `backend/.env`. Each test drops and recreates the `public` schema (`tests/conftest.py`), so two runs on the same test database at the same time break each other. Give each parallel run (e.g. a worktree agent) its own database by setting `TEST_DATABASE_URL` in the environment.
+- There are no migrations: `db.create_all()` builds the schema. After a model change, reset the dev database (`docker compose down -v`, then seed).
+- `backend/scripts/make_sample_xlsx.py` writes the sample upload file.
+
+## Architecture
+
+### Backend (`backend/app`)
+- `create_app()` in `app/__init__.py` is the app factory. All routes are on the `api_v1` blueprint (`/api/v1`); every route except login and health needs a JWT (`services/tokens.py`, `services/auth.py`).
+- Layers: `api/` (thin routes: parse the request with a Pydantic schema, call a service, return `model_dump`) → `services/` (business logic) → `models/` (one SQLAlchemy model per file, re-exported from `models/__init__.py`). Schemas are in `schemas/`.
+- Domain errors: services raise `ConflictError` (`services/errors.py`); `api/errors.py` maps it to 409, and Pydantic `ValidationError` to 422 with `{"errors": [{field, message}]}`.
+- **Ingest** (`services/ingest/`): `parsers/factory.py` picks a parser by the file content (Strategy + Factory; only Excel exists) → rows are validated by `ReadingIn` (`ingest/schemas.py`) against a `Registry` of the known branches, fridges and loggers → `repository.py` is the single write path for readings (duplicates are counted, not saved) → detection runs on the new readings. Unknown branches and loggers are returned to the UI, which sends them back as a `register` block to create them before the save. A reading typed in the app goes through the same pipeline with `RecordIn`.
+- **Detection** (`services/detection/`): `rules.py` holds pure functions (`find_gaps`, `find_growth`, `find_deviations`, which also reports spikes) over `Point`s in °C; `service.py` loads a fridge's readings, converts them to °C, and applies the fridge's threshold settings.
+- **Units:** the unit belongs to the fridge. `Reader.metric` is a copy of its fridge's unit. Changing a fridge's unit relabels its readings (values stay the same), then re-runs detection on them (`services/fridges.py`). The UI converts only for display.
+- **Threshold settings:** named sets shared by many fridges (`ThresholdSettings`); a new fridge gets the "default" set.
+- **Archive:** deleting a reading, logger, fridge or branch moves the related readings and alerts into `reader_archive` / `alert_archive` (`models/archive/`). Archived readings can be restored or cleaned.
+- **SQLAlchemy `before_flush` hooks** apply these rules globally, so code that deletes or adds objects gets them automatically: `services/archive.py` archives before a delete, and `services/thresholds.py` attaches the default settings to new fridges. `create_app` imports these modules to register the hooks.
+- Config comes from `backend/.env` through python-dotenv (`app/config.py`); real environment variables win. Required values have no defaults, so the app fails at startup when one is missing.
+
+### Frontend (`frontend/src`)
+- `lib/api.ts` is the fetch wrapper: it adds the JWT from `lib/auth.ts`, logs out on 401, and throws `ApiError` with the body. `lib/endpoints.ts` has the typed API functions and the response types (`PAGE_SIZE = 10`).
+- `pages/<Page>/` are the screens (routes in `App.tsx`, inside `AppShell`); `components/<Component>/` are the base and composed components (see rule 13).
+- Tests use the helpers in `src/testUtils.tsx`: `mockApi` (maps `"METHOD /path"` to a response), `renderLoggedIn`, `paramsOf`, `at`, `makeBranch`, `makeFridge`.
 
 ## Rules
 
