@@ -43,4 +43,30 @@ describe("Combobox", () => {
     expect(input).toHaveValue("Rishon LeZion");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
+
+  it("opens with ArrowDown, moves the active option with the arrows and picks it with Enter", async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    const input = screen.getByRole("combobox", { name: "Branch" });
+    input.focus();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{ArrowUp}");
+    const active = screen.getByRole("option", { name: "Rishon LeZion" });
+    expect(active).toHaveAttribute("aria-selected", "true");
+    expect(input).toHaveAttribute("aria-activedescendant", active.id);
+
+    await userEvent.keyboard("{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith("Rishon LeZion");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("closes the list on Escape and keeps the typed text", async () => {
+    render(<Harness />);
+
+    const input = screen.getByRole("combobox", { name: "Branch" });
+    await userEvent.type(input, "Eil{Escape}");
+
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("Eil");
+  });
 });
