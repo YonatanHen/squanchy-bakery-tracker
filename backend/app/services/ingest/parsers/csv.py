@@ -13,8 +13,11 @@ class CsvParser:
     """Reads .csv logger exports; columns are matched by header name, in any order and case."""
 
     def parse(self, stream: BinaryIO) -> list[RawRow]:
-        """Read every data row of the CSV file."""
-        rows = csv.reader(io.TextIOWrapper(stream, encoding="utf-8", newline=""))
+        """Read every data row of the CSV file; the delimiter (',' or ';') is detected from the header."""
+        text = stream.read().decode("utf-8")
+        header_line = text.split("\n", 1)[0]
+        delimiter = ";" if header_line.count(";") > header_line.count(",") else ","
+        rows = csv.reader(io.StringIO(text, newline=""), delimiter=delimiter)
         header = next(rows, [])
         columns = {collapse_spaces(h).lower(): i for i, h in enumerate(header)}
         result = [
