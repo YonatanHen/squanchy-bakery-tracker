@@ -56,7 +56,7 @@ function extras(result: SaveResult): string {
   return parts.join(" · ");
 }
 
-/** Upload screen: pick an .xlsx file, then see what was saved and which rows to fix. */
+/** Upload screen: pick an .xlsx or .csv file, then see what was saved and which rows to fix. */
 export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<SaveResult | null>(null);
@@ -129,14 +129,16 @@ export function UploadPage() {
               <UploadIcon />
             </span>
             <span className={`${styles.dropText} ${styles.phone}`}>
-              <strong className={styles.dropTitle}>{file ? file.name : "Choose an .xlsx file"}</strong>
-              <span className={styles.dropHint}>{file ? "Excel file · tap to choose another" : "Excel file"}</span>
+              <strong className={styles.dropTitle}>{file ? file.name : "Choose an .xlsx or .csv file"}</strong>
+              <span className={styles.dropHint}>
+                {file ? "Excel or CSV file · tap to choose another" : "Excel or CSV file"}
+              </span>
             </span>
             <span className={`${styles.dropText} ${styles.desktop}`}>
-              <strong className={styles.dropTitle}>Drop an .xlsx file here, or click to choose</strong>
+              <strong className={styles.dropTitle}>Drop an .xlsx or .csv file here, or click to choose</strong>
               {file && <span className={styles.dropHint}>Last file: {file.name}</span>}
             </span>
-            <input type="file" accept=".xlsx" className={styles.input} onChange={onPick} />
+            <input type="file" accept=".xlsx,.csv" className={styles.input} onChange={onPick} />
           </label>
           {error && (
             <p role="alert" className={styles.error}>

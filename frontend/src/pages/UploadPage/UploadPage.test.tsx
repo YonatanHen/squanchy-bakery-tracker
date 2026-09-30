@@ -42,6 +42,12 @@ afterEach(() => {
 });
 
 describe("UploadPage", () => {
+  it("lets the user pick .xlsx and .csv files", () => {
+    renderLoggedIn("/upload");
+
+    expect(screen.getByLabelText(/choose/i)).toHaveAttribute("accept", ".xlsx,.csv");
+  });
+
   it("uploads the chosen file and shows saved, duplicates and rows to fix", async () => {
     const fetchMock = mockApi([["POST /api/v1/readings/upload", result({ inserted: 2, duplicates: 0, rejected: 3 })]]);
 
@@ -60,7 +66,7 @@ describe("UploadPage", () => {
     const fetchMock = mockApi([["POST /api/v1/readings/upload", result({ inserted: 1 })]]);
     renderLoggedIn("/upload");
 
-    fireEvent.drop(screen.getByText("Drop an .xlsx file here, or click to choose"), { dataTransfer: { files: [WEEK] } });
+    fireEvent.drop(screen.getByText("Drop an .xlsx or .csv file here, or click to choose"), { dataTransfer: { files: [WEEK] } });
 
     await screen.findByRole("list", { name: "Upload result" });
     expect((at(fetchMock.mock.calls, 0)[1]?.body as FormData).get("file")).toBe(WEEK);
@@ -185,12 +191,14 @@ describe("UploadPage", () => {
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Fridge 'Dairy' in Haifa already has logger TL-0231");
   });
 
-  it("shows the backend message when the file is not an .xlsx file", async () => {
-    mockApi([["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx file" })]]);
+  it("shows the backend message when the file is not an .xlsx or .csv file", async () => {
+    mockApi([
+      ["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx or .csv file" })],
+    ]);
 
     await uploadWeek();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Unsupported file format. Upload an .xlsx file");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Unsupported file format. Upload an .xlsx or .csv file");
     expect(screen.queryByRole("list", { name: "Upload result" })).not.toBeInTheDocument();
   });
 

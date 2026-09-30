@@ -9,7 +9,7 @@ from app.api import api_v1
 from app.db import db
 from app.errors import field_errors
 from app.services.errors import ConflictError, NotFoundError
-from app.services.ingest.parsers.base import MissingColumns, UnsupportedFormat
+from app.services.ingest.parsers.base import MissingColumns, UnreadableFile, UnsupportedFormat
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,14 @@ def unknown_url(exc: NotFound):
 @api_v1.errorhandler(UnsupportedFormat)
 def unsupported_format(exc: UnsupportedFormat):
     """Return 415 when no parser accepts the uploaded file."""
-    return {"error": "Unsupported file format. Upload an .xlsx file"}, 415
+    return {"error": "Unsupported file format. Upload an .xlsx or .csv file"}, 415
+
+
+@api_v1.errorhandler(UnreadableFile)
+def unreadable_file(exc: UnreadableFile):
+    """Return 400 when the file's content cannot be read, with how to fix it."""
+    logger.warning("Rejected upload: %s", exc)
+    return {"error": "Could not read the file. Save it as CSV UTF-8 and upload it again"}, 400
 
 
 @api_v1.errorhandler(MissingColumns)

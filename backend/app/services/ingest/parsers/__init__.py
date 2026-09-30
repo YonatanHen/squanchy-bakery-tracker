@@ -1,1 +1,1 @@
-"""Upload file parsers (Strategy + Factory); only Excel is implemented."""
+"""Upload file parsers (Strategy + Factory): Excel and CSV."""
