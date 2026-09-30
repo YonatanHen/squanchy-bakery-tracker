@@ -4,70 +4,72 @@ from sqlalchemy import event, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Fridge, ThresholdSettings
-from app.models.threshold_settings import DEFAULT_PROFILE
+from app.models.threshold_settings import DEFAULT_SETTINGS_NAME
 from app.services.errors import get_or_raise
 
 logger = logging.getLogger(__name__)
 
 
-def default_profile(session) -> ThresholdSettings:
-    """Return the "default" profile with the suggested values, creating it on first use."""
+def default_settings(session) -> ThresholdSettings:
+    """Return the "default" threshold settings with the suggested values, creating them on first use."""
     with session.no_autoflush:
-        profile = session.scalar(select(ThresholdSettings).where(func.lower(ThresholdSettings.name) == DEFAULT_PROFILE))
-    if profile is None:
-        profile = ThresholdSettings(name=DEFAULT_PROFILE)
-        session.add(profile)
-        logger.info("Created the default threshold profile")
-    return profile
+        settings = session.scalar(
+            select(ThresholdSettings).where(func.lower(ThresholdSettings.name) == DEFAULT_SETTINGS_NAME)
+        )
+    if settings is None:
+        settings = ThresholdSettings(name=DEFAULT_SETTINGS_NAME)
+        session.add(settings)
+        logger.info("Created the default threshold settings")
+    return settings
 
 
-def list_profiles(session) -> list[tuple[ThresholdSettings, int]]:
-    """All profiles ordered by name, each with the number of fridges using it."""
+def list_settings(session) -> list[tuple[ThresholdSettings, int]]:
+    """All threshold settings ordered by name, each with the number of fridges using them."""
     stmt = (
         select(ThresholdSettings, func.count(Fridge.id))
         .outerjoin(Fridge, Fridge.threshold_settings_id == ThresholdSettings.id)
         .group_by(ThresholdSettings.id)
         .order_by(ThresholdSettings.name)
     )
-    return [(profile, count) for profile, count in session.execute(stmt)]
+    return [(settings, count) for settings, count in session.execute(stmt)]
 
 
-def fridge_count(session, profile_id: int) -> int:
-    """Number of fridges using the profile."""
-    return session.scalar(select(func.count(Fridge.id)).where(Fridge.threshold_settings_id == profile_id))
+def fridge_count(session, settings_id: int) -> int:
+    """Number of fridges using the threshold settings."""
+    return session.scalar(select(func.count(Fridge.id)).where(Fridge.threshold_settings_id == settings_id))
 
 
-def create_profile(session, values: dict) -> ThresholdSettings:
-    """Create a named profile; a duplicate name raises IntegrityError (409)."""
-    profile = ThresholdSettings(**values)
-    session.add(profile)
+def create_settings(session, values: dict) -> ThresholdSettings:
+    """Create named threshold settings; a duplicate name raises IntegrityError (409)."""
+    settings = ThresholdSettings(**values)
+    session.add(settings)
     session.commit()
-    logger.info("Created threshold profile id=%s", profile.id)
-    return profile
+    logger.info("Created threshold settings id=%s", settings.id)
+    return settings
 
 
-def update_profile(session, profile_id: int, values: dict) -> ThresholdSettings:
-    """Replace a profile's name and values; it changes the alerts of every fridge using it."""
-    profile = get_or_raise(session, ThresholdSettings, profile_id)
+def update_settings(session, settings_id: int, values: dict) -> ThresholdSettings:
+    """Replace the name and values; it changes the alerts of every fridge using these settings."""
+    settings = get_or_raise(session, ThresholdSettings, settings_id)
     for field, value in values.items():
-        setattr(profile, field, value)
+        setattr(settings, field, value)
     session.commit()
-    logger.info("Updated threshold profile id=%s used by %d fridges", profile_id, fridge_count(session, profile_id))
-    return profile
+    logger.info("Updated threshold settings id=%s used by %d fridges", settings_id, fridge_count(session, settings_id))
+    return settings
 
 
-def delete_profile(session, profile_id: int) -> None:
-    """Delete a profile no fridge uses; while fridges use it the DB refuses (IntegrityError, 409)."""
-    session.delete(get_or_raise(session, ThresholdSettings, profile_id))
+def delete_settings(session, settings_id: int) -> None:
+    """Delete threshold settings no fridge uses; while fridges use them the DB refuses (IntegrityError, 409)."""
+    session.delete(get_or_raise(session, ThresholdSettings, settings_id))
     session.commit()
-    logger.info("Deleted threshold profile id=%s", profile_id)
+    logger.info("Deleted threshold settings id=%s", settings_id)
 
 
 @event.listens_for(Session, "before_flush")
-def _attach_default_profile(session, flush_context, instances):
-    """Attach every new fridge without a profile to the "default" profile."""
+def _attach_default_settings(session, flush_context, instances):
+    """Attach every new fridge without threshold settings to the "default" ones."""
     new_fridges = [obj for obj in session.new if isinstance(obj, Fridge) and obj.threshold_settings is None]
     if new_fridges:
-        profile = default_profile(session)
+        settings = default_settings(session)
         for fridge in new_fridges:
-            fridge.threshold_settings = profile
+            fridge.threshold_settings = settings

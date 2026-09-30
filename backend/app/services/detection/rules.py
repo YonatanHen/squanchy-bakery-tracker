@@ -16,7 +16,7 @@ class Point:
 
 @dataclass(frozen=True)
 class Thresholds:
-    """The fridge's threshold profile values, in °C and minutes."""
+    """The fridge's threshold settings values, in °C and minutes."""
 
     growth_non_urgent: float
     growth_urgent: float
@@ -48,7 +48,7 @@ def _level(value: float, non_urgent: float, urgent: float) -> AlertLevel | None:
 
 
 def find_growth(points: list[Point], t: Thresholds) -> list[Finding]:
-    """Alert when the last readings rise without a step down by at least the profile's growth thresholds."""
+    """Alert when the last readings rise without a step down by at least the fridge's growth thresholds."""
     findings = []
     ok = [p for p in _by_time(points) if p.temp_c is not None]
     for end in range(WINDOW - 1, len(ok)):
@@ -68,7 +68,7 @@ def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], 
 
     Args:
         points: All readings of one fridge (old and new), in °C.
-        t: The fridge's threshold profile.
+        t: The fridge's threshold settings.
 
     Returns:
         Findings for new readings, and the average of the non-spike OK readings (None if there are none).
@@ -110,7 +110,7 @@ def _by_time(points: list[Point]) -> list[Point]:
 
 
 def find_gaps(points: list[Point], t: Thresholds) -> list[Finding]:
-    """Alert on new readings that come after a gap longer than the profile's gap thresholds."""
+    """Alert on new readings that come after a gap longer than the fridge's gap thresholds."""
     findings = []
     ordered = _by_time(points)
     for previous, current in zip(ordered, ordered[1:]):

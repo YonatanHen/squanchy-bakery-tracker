@@ -8,11 +8,11 @@ from app.db import db
 if TYPE_CHECKING:
     from app.models.fridge import Fridge
 
-DEFAULT_PROFILE = "default"
+DEFAULT_SETTINGS_NAME = "default"
 
 
 class ThresholdSettings(db.Model):
-    """A named alert-threshold profile (°C and minutes), shared by any number of fridges."""
+    """Named alert threshold settings (°C and minutes), shared by any number of fridges."""
 
     __tablename__ = "threshold_settings"
 
@@ -25,7 +25,7 @@ class ThresholdSettings(db.Model):
     gap_non_urgent_minutes: Mapped[int] = mapped_column(default=15)
     gap_urgent_minutes: Mapped[int] = mapped_column(default=120)
 
-    # passive_deletes="all": the DB refuses deleting a profile that fridges still use.
+    # passive_deletes="all": the DB refuses deleting threshold settings that fridges still use.
     fridges: Mapped[list["Fridge"]] = relationship(back_populates="threshold_settings", passive_deletes="all")
 
 

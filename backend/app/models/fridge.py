@@ -24,7 +24,7 @@ class Fridge(db.Model):
     metric: Mapped[Metric] = mapped_column(metric_enum, default=Metric.C)
     avg_temp: Mapped[float | None] = mapped_column()
     last_measured: Mapped[datetime | None] = mapped_column(DateTime)
-    # Shared profile; new fridges get "default" (services/thresholds.py).
+    # Shared threshold settings; new fridges get "default" (services/thresholds.py).
     threshold_settings_id: Mapped[int] = mapped_column(ForeignKey("threshold_settings.id", ondelete="RESTRICT"))
 
     branch: Mapped[Branch] = relationship(back_populates="fridges")

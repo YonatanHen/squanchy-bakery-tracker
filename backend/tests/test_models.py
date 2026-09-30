@@ -38,7 +38,7 @@ def test_same_fridge_name_is_allowed_in_different_branches(session):
 
 
 def test_new_fridge_is_celsius_and_uses_the_default_thresholds(session):
-    """A new fridge defaults to Celsius and is attached to the "default" profile with the suggested values."""
+    """A new fridge defaults to Celsius and is attached to the "default" threshold settings with the suggested values."""
     fridge = Fridge(branch=Branch(name="Rishon LeZion", city="Rishon LeZion"), name="Cream cakes")
     session.add(fridge)
     session.commit()
@@ -51,8 +51,8 @@ def test_new_fridge_is_celsius_and_uses_the_default_thresholds(session):
     assert (t.gap_non_urgent_minutes, t.gap_urgent_minutes) == (15, 120)
 
 
-def test_fridges_share_one_threshold_profile(session):
-    """Two new fridges use the same "default" profile; only one settings row exists."""
+def test_fridges_share_one_threshold_settings(session):
+    """Two new fridges use the same "default" threshold settings; only one settings row exists."""
     branch = Branch(name="Tel Aviv", city="Tel Aviv")
     first, second = Fridge(branch=branch, name="Walk-in"), Fridge(branch=branch, name="Display 1")
     session.add_all([first, second])

@@ -23,7 +23,7 @@ def create_app(overrides: dict | None = None) -> Flask:
     db.init_app(app)
 
     from app import models  # noqa: F401  registers tables
-    from app.services import archive, thresholds  # noqa: F401  registers the archive and default-profile hooks
+    from app.services import archive, thresholds  # noqa: F401  registers the archive and default threshold settings hooks
     from app.api import api_v1
     from app.api.errors import unknown_url
 

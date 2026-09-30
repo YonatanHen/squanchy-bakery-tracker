@@ -10,7 +10,7 @@ A web app for the bakery's fridge temperature loggers. Branch managers send week
 - **Messy data is normalized, not guessed.** Two date formats and Excel date cells are accepted; branch, fridge and logger names match in any case and spacing; `ERR` is stored as a reading without a temperature; every empty field is a clear row error.
 - **Branches, fridges and loggers are registered from the data.** An unknown branch or logger in a file is never created silently: the upload lists it ("did you mean *Rishon LeZion*?" for a branch typo), and after the user confirms, it is created together with the readings.
 - **Units are kept as measured.** A Fahrenheit logger's readings are stored in °F; they are converted to °C only for the alert rules and filters, and shown in either unit.
-- **Deterministic alerts, configurable thresholds.** Rules in code, not a model: a gap in the readings, a steady rise over the last 4 readings, and a deviation from the fridge's average (too warm or too cold). A one-off spike that returns to normal gets a light alert and does not move the average. The limits come from named **threshold profiles** shared by many fridges (e.g. the same limits for every dairy fridge).
+- **Deterministic alerts, configurable thresholds.** Rules in code, not a model: a gap in the readings, a steady rise over the last 4 readings, and a deviation from the fridge's average (too warm or too cold). A one-off spike that returns to normal gets a light alert and does not move the average. The limits come from named **threshold settings** shared by many fridges (e.g. the same limits for every dairy fridge).
 - **Nothing is lost by accident.** Deleting a branch, fridge or reading moves its readings and alerts to archive tables in the same transaction, so a later question can still be answered. Edits change a reading in place (the UI asks "Are you sure?") and re-run the alert rules on it.
 
 ## Architecture
@@ -24,7 +24,7 @@ flowchart LR
             ING["ingest:<br/>parser factory → Excel parser →<br/>Pydantic row validation →<br/>repository"]
             DET["detection:<br/>gap · growth · deviation · spike"]
             ARC["archive on delete"]
-            THR["threshold profiles"]
+            THR["threshold settings"]
         end
         SVC --> MOD["models (SQLAlchemy)"]
     end
@@ -245,7 +245,7 @@ All routes are under `/api/v1`. Every route except `GET /health` and `POST /auth
 | GET | `/alerts` | Query alerts (level, location, dates); `?archived=true` for alerts of deleted readings |
 | GET | `/branches` | Branches with their fridges and loggers |
 | PATCH / DELETE | `/branches/<id>` | Edit name, city, address / delete (history archived) |
-| PATCH / DELETE | `/fridges/<id>` | Edit name, unit, logger, threshold profile / delete (history archived) |
+| PATCH / DELETE | `/fridges/<id>` | Edit name, unit, logger, threshold settings / delete (history archived) |
 | GET | `/branches/<id>/delete-impact`, `/fridges/<id>/delete-impact` | Counts for the delete confirmation |
-| GET / POST | `/threshold-settings` | List profiles (with how many fridges use each) / create one |
-| PUT / DELETE | `/threshold-settings/<id>` | Edit a profile / delete an unused one |
+| GET / POST | `/threshold-settings` | List threshold settings (with how many fridges use each) / create one |
+| PUT / DELETE | `/threshold-settings/<id>` | Edit threshold settings / delete unused ones |
