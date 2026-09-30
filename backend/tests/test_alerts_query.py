@@ -26,8 +26,8 @@ def test_all_alerts_of_the_sample_week_newest_first(client, auth_headers, sample
 
 
 def test_filter_by_level(client, auth_headers, sample):
-    """3 of the 5 alerts are urgent."""
-    assert query(client, auth_headers, level="URGENT")["total"] == 3
+    """4 of the 5 alerts are urgent: Rishon's limit period and growth, and the two gaps."""
+    assert query(client, auth_headers, level="URGENT")["total"] == 4
 
 
 def test_filter_by_branch_and_date(client, auth_headers, sample):

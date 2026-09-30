@@ -5,7 +5,7 @@ from sqlalchemy import Select, case, delete, func, select
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters, ReadingOut, ReadingPage, ReadingPatch
-from app.services.detection.service import detect, refresh_fridge_stats
+from app.services.detection.service import detect
 from app.services.errors import ConflictError, get_or_raise
 from app.services.units import to_celsius
 
@@ -176,11 +176,11 @@ def restore_reading(session, reading_id: int) -> ReadingOut:
 
 
 def delete_reading(session, reading_id: int) -> None:
-    """Delete a reading (it is archived with its alerts) and recompute its fridge's average."""
+    """Delete a reading (it is archived with its alerts) and rebuild its fridge's limit periods."""
     reader = get_or_raise(session, Reader, reading_id)
-    fridge = reader.logger.fridge
+    fridge_id = reader.logger.fridge_id
     session.delete(reader)
     session.flush()
-    refresh_fridge_stats(session, fridge)
+    detect(session, {fridge_id}, set())
     session.commit()
     logger.info("Deleted reading id=%s", reading_id)

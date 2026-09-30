@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Logger, Metric, Reader, Status
+from app.models import Alert, AlertKind, AlertLevel, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from tests.helpers import load_sample
 
@@ -60,14 +60,29 @@ def test_moving_a_reading_onto_an_existing_time_is_a_conflict(client, session, a
 
 
 def test_delete_reading_archives_it_with_its_alerts(client, session, auth_headers):
-    """Deleting Rishon's 06:45 reading archives it with its 2 alerts."""
+    """Deleting Rishon's 06:45 reading archives it with its growth alert; the limit period now ends at 06:30."""
     load_sample(session)
     target = reading(session, "TL-0388", datetime(2026, 9, 14, 6, 45))
 
     assert client.delete(f"/api/v1/readings/{target.id}", headers=auth_headers).status_code == 204
     session.expire_all()
-    assert session.query(Alert).count() == 3
-    assert (session.query(ReaderArchive).count(), session.query(AlertArchive).count()) == (1, 2)
+    assert session.query(Alert).count() == 4
+    assert (session.query(ReaderArchive).count(), session.query(AlertArchive).count()) == (1, 1)
+    limit = session.query(Alert).filter_by(kind=AlertKind.LIMIT, reader_id=reading(session, "TL-0388", datetime(2026, 9, 14, 6, 15)).id).one()
+    assert limit.description == "Above 5.0°C since 14/09 06:15, still above at the last reading 06:30 (15 min so far), peak 6.3°C"
+
+
+def test_deleting_the_first_reading_of_a_period_moves_its_alert(client, session, auth_headers):
+    """Rishon's 06:15 reading deleted: the period now starts at 06:30 and its alert is on that reading."""
+    load_sample(session)
+    first = reading(session, "TL-0388", datetime(2026, 9, 14, 6, 15))
+
+    client.delete(f"/api/v1/readings/{first.id}", headers=auth_headers)
+
+    session.expire_all()
+    [limit] = [a for a in session.query(Alert) if a.kind is AlertKind.LIMIT and a.reader.logger_id == "TL-0388"]
+    assert limit.reader.time == datetime(2026, 9, 14, 6, 30)
+    assert limit.description.startswith("Above 5.0°C since 14/09 06:30")
 
 
 def test_patch_time_in_the_browser_format(client, session, auth_headers):

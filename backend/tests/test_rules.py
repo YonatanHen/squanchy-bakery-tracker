@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from app.models import AlertKind, AlertLevel, Metric
-from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth, find_limits
+from app.services.detection.rules import Point, Thresholds, find_gaps, find_growth, find_limits
 from app.services.units import from_celsius, to_celsius
 
 T = Thresholds(0.1, 1.0, 0.0, 5.0, 15, 120)  # the default threshold settings
@@ -137,51 +137,6 @@ def test_fewer_than_four_readings_is_not_a_trend():
     assert find_growth(points(4.6, 5.4, 6.3), T) == []
 
 
-def test_spike_back_within_deviation_non_urgent_is_a_non_urgent_alert_and_stays_out_of_the_average():
-    """Tel Aviv 9.4°C, then back to 4.3°C: a spike alert (NON_URGENT), and 9.4 is not added to the average."""
-    findings, average = find_deviations(points(4.0, 4.1, 9.4, 4.3, 3.7), T)
-
-    [spike] = findings
-    assert (spike.point_id, spike.level) == (2, AlertLevel.NON_URGENT)
-    assert spike.description == "Spike: 9.4°C against an average of 4.0°C"
-    assert average == pytest.approx(4.025)
-
-
-def test_last_reading_between_the_deviation_thresholds_is_non_urgent():
-    """Rishon's 7.1°C is 1.7°C above the average: at least deviation_non_urgent, below deviation_urgent."""
-    [finding], _ = find_deviations(points(4.6, 5.4, 6.3, 7.1), T)
-
-    assert (finding.point_id, finding.level) == (3, AlertLevel.NON_URGENT)
-    assert finding.description == "7.1°C is 1.7°C above the fridge average of 5.4°C"
-
-
-def test_drop_at_or_above_deviation_urgent_is_urgent():
-    """The fridge getting too cold (0.5°C against about 4.0°C) is at least deviation_urgent below: urgent."""
-    findings, _ = find_deviations(points(4.0, 4.1, 4.0, 0.5, 0.6), T)
-
-    assert (findings[0].point_id, findings[0].level) == (3, AlertLevel.URGENT)
-    assert "below the fridge average" in findings[0].description
-
-
-def test_change_within_deviation_non_urgent_is_not_alerted():
-    """4.0, 4.1, 4.3, 3.9 stay within deviation_non_urgent of the average: no alert."""
-    assert find_deviations(points(4.0, 4.1, 4.3, 3.9), T)[0] == []
-
-
-def test_first_reading_has_no_average_to_compare():
-    """A fridge's first reading only starts the average."""
-    findings, average = find_deviations(points(9.0), T)
-
-    assert (findings, average) == ([], 9.0)
-
-
-def test_old_readings_build_the_average_without_new_alerts():
-    """Readings from earlier uploads feed the average but are not alerted again."""
-    old = points(4.0, 4.1, 9.4, 4.3, new=False)
-
-    assert find_deviations(old, T)[0] == []
-
-
 def at(*pairs, new=True):
     """Readings at (minutes after START, °C) pairs."""
     return [Point(i, START + timedelta(minutes=m), t, new) for i, (m, t) in enumerate(pairs)]
@@ -192,7 +147,6 @@ def test_readings_still_above_max_are_one_urgent_period_on_its_first_reading():
     [finding] = find_limits(points(4.6, 5.4, 6.3, 7.1), T)
 
     assert (finding.point_id, finding.level, finding.kind) == (1, AlertLevel.URGENT, AlertKind.LIMIT)
-    assert finding.covers == frozenset({1, 2, 3})
     assert finding.description == (
         "Above 5.0°C since 14/09 06:15, still above at the last reading 06:45 (30 min so far), peak 7.1°C"
     )
@@ -225,7 +179,7 @@ def test_an_err_reading_does_not_end_a_period():
     """The logger failed once while the fridge was warm: still one period."""
     [finding] = find_limits(points(4.0, 6.0, None, 6.5, 4.0), T)
 
-    assert finding.covers == frozenset({1, 2, 3})
+    assert finding.point_id == 1
     assert finding.description == "Above 5.0°C from 14/09 06:15 to 07:00 (45 min), peak 6.5°C"
 
 
@@ -236,11 +190,6 @@ def test_a_gap_inside_a_period_is_named_in_the_alert():
     assert finding.description == (
         "Above 5.0°C from 14/09 06:15 to 08:30 (2h 15m), peak 6.5°C; no readings for 2h 0m inside this period"
     )
-
-
-def test_a_period_of_old_readings_is_not_alerted_again():
-    """Readings from earlier uploads already have their alert."""
-    assert find_limits(points(4.6, 5.4, 6.3, 7.1, new=False), T) == []
 
 
 def test_the_fridges_threshold_settings_set_the_limits():

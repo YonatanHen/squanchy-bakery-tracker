@@ -34,11 +34,9 @@ class Finding:
     level: AlertLevel
     description: str
     kind: AlertKind
-    covers: frozenset[int] = frozenset()  # readings of a limit period; their old LIMIT alert is replaced
 
 
 WINDOW = 4  # readings in a growth trend
-DEVIATION_NON_URGENT, DEVIATION_URGENT = 1.5, 3.0  # °C; removed when the limit rule replaces the deviation rule
 
 
 def _level(value: float, non_urgent: float, urgent: float) -> AlertLevel | None:
@@ -70,49 +68,6 @@ def find_growth(points: list[Point], t: Thresholds) -> list[Finding]:
             )
             findings.append(Finding(current.id, level, text, AlertKind.GROWTH))
     return findings
-
-
-def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], float | None]:
-    """Compare each reading to the running average, above or below; spikes are alerted but not averaged.
-
-    Args:
-        points: All readings of one fridge (old and new), in °C.
-        t: The fridge's threshold settings.
-
-    Returns:
-        Findings for new readings, and the average of the non-spike OK readings (None if there are none).
-    """
-    findings = []
-    ok = [p for p in _by_time(points) if p.temp_c is not None]
-    total, count = 0.0, 0
-    for index, point in enumerate(ok):
-        if count == 0:
-            total, count = point.temp_c, 1
-            continue
-        average = total / count
-        deviation = round(point.temp_c - average, 2)
-        if abs(deviation) < DEVIATION_NON_URGENT:
-            total, count = total + point.temp_c, count + 1
-            continue
-        following = ok[index + 1] if index + 1 < len(ok) else None
-        if following is not None and abs(following.temp_c - average) < DEVIATION_NON_URGENT:
-            # Spike: the next reading is back to normal, e.g. a door opened for a delivery.
-            if point.is_new:
-                findings.append(Finding(
-                    point.id, AlertLevel.NON_URGENT, f"Spike: {point.temp_c:.1f}°C against an average of {average:.1f}°C",
-                    AlertKind.LIMIT,
-                ))
-            continue
-        if point.is_new:
-            level = _level(abs(deviation), DEVIATION_NON_URGENT, DEVIATION_URGENT)
-            direction = "above" if deviation > 0 else "below"
-            findings.append(Finding(
-                point.id, level,
-                f"{point.temp_c:.1f}°C is {abs(deviation):.1f}°C {direction} the fridge average of {average:.1f}°C",
-                AlertKind.LIMIT,
-            ))
-        total, count = total + point.temp_c, count + 1
-    return findings, (total / count if count else None)
 
 
 def _by_time(points: list[Point]) -> list[Point]:
@@ -169,11 +124,11 @@ def _limit_finding(period: list[Point], side: str, end: Point | None, t: Thresho
     longest = max(((b.time - a.time).total_seconds() / 60 for a, b in zip(timeline, timeline[1:])), default=0)
     if longest > t.gap_non_urgent_minutes:
         text += f"; no readings for {_duration(longest)} inside this period"
-    return Finding(first.id, level, text, AlertKind.LIMIT, frozenset(p.id for p in period))
+    return Finding(first.id, level, text, AlertKind.LIMIT)
 
 
 def find_limits(points: list[Point], t: Thresholds) -> list[Finding]:
-    """One alert per period outside the fridge's min/max limits that has a new reading.
+    """One alert per period outside the fridge's min/max limits, old or new (detection replaces them all).
 
     A period starts at the first reading outside the limits and ends at the first reading back within them;
     an ERR reading does not end it. Two or more readings outside are URGENT, one is NON_URGENT.
@@ -183,10 +138,10 @@ def find_limits(points: list[Point], t: Thresholds) -> list[Finding]:
     side: str | None = None
 
     def close(end: Point | None) -> None:
-        """Add the finding of the open period when it or its end reading is new."""
+        """Add the finding of the open period."""
         while period and period[-1].temp_c is None:  # trailing ERR readings are not part of the period
             period.pop()
-        if period and any(p.is_new for p in period + ([end] if end else [])):
+        if period:
             findings.append(_limit_finding(period, side, end, t))
 
     for point in _by_time(points):

@@ -1,9 +1,9 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
-from app.models import Alert, Fridge, Logger, Reader
-from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth
+from app.models import Alert, AlertKind, Fridge, Logger, Reader
+from app.services.detection.rules import Point, Thresholds, find_gaps, find_growth, find_limits
 from app.services.units import to_celsius
 
 logger = logging.getLogger(__name__)
@@ -27,38 +27,35 @@ def _thresholds(fridge: Fridge) -> Thresholds:
     )
 
 
-def _store_stats(fridge: Fridge, points: list[Point]) -> None:
-    """Save the time of the fridge's last reading."""
-    fridge.last_measured = max((p.time for p in points), default=None)
+def _drop_limit_alerts(session, points: list[Point]) -> int:
+    """Delete the fridge's LIMIT alerts; they are rebuilt from all its readings. Returns how many."""
+    ids = [p.id for p in points]
+    stmt = delete(Alert).where(Alert.kind == AlertKind.LIMIT, Alert.reader_id.in_(ids))
+    return session.execute(stmt.execution_options(synchronize_session="fetch")).rowcount
 
 
 def detect(session, fridge_ids: set[int], new_reader_ids: set[int]) -> int:
-    """Run the gap, growth and deviation rules on the new readings of each fridge.
+    """Run the gap and growth rules on the new readings, and rebuild the limit periods of each fridge.
 
     Args:
         session: The SQLAlchemy session; the caller commits.
-        fridge_ids: Fridges that got new readings.
-        new_reader_ids: Ids of the readings saved in this upload.
+        fridge_ids: Fridges whose readings changed.
+        new_reader_ids: Ids of the readings saved or changed now; empty after a delete.
 
     Returns:
-        The number of alerts added.
+        The number of alerts added, less the limit alerts they replace.
     """
     added = 0
     for fridge_id in fridge_ids:
         fridge = session.get(Fridge, fridge_id)
         points = _points(session, fridge_id, new_reader_ids)
         t = _thresholds(fridge)
-        deviations, _ = find_deviations(points, t)
-        for finding in find_gaps(points, t) + find_growth(points, t) + deviations:
+        added -= _drop_limit_alerts(session, points)
+        for finding in find_gaps(points, t) + find_growth(points, t) + find_limits(points, t):
             session.add(Alert(
                 reader_id=finding.point_id, level=finding.level, description=finding.description, kind=finding.kind,
             ))
             added += 1
-        _store_stats(fridge, points)
+        fridge.last_measured = max((p.time for p in points), default=None)
     logger.info("Detection on %d fridges added %d alerts", len(fridge_ids), added)
     return added
-
-
-def refresh_fridge_stats(session, fridge: Fridge) -> None:
-    """Recompute the fridge's last reading after a delete; adds no alerts."""
-    _store_stats(fridge, _points(session, fridge.id, set()))

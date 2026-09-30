@@ -86,8 +86,9 @@ def test_restore_brings_an_archived_reading_back_with_fresh_alerts(client, sessi
     assert session.get(Reader, reading_id).metric == Metric.C
     assert (session.get(ReaderArchive, reading_id), session.query(AlertArchive).filter_by(reader_id=reading_id).count()) == (None, 0)
     alerts = session.query(Alert).filter_by(reader_id=reading_id).all()
-    assert sorted(a.level.value for a in alerts) == sorted([AlertLevel.NON_URGENT.value, AlertLevel.URGENT.value])
-    assert "Temperature rose 2.5°C from 14/09 06:00 to 06:45 (45 min)" in [a.description for a in alerts]
+    assert [(a.level, a.description) for a in alerts] == [
+        (AlertLevel.URGENT, "Temperature rose 2.5°C from 14/09 06:00 to 06:45 (45 min)"),
+    ]
 
 
 def test_restore_when_the_logger_no_longer_exists_is_a_409(client, session, auth_headers):
