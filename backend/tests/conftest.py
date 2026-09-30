@@ -6,9 +6,7 @@ from sqlalchemy import text
 from app import create_app
 from app.db import db
 
-TEST_DB = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+psycopg://squanchy:squanchy@localhost:5432/squanchy_bakery_test"
-)
+TEST_DB = os.environ["TEST_DATABASE_URL"]  # loaded from backend/.env by app.config
 
 
 @pytest.fixture
