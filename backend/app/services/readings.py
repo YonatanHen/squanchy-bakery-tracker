@@ -138,6 +138,7 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
     old_fridge_id = reader.logger.fridge_id
     if "logger_id" in changes:
         reader.logger = session.get(Logger, changes["logger_id"])
+        reader.metric = reader.logger.fridge.metric  # value unchanged, relabeled in the new fridge's unit
     if "time" in changes:
         reader.time = changes["time"]
     if "temp" in changes:

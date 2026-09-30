@@ -114,6 +114,20 @@ def test_patch_cannot_change_a_reading_unit(client, session, auth_headers):
     assert (stored.temp, stored.metric) == (38.3, Metric.F)
 
 
+def test_moving_a_reading_takes_the_new_fridges_unit(client, session, auth_headers):
+    """Jerusalem's 08:30 reading (4.0°C) moved to Haifa's °F fridge is marked °F with the same value."""
+    load_sample(session)
+    target = reading(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
+
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"logger_id": "TL-0231"}, headers=auth_headers)
+
+    assert response.status_code == 200
+    assert (response.get_json()["temp"], response.get_json()["metric"]) == (4.0, "F")
+    session.expire_all()
+    stored = session.get(Reader, target.id)
+    assert (stored.temp, stored.metric) == (4.0, Metric.F)
+
+
 def test_patch_to_an_unknown_logger_is_a_422_on_logger_id(client, session, auth_headers):
     """A logger that is not registered is rejected on its field and the reading stays where it was."""
     load_sample(session)
