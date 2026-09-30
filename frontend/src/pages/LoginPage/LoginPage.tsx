@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/Button";
-import { Field } from "../components/Field";
-import { LogoIcon } from "../components/icons";
-import { TextInput } from "../components/TextInput";
-import { ApiError } from "../lib/api";
-import { useAuth } from "../lib/AuthContext";
+import { Button } from "../../components/Button/Button";
+import { Field } from "../../components/Field/Field";
+import { LogoIcon } from "../../components/icons/icons";
+import { TextInput } from "../../components/TextInput/TextInput";
+import { ApiError } from "../../lib/api";
+import { useAuth } from "../../lib/AuthContext";
 import styles from "./LoginPage.module.css";
 
 /** Show the sign-in form and open Readings after a successful login. */

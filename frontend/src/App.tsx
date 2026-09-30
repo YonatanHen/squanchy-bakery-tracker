@@ -1,9 +1,9 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { AppShell } from "./components/AppShell";
+import { AppShell } from "./components/AppShell/AppShell";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
-import { LoginPage } from "./pages/LoginPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
-import { ThresholdsPage } from "./pages/ThresholdsPage";
+import { LoginPage } from "./pages/LoginPage/LoginPage";
+import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
+import { ThresholdsPage } from "./pages/ThresholdsPage/ThresholdsPage";
 
 /** Render the child routes only when logged in; otherwise go to /login. */
 function RequireAuth() {

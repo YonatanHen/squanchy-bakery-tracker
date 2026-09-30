@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import styles from "./BottomNav.module.css";
-import { NAV_ITEMS } from "./navItems";
+import { NAV_ITEMS } from "../navItems/navItems";
 
 /** Fixed bottom navigation for phone widths (below 900px). */
 export function BottomNav() {

@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppRoutes } from "../App";
-import { getToken } from "../lib/api";
-import { AuthProvider } from "../lib/AuthContext";
+import { AppRoutes } from "../../App";
+import { getToken } from "../../lib/api";
+import { AuthProvider } from "../../lib/AuthContext";
 
 const fetchMock = vi.fn();
 

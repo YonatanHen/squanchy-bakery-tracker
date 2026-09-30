@@ -78,7 +78,8 @@ Log process states and errors on the server with Python `logging` (`logger = log
 
 ### 13. Frontend: reusable components
 Build the UI from small shared components. Screens compose them; they do not repeat markup or styles.
-- Base components live in `frontend/src/components/`, one per file with its styles and a test: e.g. `Field` (label + control + hint + error), `TextInput`, `Select`, `Combobox` (pick or type), `Button` (primary, secondary, danger), `SegmentedToggle` (°C/°F, Active/Archived), `Card`, `LevelBadge`, `Dialog` (bottom sheet on phones, centered on desktop), `DataTable`, `EmptyState`.
+- Each component and page has its own folder with its `.tsx`, `.module.css` and `.test.tsx` (e.g. `components/Button/Button.tsx`); import from the `.tsx` file directly, no `index.ts`. Global tokens stay in `src/index.css`.
+- Base components live in `frontend/src/components/`: e.g. `Field` (label + control + hint + error), `TextInput`, `Select`, `Combobox` (pick or type), `Button` (primary, secondary, danger), `SegmentedToggle` (°C/°F, Active/Archived), `Card`, `LevelBadge`, `Dialog` (bottom sheet on phones, centered on desktop), `DataTable`, `EmptyState`.
 - Specific components extend the base ones by composition, never by copying their markup: e.g. `TemperatureField` and `DateTimeField` wrap `Field` + `TextInput`; `BranchField`, `FridgeField` and `LoggerField` wrap `Combobox`.
 - Before writing a new component, check `frontend/src/components/` for one to extend or reuse.
 - Colors, fonts, radii and spacing come only from the design-token CSS variables; no raw hex values in components.

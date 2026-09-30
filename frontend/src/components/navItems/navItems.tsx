@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { AlertsIcon, BranchesIcon, ReadingsIcon, ThresholdsIcon, UploadIcon } from "./icons";
+import { AlertsIcon, BranchesIcon, ReadingsIcon, ThresholdsIcon, UploadIcon } from "../icons/icons";
 
 export interface NavItem {
   path: string;
