@@ -45,4 +45,36 @@ describe("UploadPage", () => {
     ]);
     expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
   });
+
+  it("lists each rejected row with its field, value and message", async () => {
+    mockApi([
+      [
+        "POST /api/v1/readings/upload",
+        result({
+          rejected: 2,
+          errors: [
+            { row: 4, field: "time", value: "32/09/2026 06:30", message: "Unrecognized date '32/09/2026 06:30'" },
+            { row: 5, field: "logger", value: "TL-51", message: "Logger id must match TL-NNNN" },
+          ],
+        }),
+      ],
+    ]);
+
+    await uploadWeek();
+
+    const rows = await screen.findByRole("list", { name: "Rows to fix" });
+    expect(within(rows).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "Row 4Time “32/09/2026 06:30” — unrecognized date '32/09/2026 06:30'",
+      "Row 5Logger “TL-51” — logger id must match TL-NNNN",
+    ]);
+  });
+
+  it("shows no rows-to-fix list when every row was saved", async () => {
+    mockApi([["POST /api/v1/readings/upload", result({ inserted: 5 })]]);
+
+    await uploadWeek();
+
+    await screen.findByRole("list", { name: "Upload result" });
+    expect(screen.queryByRole("list", { name: "Rows to fix" })).not.toBeInTheDocument();
+  });
 });
