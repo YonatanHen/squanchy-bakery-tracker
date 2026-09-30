@@ -45,7 +45,7 @@ def test_editing_a_reading_replaces_its_alerts(client, session, auth_headers):
     assert response.status_code == 200
     session.expire_all()
     alerts = [(a.level, a.description) for a in session.query(Alert).filter_by(reader_id=target.id)]
-    assert alerts == [(AlertLevel.URGENT, "Temperature rose 1.9°C over the last 4 readings")]
+    assert alerts == [(AlertLevel.URGENT, "Temperature rose 1.9°C from 14/09 06:00 to 06:45 (45 min)")]
     assert session.query(AlertArchive).count() == 0
 
 

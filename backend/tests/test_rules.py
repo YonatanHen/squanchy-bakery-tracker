@@ -94,7 +94,7 @@ def test_rise_at_or_above_growth_urgent_over_four_readings_is_urgent():
     [finding] = find_growth(points(4.6, 5.4, 6.3, 7.1), T)
 
     assert (finding.point_id, finding.level) == (3, AlertLevel.URGENT)
-    assert finding.description == "Temperature rose 2.5°C over the last 4 readings"
+    assert finding.description == "Temperature rose 2.5°C from 14/09 06:00 to 06:45 (45 min)"
 
 
 def test_rise_between_the_growth_thresholds_is_non_urgent():

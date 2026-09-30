@@ -62,9 +62,13 @@ def find_growth(points: list[Point], t: Thresholds) -> list[Finding]:
         total = round(current.temp_c - window[0].temp_c, 2)
         level = _level(total, t.growth_non_urgent, t.growth_urgent)
         if level:
-            findings.append(Finding(
-                current.id, level, f"Temperature rose {total:.1f}°C over the last {WINDOW} readings", AlertKind.GROWTH,
-            ))
+            first = window[0].time
+            minutes = (current.time - first).total_seconds() / 60
+            text = (
+                f"Temperature rose {total:.1f}°C from {first.strftime('%d/%m %H:%M')} "
+                f"to {_clock(current.time, first)} ({_duration(minutes)})"
+            )
+            findings.append(Finding(current.id, level, text, AlertKind.GROWTH))
     return findings
 
 
