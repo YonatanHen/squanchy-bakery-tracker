@@ -7,7 +7,6 @@ import { Button } from "../Button/Button";
 import { DateTimeField } from "../DateTimeField/DateTimeField";
 import { Dialog } from "../Dialog/Dialog";
 import { Field } from "../Field/Field";
-import { SegmentedToggle } from "../SegmentedToggle/SegmentedToggle";
 import { Select, type SelectOption } from "../Select/Select";
 import { TemperatureField } from "../TemperatureField/TemperatureField";
 import styles from "./EditReadingDialog.module.css";
@@ -20,11 +19,6 @@ interface EditReadingDialogProps {
 }
 
 type Mode = "edit" | "confirm" | "delete";
-
-const UNITS = [
-  { value: "C", label: "°C" },
-  { value: "F", label: "°F" },
-] as const;
 
 /** Show a typed temperature the way the list shows it: "4.4 °C", or ERR. */
 function tempLabel(text: string, metric: Metric): string {
@@ -47,7 +41,7 @@ function placeOptions(branches: Branch[], reading: Reading): Map<string, SelectO
   return places;
 }
 
-/** Edit a reading's place, time, temperature or unit after an "Are you sure?" step, or delete it (it is archived). */
+/** Edit a reading's place, time or temperature (the unit follows the fridge) after an "Are you sure?" step, or delete it (it is archived). */
 export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditReadingDialogProps) {
   const originalTime = toDateTimeLocal(reading.time);
   const originalTemp = reading.temp === null ? "ERR" : String(reading.temp);
@@ -56,7 +50,6 @@ export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditR
   const [loggerId, setLoggerId] = useState<string>(reading.logger_id);
   const [time, setTime] = useState<string>(originalTime);
   const [temp, setTemp] = useState<string>(originalTemp);
-  const [metric, setMetric] = useState<Metric>(reading.metric);
   const [mode, setMode] = useState<Mode>("edit");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string>("");
@@ -68,13 +61,11 @@ export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditR
     ...(loggerId !== reading.logger_id && { logger_id: loggerId }),
     ...(time !== originalTime && { time }),
     ...(temp.trim() !== originalTemp && { temp: temp.trim() }),
-    ...(metric !== reading.metric && { metric }),
   };
-  const tempChanged = changes.temp !== undefined || changes.metric !== undefined;
   const summary = [
     changes.logger_id && `${reading.branch} · ${reading.fridge} → ${branch} · ${fridgeName}.`,
     changes.time && `${formatShort(originalTime)} → ${formatShort(changes.time)}.`,
-    tempChanged && `${tempLabel(originalTemp, reading.metric)} → ${tempLabel(temp, metric)}.`,
+    changes.temp !== undefined && `${tempLabel(originalTemp, reading.metric)} → ${tempLabel(temp, reading.metric)}.`,
   ].filter(Boolean);
 
   const edit = <T,>(setter: (value: T) => void) => (value: T) => {
@@ -156,17 +147,11 @@ export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditR
       </Field>
       <DateTimeField label="Time" value={time} onChange={edit(setTime)} error={errors.time} />
       <TemperatureField
-        label={`Temperature (°${metric}, or ERR)`}
+        label={`Temperature (°${reading.metric}, or ERR)`}
         value={temp}
         onChange={edit(setTemp)}
         error={errors.temp}
       />
-      <div className={styles.unit}>
-        <span className={styles.unitLabel} aria-hidden="true">
-          Unit
-        </span>
-        <SegmentedToggle label="Unit" options={UNITS} value={metric} onChange={edit(setMetric)} />
-      </div>
       {mode === "confirm" && (
         <div className={styles.confirm} role="status">
           <strong className={styles.confirmTitle}>Are you sure?</strong>
