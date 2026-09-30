@@ -1,0 +1,139 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 26px;
+}
+
+.columns,
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-14);
+  border: 1.5px dashed var(--muted);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.drop:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: flex;
+  color: var(--primary);
+}
+
+.dropText {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropTitle {
+  font-size: 15px;
+}
+
+.dropHint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Visually hidden but focusable; the label is the target */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-10);
+  border-radius: var(--radius-md);
+}
+
+.number {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.countLabel {
+  font-size: 12px;
+}
+
+.count[data-tone="default"] .countLabel {
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .page {
+    gap: var(--space-18);
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-20);
+    align-items: start;
+  }
+
+  .drop {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-10);
+    height: 200px;
+    border-radius: var(--space-16);
+    text-align: center;
+  }
+
+  .dropTitle {
+    font-size: 16px;
+  }
+
+  .counts {
+    gap: var(--space-10);
+  }
+
+  .count {
+    padding: var(--space-12);
+  }
+
+  .number {
+    font-size: 26px;
+  }
+
+  .countLabel {
+    font-size: 13px;
+  }
+}
