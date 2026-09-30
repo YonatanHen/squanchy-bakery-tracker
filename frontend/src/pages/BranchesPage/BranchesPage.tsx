@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BranchCard } from "../../components/BranchCard/BranchCard";
 import { BranchEditDialog } from "../../components/BranchEditDialog/BranchEditDialog";
 import { DeleteImpactDialog } from "../../components/DeleteImpactDialog/DeleteImpactDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
+import { FridgeEditDialog } from "../../components/FridgeEditDialog/FridgeEditDialog";
 import {
   deleteBranch,
   deleteFridge,
@@ -10,9 +11,13 @@ import {
   listBranches,
   listThresholdSettings,
   updateBranch,
+  updateFridge,
   type Branch,
   type BranchChanges,
   type DeleteImpact,
+  type Fridge,
+  type FridgeChanges,
+  type ThresholdSettings,
 } from "../../lib/endpoints";
 import styles from "./BranchesPage.module.css";
 
@@ -26,18 +31,23 @@ interface PendingDelete {
 /** Branches screen: each branch with its fridges and loggers, with edit and delete. */
 export function BranchesPage() {
   const [branches, setBranches] = useState<Branch[] | null>(null);
-  const [settingsNames, setSettingsNames] = useState<Record<number, string>>({});
+  const [thresholdSettings, setThresholdSettings] = useState<ThresholdSettings[]>([]);
   const [error, setError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [editingFridge, setEditingFridge] = useState<{ fridge: Fridge; branchName: string } | null>(null);
+  const settingsNames = useMemo(
+    () => Object.fromEntries(thresholdSettings.map((s) => [s.id, s.name])),
+    [thresholdSettings],
+  );
 
   const load = useCallback(async () => {
     try {
       const [loaded, settings] = await Promise.all([listBranches(), listThresholdSettings()]);
       setBranches(loaded);
-      setSettingsNames(Object.fromEntries(settings.map((s) => [s.id, s.name])));
+      setThresholdSettings(settings);
       setError("");
     } catch {
       setError("Could not load the branches. Try again.");
@@ -82,9 +92,17 @@ export function BranchesPage() {
     await load();
   };
 
+  /** Save the fridge edit, then close the dialog and reload the list; errors stay in the dialog. */
+  const saveFridge = async (changes: FridgeChanges) => {
+    if (!editingFridge) return;
+    await updateFridge(editingFridge.fridge.id, changes);
+    setEditingFridge(null);
+    await load();
+  };
+
   const closeDelete = useCallback(() => setPendingDelete(null), []);
   const closeBranchEdit = useCallback(() => setEditingBranch(null), []);
-  const noop = () => {};
+  const closeFridgeEdit = useCallback(() => setEditingFridge(null), []);
 
   return (
     <section className={styles.page}>
@@ -103,11 +121,20 @@ export function BranchesPage() {
           settingsNames={settingsNames}
           onEdit={setEditingBranch}
           onDelete={(b) => askDelete("branch", b)}
-          onEditFridge={noop}
+          onEditFridge={(fridge) => setEditingFridge({ fridge, branchName: branch.name })}
           onDeleteFridge={(f) => askDelete("fridge", f)}
         />
       ))}
       {editingBranch && <BranchEditDialog branch={editingBranch} onSave={saveBranch} onCancel={closeBranchEdit} />}
+      {editingFridge && (
+        <FridgeEditDialog
+          fridge={editingFridge.fridge}
+          branchName={editingFridge.branchName}
+          thresholdSettings={thresholdSettings}
+          onSave={saveFridge}
+          onCancel={closeFridgeEdit}
+        />
+      )}
       {pendingDelete && (
         <DeleteImpactDialog
           kind={pendingDelete.kind}

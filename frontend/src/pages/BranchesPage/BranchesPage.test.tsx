@@ -189,6 +189,38 @@ describe("BranchesPage edit branch", () => {
   });
 });
 
+describe("BranchesPage edit fridge", () => {
+  it("moves the fridge to other threshold settings with a PATCH and shows it in the list", async () => {
+    const settings = [...SETTINGS, { id: 2, name: "Cream cakes", fridges: 0 }];
+    let branches = [JERUSALEM, HAIFA];
+    const fetchMock = mockApi([
+      ["GET /api/v1/branches", () => branches],
+      ["GET /api/v1/threshold-settings", settings],
+      [
+        "PATCH /api/v1/fridges/3",
+        (_url: URL, init?: RequestInit) => {
+          const fridge = { ...HAIFA.fridges[0], ...JSON.parse(String(init?.body)) };
+          branches = [JERUSALEM, { ...HAIFA, fridges: [fridge] }];
+          return fridge;
+        },
+      ],
+    ]);
+    renderLoggedIn("/branches");
+
+    const haifa = await screen.findByRole("list", { name: "Haifa fridges" });
+    await userEvent.click(within(haifa).getByRole("button", { name: "Edit fridge Dairy" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit fridge" });
+    expect(dialog).toHaveAccessibleDescription("Haifa · Dairy");
+    await userEvent.selectOptions(within(dialog).getByLabelText("Threshold settings"), "Cream cakes");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(await within(screen.getByRole("list", { name: "Haifa fridges" })).findByText("Cream cakes")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const patch = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH")!;
+    expect(JSON.parse(String(patch[1]!.body))).toEqual({ threshold_settings_id: 2 });
+  });
+});
+
 describe("BranchesPage delete fridge", () => {
   it("shows the fridge impact, then deletes the fridge only after the user confirms", async () => {
     const deletes = mockApi([
