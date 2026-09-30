@@ -11,6 +11,7 @@ import {
   updateBranch,
   updateFridge,
   updateReading,
+  uploadReadings,
 } from "./endpoints";
 
 const fetchMock = vi.fn();
@@ -138,5 +139,27 @@ describe("branch and fridge edits", () => {
     expect(calledUrl()).toBe("/api/v1/fridges/3");
     expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PATCH");
     expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ metric: "F", logger_id: "TL-0231" });
+  });
+});
+
+describe("uploadReadings", () => {
+  it("posts the file as multipart, without a register block on the first upload", async () => {
+    const file = new File(["x"], "week.xlsx");
+
+    await uploadReadings(file);
+
+    expect(calledUrl()).toBe("/api/v1/readings/upload");
+    const form = fetchMock.mock.calls[0][1].body as FormData;
+    expect(form.get("file")).toBe(file);
+    expect(form.has("register")).toBe(false);
+  });
+
+  it("re-sends the file with the confirmed entries as JSON text in register", async () => {
+    const register = { branches: [{ name: "Eilat", city: "Eilat" }], fridges: [] };
+
+    await uploadReadings(new File(["x"], "week.xlsx"), register);
+
+    const form = fetchMock.mock.calls[0][1].body as FormData;
+    expect(JSON.parse(form.get("register") as string)).toEqual(register);
   });
 });
