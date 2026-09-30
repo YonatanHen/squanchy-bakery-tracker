@@ -32,6 +32,11 @@ const UNITS = [
   { value: "F", label: "°F" },
 ] as const;
 
+const LISTS = [
+  { value: "active", label: "Active" },
+  { value: "archived", label: "Archived" },
+] as const;
+
 // The API's largest page; alerts of one readings page rarely come close
 const ALERTS_LIMIT = 200;
 
@@ -87,6 +92,7 @@ function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Readi
 /** Readings screen: filters, °C/°F, cards on phones and a table on desktop, with paging. */
 export function ReadingsPage() {
   const [unit, setUnit] = useState<Metric>("C");
+  const [archived, setArchived] = useState<boolean>(false);
   const [filters, setFilters] = useState<Filters>({});
   const [offset, setOffset] = useState<number>(0);
   const [page, setPage] = useState<Page<Reading> | null>(null);
@@ -105,7 +111,7 @@ export function ReadingsPage() {
 
   useEffect(() => {
     let active = true;
-    listReadings(filters, unit, offset)
+    listReadings(filters, unit, offset, archived)
       .then((result) => {
         if (!active) return;
         setPage(result);
@@ -127,7 +133,7 @@ export function ReadingsPage() {
     return () => {
       active = false;
     };
-  }, [filters, unit, offset, reloads]);
+  }, [filters, unit, offset, archived, reloads]);
 
   const items = page?.items ?? [];
   const onEdit = (reading: Reading) => setEditing(reading);
@@ -157,6 +163,15 @@ export function ReadingsPage() {
         <Link to="/readings/new" className={`${styles.addLink} ${styles.desktopOnly}`}>
           + Add a reading
         </Link>
+        <SegmentedToggle
+          label="Reading list"
+          options={LISTS}
+          value={archived ? "archived" : "active"}
+          onChange={(value) => {
+            setArchived(value === "archived");
+            setOffset(0);
+          }}
+        />
         <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
       </PageHeader>
       <ReadingFilters branches={branches} unit={unit} value={filters} errors={fieldErrors} onApply={applyFilters} />

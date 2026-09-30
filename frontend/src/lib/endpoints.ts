@@ -137,9 +137,15 @@ function query(params: Record<string, string | number | undefined>): string {
   return text ? `?${text}` : "";
 }
 
-/** Get one page of readings; the temperature range is in `unit`, dates cover whole days. */
-export function listReadings(filters: ReadingFilters, unit: Metric, offset: number): Promise<Page<Reading>> {
+/** Get one page of readings, or deleted ones with archived; the temperature range is in `unit`, dates cover whole days. */
+export function listReadings(
+  filters: ReadingFilters,
+  unit: Metric,
+  offset: number,
+  archived = false,
+): Promise<Page<Reading>> {
   const q = query({
+    archived: archived ? "true" : undefined,
     branch: filters.branch,
     fridge: filters.fridge,
     date_from: filters.dateFrom && `${filters.dateFrom}T00:00:00`,

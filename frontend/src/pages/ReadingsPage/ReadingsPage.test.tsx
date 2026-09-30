@@ -197,6 +197,22 @@ describe("ReadingsPage paging", () => {
   });
 });
 
+describe("ReadingsPage archive", () => {
+  it("shows Active first and loads archived readings when the user picks Archived", async () => {
+    const fetchMock = mockReadings();
+    renderLoggedIn("/readings");
+    await screen.findByRole("table", { name: "Readings" });
+
+    const lists = screen.getByRole("group", { name: "Reading list" });
+    expect(within(lists).getByRole("button", { name: "Active" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(lists).getByRole("button", { name: "Archived" }));
+
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings").at(-1)!.get("archived")).toBe("true"));
+    expect(at(paramsOf(fetchMock, "/api/v1/readings"), 0).has("archived")).toBe(false);
+    expect(within(lists).getByRole("button", { name: "Archived" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
 describe("ReadingsPage filters", () => {
   it("reloads the first page with the applied branch and minimum temperature", async () => {
     const fetchMock = mockReadings();
