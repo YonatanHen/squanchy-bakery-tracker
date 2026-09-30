@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/Button/Button";
 import { DataTable, type Column } from "../../components/DataTable/DataTable";
+import { EditReadingDialog } from "../../components/EditReadingDialog/EditReadingDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
 import { Pager } from "../../components/Pager/Pager";
@@ -89,6 +90,8 @@ export function ReadingsPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [alertLevels, setAlertLevels] = useState<AlertLevels>({});
+  const [editing, setEditing] = useState<Reading | null>(null);
+  const [reloads, setReloads] = useState(0);
 
   useEffect(() => {
     listBranches()
@@ -120,10 +123,14 @@ export function ReadingsPage() {
     return () => {
       active = false;
     };
-  }, [filters, unit, offset]);
+  }, [filters, unit, offset, reloads]);
 
   const items = page?.items ?? [];
-  const onEdit = () => {};
+  const onEdit = (reading: Reading) => setEditing(reading);
+  const onSaved = () => {
+    setEditing(null);
+    setReloads((n) => n + 1);
+  };
 
   const applyFilters = (next: Filters) => {
     setFilters(next);
@@ -193,6 +200,9 @@ export function ReadingsPage() {
           + Add a reading
         </Link>
       </div>
+      {editing && (
+        <EditReadingDialog key={editing.id} reading={editing} onClose={() => setEditing(null)} onSaved={onSaved} />
+      )}
     </section>
   );
 }

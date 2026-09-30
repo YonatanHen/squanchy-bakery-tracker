@@ -137,6 +137,39 @@ describe("ReadingsPage alert badges", () => {
   });
 });
 
+describe("ReadingsPage editing", () => {
+  it("opens the edit dialog from the table and reloads the list after a save", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/readings", page([DAIRY_OK])],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([])],
+      ["PATCH /api/v1/readings/4", DAIRY_OK],
+    ]);
+    renderLoggedIn("/readings");
+    const table = await screen.findByRole("table", { name: "Readings" });
+
+    await userEvent.click(within(table).getByRole("button", { name: "Edit" }));
+    const temp = screen.getByLabelText("Temperature (°F, or ERR)");
+    await userEvent.clear(temp);
+    await userEvent.type(temp, "39");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings")).toHaveLength(2));
+  });
+
+  it("opens the edit dialog from a phone card", async () => {
+    mockReadings();
+    renderLoggedIn("/readings");
+    const list = await screen.findByRole("list", { name: "Readings" });
+
+    await userEvent.click(within(list).getAllByRole("button", { name: "Edit reading" })[0]);
+
+    expect(screen.getByRole("dialog", { name: "Edit reading" })).toHaveAccessibleDescription("Haifa · Dairy · TL-0231");
+  });
+});
+
 describe("ReadingsPage paging", () => {
   it("shows the range and loads the next page from the next offset", async () => {
     const fetchMock = mockApi([
