@@ -1,5 +1,5 @@
 import type { SelectHTMLAttributes } from "react";
-import styles from "./Select.module.css";
+import styles from "../styles/components/Select.module.css";
 
 export interface SelectOption {
   value: string;

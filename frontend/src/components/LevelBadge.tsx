@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import styles from "./LevelBadge.module.css";
+import styles from "../styles/components/LevelBadge.module.css";
 
 export type AlertLevel = "URGENT" | "NON_URGENT";
 export type BadgeLevel = AlertLevel | "ERR";
