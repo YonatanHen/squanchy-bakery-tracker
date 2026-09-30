@@ -1,3 +1,32 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.address {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.street {
+  grid-column: span 2;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-10);
+}
+
+.cancel {
+  flex-grow: 1;
+}
+
+.confirm {
+  flex-grow: 2;
+}
+
 .entry {
   display: flex;
   flex-direction: column;

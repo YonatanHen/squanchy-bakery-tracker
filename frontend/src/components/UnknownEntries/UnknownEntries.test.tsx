@@ -32,4 +32,36 @@ describe("UnknownEntries", () => {
     expect(dialog).toHaveTextContent("Did you mean Rishon LeZion → fix the file and upload again");
     expect(within(dialog).queryByLabelText("City")).not.toBeInTheDocument();
   });
+
+  it("adds a new branch with its city (prefilled from the name) and optional address", async () => {
+    const { onConfirm } = renderEntries({ branches: [{ name: "Eilat", suggestion: null }], loggers: [] });
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("Branch “Eilat” does not exist. Add it?");
+    expect(screen.getByLabelText("City")).toHaveValue("Eilat");
+    await userEvent.type(screen.getByLabelText("Street (optional)"), "HaTmarim");
+    await userEvent.type(screen.getByLabelText("No. (optional)"), "12a");
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      branches: [{ name: "Eilat", city: "Eilat", street: "HaTmarim", building_number: "12a" }],
+      fridges: [],
+    });
+  });
+
+  it("leaves out the empty optional address fields", async () => {
+    const { onConfirm } = renderEntries({ branches: [{ name: "Eilat" }], loggers: [] });
+
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({ branches: [{ name: "Eilat", city: "Eilat" }], fridges: [] });
+  });
+
+  it("closes without adding anything on Not now", async () => {
+    const { onConfirm, onClose } = renderEntries({ branches: [{ name: "Eilat" }], loggers: [] });
+
+    await userEvent.click(screen.getByRole("button", { name: "Not now" }));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
 });
