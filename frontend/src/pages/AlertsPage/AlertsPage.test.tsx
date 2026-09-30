@@ -1,7 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Alert } from "../../lib/endpoints";
-import { mockApi, renderLoggedIn } from "../../testUtils";
+import { mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
 
 const GAP: Alert = {
   id: 1,
@@ -78,5 +79,55 @@ describe("AlertsPage list", () => {
     renderLoggedIn("/alerts");
 
     expect(await screen.findByText("No active alerts.")).toBeInTheDocument();
+  });
+});
+
+describe("AlertsPage filters", () => {
+  it("counts the active alerts on the Active button", async () => {
+    mockApi([["GET /api/v1/alerts", page([GAP], 5)]]);
+    renderLoggedIn("/alerts");
+
+    expect(await screen.findByRole("button", { name: "Active (5)" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("lists the archived alerts (of deleted readings) with archived=true", async () => {
+    const fetchMock = mockApi([
+      [
+        "GET /api/v1/alerts",
+        (url: URL) =>
+          url.searchParams.get("archived") === "true" ? page([{ ...GAP, archived_at: "2026-09-20T10:05:00" }]) : page([GAP, HAIFA_SPIKE]),
+      ],
+    ]);
+    renderLoggedIn("/alerts");
+    await screen.findByRole("table", { name: "Alerts" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Archived" }));
+
+    expect(await screen.findByRole("button", { name: "Archived (1)" })).toHaveAttribute("aria-pressed", "true");
+    expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("archived")).toBe("true");
+    expect(screen.getByText("Archived 20/09 10:05")).toBeInTheDocument();
+  });
+
+  it("filters by level from the first page", async () => {
+    const fetchMock = mockApi([["GET /api/v1/alerts", page([GAP])]]);
+    renderLoggedIn("/alerts");
+    await screen.findByRole("table", { name: "Alerts" });
+
+    await userEvent.selectOptions(screen.getByLabelText("Level"), "Urgent");
+
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("level")).toBe("URGENT"));
+    expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("offset")).toBe("0");
+  });
+
+  it("pages through the alerts", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/alerts", (url: URL) => page([GAP], 61, Number(url.searchParams.get("offset")), 50)],
+    ]);
+    renderLoggedIn("/alerts");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Next →" }));
+
+    expect(await screen.findByText("51–51 of 61")).toBeInTheDocument();
+    expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("offset")).toBe("50");
   });
 });
