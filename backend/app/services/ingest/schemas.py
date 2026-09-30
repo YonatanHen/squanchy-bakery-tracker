@@ -7,7 +7,7 @@ from pydantic_core import PydanticCustomError
 
 from app.errors import FieldError
 from app.models import Status
-from app.services.ingest.normalizer import LOGGER_PATTERN, collapse_spaces, parse_temp, parse_time
+from app.services.ingest.normalizer import LOGGER_PATTERN, collapse_spaces, parse_api_time, parse_temp, parse_time
 from app.services.ingest.registry import Registry
 from app.services.ingest.unknown import UnknownEntries
 
@@ -96,6 +96,16 @@ class ReadingIn(BaseModel):
         """Mark a reading with no temperature as ERR."""
         self.status = Status.ERR if self.temp is None else Status.OK
         return self
+
+
+class RecordIn(ReadingIn):
+    """One reading typed in the app; its time may also come from the browser's datetime-local input."""
+
+    @field_validator("time", mode="before")
+    @classmethod
+    def normalized_time(cls, value: Any) -> datetime:
+        """Parse the file formats or YYYY-MM-DDTHH:MM."""
+        return parse_api_time(_required(value, "Time is required"))
 
 
 class FridgeNameMismatch(BaseModel):

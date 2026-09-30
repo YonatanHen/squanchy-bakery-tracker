@@ -10,19 +10,22 @@ from app.services.ingest.parsers.factory import get_parser
 from app.services.ingest.register import apply_registration, parse_registration
 from app.services.ingest.registry import Registry, load_registry
 from app.services.ingest.repository import ReadingRepository
-from app.services.ingest.schemas import FridgeNameMismatch, ReadingIn, SaveResult
+from app.services.ingest.schemas import FridgeNameMismatch, ReadingIn, RecordIn, SaveResult
 from app.services.ingest.unknown import find_unknown
 
 logger = logging.getLogger(__name__)
 
 
-def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None) -> SaveResult:
+def ingest_rows(
+    session, rows: list[RawRow], register: str | dict | None = None, schema: type[ReadingIn] = ReadingIn
+) -> SaveResult:
     """Register confirmed entities, save the valid rows in one transaction, and report the invalid ones.
 
     Args:
         session: The SQLAlchemy session.
         rows: Parsed rows with their file row numbers.
         register: Optional register block (JSON text or dict); an invalid block raises ValidationError.
+        schema: The row model; RecordIn for a record typed in the app.
 
     Returns:
         Counts of inserted, duplicate, ERR and rejected rows, plus the errors of the rejected rows.
@@ -34,7 +37,7 @@ def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None)
     result, valid, failed = SaveResult(), [], []
     for raw in rows:
         try:
-            valid.append((raw.row, ReadingIn.model_validate(raw.values, context={"registry": registry})))
+            valid.append((raw.row, schema.model_validate(raw.values, context={"registry": registry})))
         except ValidationError as exc:
             result.rejected += 1
             result.errors.extend(field_errors(exc, row=raw.row))
@@ -76,7 +79,7 @@ def ingest_record(session, values: dict) -> SaveResult:
     values = dict(values)
     register = values.pop("register", None)
     logger.info("Single record received")
-    return ingest_rows(session, [RawRow(1, values)], register)
+    return ingest_rows(session, [RawRow(1, values)], register, schema=RecordIn)
 
 
 def ingest_file(session, filename: str, content: bytes, register: str | None = None) -> SaveResult:
