@@ -16,7 +16,7 @@ def test_admin_password_is_stored_hashed_and_seed_is_idempotent(session):
 
 
 def test_login_with_valid_credentials_returns_token(client, session):
-    """Summer logs in and gets a JWT for her username."""
+    """The user logs in and gets a JWT for their username."""
     seed_admin(session)
 
     response = client.post("/api/v1/auth/login", json={"username": "admin", "password": "password"})

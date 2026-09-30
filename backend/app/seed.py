@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def seed_admin(session, username: str = "admin", password: str = "password") -> User:
-    """Create Summer's admin user once; later calls return the existing user.
+    """Create the admin user once; later calls return the existing user.
 
     Args:
         session: The SQLAlchemy session.
