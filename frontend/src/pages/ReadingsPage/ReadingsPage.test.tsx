@@ -173,7 +173,11 @@ describe("ReadingsPage editing", () => {
 describe("ReadingsPage paging", () => {
   it("shows the range and loads the next page from the next offset", async () => {
     const fetchMock = mockApi([
-      ["GET /api/v1/readings", (url: URL) => page([DAIRY_OK], 61, Number(url.searchParams.get("offset")), 50)],
+      [
+        "GET /api/v1/readings",
+        (url: URL) =>
+          page([DAIRY_OK], 61, Number(url.searchParams.get("offset")), Number(url.searchParams.get("limit") ?? "50")),
+      ],
       ["GET /api/v1/branches", BRANCHES],
       ["GET /api/v1/alerts", page([])],
     ]);
@@ -182,8 +186,8 @@ describe("ReadingsPage paging", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Next →" }));
 
-    expect(await screen.findByText("51–51 of 61")).toBeInTheDocument();
-    expect(paramsOf(fetchMock, "/api/v1/readings").at(-1)!.get("offset")).toBe("50");
+    expect(await screen.findByText("11–11 of 61")).toBeInTheDocument();
+    expect(paramsOf(fetchMock, "/api/v1/readings").at(-1)!.get("offset")).toBe("10");
   });
 
   it("links to adding a reading", async () => {

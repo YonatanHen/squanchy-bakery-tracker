@@ -138,6 +138,9 @@ function query(params: Record<string, string | number | undefined>): string {
   return text ? `?${text}` : "";
 }
 
+// Rows per page on the Readings and Alerts screens; the API's own default stays 50
+export const PAGE_SIZE = 10;
+
 /** Get one page of readings, or deleted ones with archived; the temperature range is in `unit`, dates cover whole days. */
 export function listReadings(
   filters: ReadingFilters,
@@ -155,6 +158,7 @@ export function listReadings(
     temp_max: filters.tempMax,
     unit,
     offset,
+    limit: PAGE_SIZE,
   });
   return apiRequest<Page<Reading>>(`/readings${q}`);
 }
@@ -169,7 +173,7 @@ export function listAlerts(params: AlertQuery): Promise<Page<Alert>> {
     level: params.level,
     archived: params.archived ? "true" : undefined,
     offset: params.offset,
-    limit: params.limit,
+    limit: params.limit ?? PAGE_SIZE,
   });
   return apiRequest<Page<Alert>>(`/alerts${q}`);
 }
