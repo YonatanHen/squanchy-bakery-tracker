@@ -19,7 +19,7 @@ She works from her phone most of the day.
 2. See all readings and all alerts in one place, mobile-first.
 3. Answer the inspector with filters on date range and temperature range (any threshold, not a fixed number).
 4. Get deterministic alerts on warming trends, spikes, deviation from the fridge average (too warm or too cold), and missing readings.
-5. Register branches, fridges and loggers, so every upload is checked against known data.
+5. Register branches, fridges and loggers from the readings themselves, so every upload is checked against known data without a setup step.
 
 Constraint: runs on a laptop from the README, with no accounts and no paid services.
 
@@ -63,7 +63,7 @@ Based on the ERD, with the changes agreed during design.
 
 | Table | Columns | Constraints |
 |---|---|---|
-| `branch` | id, name, city, street, building_number | unique `LOWER(name)`; address fields nullable for the 4 seeded branches |
+| `branch` | id, name, city, street, building_number | unique `LOWER(name)`; street and building_number nullable for every branch |
 | `fridge` | id, branch_id, name, metric (C/F, default C), avg_temp, last_measured | unique (branch_id, `LOWER(name)`); cascade from branch |
 | `logger` | id (`TL-NNNN`), fridge_id | fridge_id unique (1-to-1); cascade from fridge |
 | `reader` | id, logger_id, time, temp, metric, status (OK/ERR) | unique (logger_id, time); `temp` NULL only when status is ERR; cascade from logger |
@@ -74,7 +74,8 @@ Based on the ERD, with the changes agreed during design.
 Rules:
 - A reading keeps its original value and metric. The fridge is a third-party device, so its unit is stored as a fridge setting. Haifa Dairy is F, all other fridges are C. The UI converts on request.
 - One logger per fridge and one fridge per logger. A known logger with a new fridge name in the same branch means the fridge changed its display name (TL-0417: Walk-in → Display 2). The fridge is renamed.
-- Only the 4 known branches are seeded (Jerusalem, Tel Aviv, Haifa, Rishon LeZion). Summer adds more through the onboarding flow.
+- Only the 4 known branches are seeded (Jerusalem, Tel Aviv, Haifa, Rishon LeZion). New branches, fridges and loggers are registered from readings (see section 6, Registration).
+- The branch address (street + building number) was not requested by Summer. It tells apart two branches in the same city. It is optional and can be added later.
 
 ## 6. Ingestion
 
@@ -88,11 +89,14 @@ upload → ParserFactory → ExcelParser → RawRow[]
 - **Single record.** `POST /api/v1/readings` accepts one JSON record and uses the same normalizer, validator and repository.
 - **Normalizer.** Trims and collapses spaces. Looks up branch, fridge and logger case-insensitively, and the stored name wins ("tel aviv" → "Tel Aviv"). Accepted date formats: `YYYY-MM-DD HH:MM`, `DD/MM/YYYY HH:MM`, and Excel datetime cells. `ERR` becomes status ERR with no temperature.
 - **Validator.** Every field has Pydantic rules. Row errors: unknown branch, unknown logger, logger id not matching `TL-NNNN`, malformed date, temperature that is not a number or `ERR`. The validator collects the errors of all rows.
+- **Registration (no onboarding step).** An unknown branch or logger is a row error, and the 422 also returns them grouped under `unknown`. A branch gets the closest registered name (`difflib`, similarity ≥ 0.8): "Branch X does not exist. Did you mean Y? / Add it?". A logger gets no suggestion, because similar IDs (TL-0512, TL-0513) are usually different loggers, and a branch can have several similar fridges: "Logger X does not exist. Add it / Edit it before adding?". Adding a branch asks for its city (address optional); adding a logger asks for its fridge name and metric, and all fields can be edited before adding. The UI then re-sends the same file or record with a `register` block. The new entities and the readings are saved in one transaction, so an invalid row still saves nothing.
 - **Repository.** One transaction per upload. Any row error rejects the whole file, and nothing is saved. Duplicate (logger, time) rows are skipped. The result reports inserted, skipped duplicates, ERR rows and renamed fridges.
 
 Error response (HTTP 422):
 ```json
-{ "errors": [ { "row": 7, "field": "branch", "value": "Eilat", "message": "Unknown branch name" } ] }
+{ "errors": [ { "row": 7, "field": "branch", "value": "Eilat", "message": "Unknown branch name" } ],
+  "unknown": { "branches": [ { "name": "Eilat", "suggestion": null } ],
+               "loggers": [ { "logger": "TL-0600", "branch": "Eilat", "fridge": "Dairy" } ] } }
 ```
 
 ## 7. Alert detection
@@ -128,13 +132,12 @@ Expected results on `data/sample_week.xlsx` (the 16 sample rows from the assignm
 | GET | `/api/v1/health` | Health check (no auth) |
 | POST | `/api/v1/auth/login` | Returns a JWT |
 | GET | `/api/v1/readings` | Filters: date_from, date_to, temp_min, temp_max (+ unit, default C), branch, city, street, building_number, fridge, logger_id, status, metric. Offset pagination |
-| POST | `/api/v1/readings/upload` | Excel upload |
-| POST | `/api/v1/readings` | Single record |
+| POST | `/api/v1/readings/upload` | Excel upload; optional `register` field with confirmed new entities |
+| POST | `/api/v1/readings` | Single record; optional `register` block |
 | PATCH / DELETE | `/api/v1/readings/<id>` | Edit or delete a reading; `avg_temp` recalculated |
 | GET | `/api/v1/alerts` | Location and date filters + level |
-| GET / POST | `/api/v1/branches` | List; POST = onboarding (branch + fridges + loggers) |
-| GET / PATCH / DELETE | `/api/v1/branches/<id>` | Branch details |
-| POST | `/api/v1/branches/<id>/fridges` | Add a fridge with its logger |
+| GET | `/api/v1/branches` | List with fridges and loggers |
+| PATCH / DELETE | `/api/v1/branches/<id>` | Edit name, city, address; delete |
 | PATCH / DELETE | `/api/v1/fridges/<id>` | Edit or delete a fridge with its logger |
 | GET | `/api/v1/branches/<id>/delete-impact`, `/api/v1/fridges/<id>/delete-impact` | Read-only counts of what a delete would remove |
 | GET / PUT | `/api/v1/fridges/<id>/thresholds` | Thresholds of one fridge |
@@ -145,7 +148,7 @@ Every route except health and login needs a valid JWT. Missing or invalid token 
 
 ## 9. Frontend
 
-Screens: login, readings (filters, pagination, C/F toggle), alerts (light style for non-urgent), upload (file + single record, result and errors), branches (onboarding wizard: branch → fridges → loggers; edit; delete with counts), thresholds (pick a fridge, edit its values).
+Screens: login, readings (filters, pagination, C/F toggle), alerts (light style for non-urgent), upload (file + single record, result and errors, "did you mean / add it?" confirmation for unknown branches and loggers), branches (list, edit, delete with counts; no creation screen), thresholds (pick a fridge, edit its values).
 Mockups of every screen at phone width are reviewed and approved before any frontend code.
 
 ## 10. Testing
