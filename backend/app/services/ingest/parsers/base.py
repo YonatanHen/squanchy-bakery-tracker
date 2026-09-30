@@ -31,6 +31,10 @@ class UnsupportedFormat(Exception):
     """No parser accepts the uploaded file."""
 
 
+class UnreadableFile(Exception):
+    """A parser accepts the file type but cannot read its content, e.g. a CSV that is not UTF-8."""
+
+
 class MissingColumns(Exception):
     """The file's header lacks required columns."""
 

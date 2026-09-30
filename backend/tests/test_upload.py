@@ -232,3 +232,14 @@ def test_missing_columns_and_unsupported_files_are_rejected(client, auth_headers
     txt = {"file": (io.BytesIO(b"Logger,Branch\n"), "week.txt")}
     response = client.post("/api/v1/readings/upload", data=txt, headers=auth_headers, content_type="multipart/form-data")
     assert response.status_code == 415
+
+
+def test_a_csv_that_is_not_utf8_gets_a_clear_400(client, auth_headers):
+    """A CSV saved by a Hebrew Excel in Windows-1255 cannot be read: 400 with what to do, not a 500."""
+    text = "Logger,Branch,Fridge,Time,Temp\nTL-0512,ירושלים,Dairy,2026-09-14 06:00,3.8\n"
+    data = {"file": (io.BytesIO(text.encode("cp1255")), "week.csv")}
+
+    response = client.post("/api/v1/readings/upload", data=data, headers=auth_headers, content_type="multipart/form-data")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Could not read the file. Save it as CSV UTF-8 and upload it again"}

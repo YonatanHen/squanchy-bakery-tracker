@@ -51,6 +51,13 @@ def test_empty_rows_are_skipped():
     assert [r.row for r in rows] == [3]
 
 
+def test_a_short_row_is_read_with_the_missing_fields_empty():
+    """A row cut off after Fridge keeps its values; Time and Temp are empty, so validation rejects the row (no 500)."""
+    [row] = parse("Logger,Branch,Fridge,Time,Temp\nTL-0512,Jerusalem,Dairy\n")
+
+    assert row.values == {"logger": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy", "time": None, "temp": None}
+
+
 def test_factory_picks_csv_by_name_and_rejects_a_renamed_xlsx():
     """A .csv text file gets the CSV parser; an .xlsx (ZIP) file renamed to .csv is rejected."""
     assert isinstance(get_parser("week.csv", b"Logger,Br"), CsvParser)
