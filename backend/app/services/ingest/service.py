@@ -4,6 +4,7 @@ import logging
 from pydantic import ValidationError
 
 from app.errors import field_errors
+from app.services.detection.service import detect
 from app.services.ingest.parsers.base import MissingColumns, RawRow, UnsupportedFormat
 from app.services.ingest.parsers.factory import get_parser
 from app.services.ingest.register import apply_registration, parse_registration
@@ -39,7 +40,10 @@ def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None)
             result.errors.extend(field_errors(exc, row=raw.row))
             failed.append((raw.values, {e["type"] for e in exc.errors()}))
     result.unknown = find_unknown(failed, registry)
-    ReadingRepository(session, registry).save_many(readings, result)
+    repository = ReadingRepository(session, registry)
+    repository.save_many(readings, result)
+    fridge_ids = {registry.loggers[r.logger_id].fridge_id for r in repository.new_readers}
+    result.alerts = detect(session, fridge_ids, {r.id for r in repository.new_readers})
     session.commit()
     logger.info(
         "Ingested %d rows: %d inserted, %d duplicates, %d ERR, %d rejected",
