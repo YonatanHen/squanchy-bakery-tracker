@@ -97,6 +97,46 @@ describe("ReadingsPage list", () => {
   });
 });
 
+describe("ReadingsPage alert badges", () => {
+  /** An active alert on reading `readingId`. */
+  function alert(id: number, readingId: number, level: "URGENT" | "NON_URGENT") {
+    return { ...DAIRY_OK, id, reading_id: readingId, level, description: "Spike" };
+  }
+
+  it("counts each reading's alerts in the most severe level's color", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/readings", page([DAIRY_OK, DAIRY_ERR])],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([alert(1, 4, "NON_URGENT"), alert(2, 4, "URGENT")])],
+    ]);
+    renderLoggedIn("/readings");
+
+    const table = await screen.findByRole("table", { name: "Readings" });
+    const row = within(table).getAllByRole("row")[1];
+    expect(await within(row).findByText("2 alerts")).toHaveAttribute("data-level", "URGENT");
+    expect(row).toHaveAttribute("data-tone", "urgent");
+    expect(within(table).getAllByRole("row")[2]).toHaveAttribute("data-tone", "default");
+
+    // Only the alerts of the page's time span are asked for
+    const params = paramsOf(fetchMock, "/api/v1/alerts")[0];
+    expect(params.get("date_from")).toBe("2026-09-14T06:00:00");
+    expect(params.get("date_to")).toBe("2026-09-14T06:30:00");
+  });
+
+  it("shows a non-urgent alert in the light style", async () => {
+    mockApi([
+      ["GET /api/v1/readings", page([DAIRY_OK])],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([alert(1, 4, "NON_URGENT")])],
+    ]);
+    renderLoggedIn("/readings");
+
+    const table = await screen.findByRole("table", { name: "Readings" });
+    expect(await within(table).findByText("1 alert")).toHaveAttribute("data-level", "NON_URGENT");
+    expect(within(table).getAllByRole("row")[1]).toHaveAttribute("data-tone", "light");
+  });
+});
+
 describe("ReadingsPage paging", () => {
   it("shows the range and loads the next page from the next offset", async () => {
     const fetchMock = mockApi([

@@ -8,10 +8,13 @@ import { Pager } from "../../components/Pager/Pager";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
 import { ReadingFilters } from "../../components/ReadingFilters/ReadingFilters";
 import { SegmentedToggle } from "../../components/SegmentedToggle/SegmentedToggle";
+import { summarizeAlerts } from "../../lib/alertSummary";
 import { ApiError } from "../../lib/api";
 import {
+  listAlerts,
   listBranches,
   listReadings,
+  type AlertLevel,
   type Branch,
   type Page,
   type Reading,
@@ -26,15 +29,43 @@ const UNITS = [
   { value: "F", label: "°F" },
 ] as const;
 
+// The API's largest page; alerts of one readings page rarely come close
+const ALERTS_LIMIT = 200;
+
+type AlertLevels = Record<number, AlertLevel[]>;
+
+/** Get the alert levels of each reading on the page, from the alerts of the page's time span. */
+async function loadAlertLevels(items: Reading[], filters: Filters): Promise<AlertLevels> {
+  if (items.length === 0) return {};
+  const alerts = await listAlerts({
+    archived: false,
+    branch: filters.branch,
+    fridge: filters.fridge,
+    dateFrom: items[0].time,
+    dateTo: items[items.length - 1].time,
+    limit: ALERTS_LIMIT,
+  });
+  const levels: AlertLevels = {};
+  for (const alert of alerts?.items ?? []) (levels[alert.reading_id] ??= []).push(alert.level);
+  return levels;
+}
+
+/** Show the ERR badge, the alert count badge, or OK. */
+function statusCell(reading: Reading, levels: AlertLevel[]) {
+  const summary = summarizeAlerts(levels);
+  if (reading.status === "ERR") return <LevelBadge level="ERR" />;
+  return summary ? <LevelBadge level={summary.level}>{summary.text}</LevelBadge> : "OK";
+}
+
 /** Build the desktop table columns for the selected unit. */
-function columns(unit: Metric, onEdit: (reading: Reading) => void): Column<Reading>[] {
+function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Reading) => void): Column<Reading>[] {
   return [
     { key: "time", header: "Time", cell: (r) => formatShort(r.time), mono: true },
     { key: "temp", header: "Temperature", cell: (r) => formatTemp(r.temp, r.metric, unit), mono: true },
     { key: "fridge", header: "Fridge", cell: (r) => r.fridge },
     { key: "branch", header: "Branch", cell: (r) => r.branch },
     { key: "logger", header: "Logger", cell: (r) => r.logger_id, mono: true },
-    { key: "status", header: "Status", cell: (r) => (r.status === "ERR" ? <LevelBadge level="ERR" /> : "OK") },
+    { key: "status", header: "Status", cell: (r) => statusCell(r, alertLevels[r.id] ?? []) },
     {
       key: "actions",
       header: "Actions",
@@ -57,6 +88,7 @@ export function ReadingsPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [alertLevels, setAlertLevels] = useState<AlertLevels>({});
 
   useEffect(() => {
     listBranches()
@@ -72,6 +104,10 @@ export function ReadingsPage() {
         setPage(result);
         setError("");
         setFieldErrors({});
+        setAlertLevels({});
+        loadAlertLevels(result?.items ?? [], filters)
+          .then((levels) => active && setAlertLevels(levels))
+          .catch(() => active && setAlertLevels({}));
       })
       .catch((err) => {
         if (!active) return;
@@ -132,12 +168,18 @@ export function ReadingsPage() {
           <ul aria-label="Readings" className={styles.cards}>
             {items.map((reading) => (
               <li key={reading.id}>
-                <ReadingCard reading={reading} unit={unit} alerts={[]} onEdit={onEdit} />
+                <ReadingCard reading={reading} unit={unit} alerts={alertLevels[reading.id] ?? []} onEdit={onEdit} />
               </li>
             ))}
           </ul>
           <div className={styles.table}>
-            <DataTable label="Readings" columns={columns(unit, onEdit)} rows={items} rowKey={(r) => r.id} />
+            <DataTable
+              label="Readings"
+              columns={columns(unit, alertLevels, onEdit)}
+              rows={items}
+              rowKey={(r) => r.id}
+              rowTone={(r) => summarizeAlerts(alertLevels[r.id] ?? [])?.tone ?? "default"}
+            />
           </div>
         </>
       )}
