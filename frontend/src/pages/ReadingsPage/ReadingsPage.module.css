@@ -36,25 +36,11 @@
   color: var(--urgent-text);
 }
 
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-10);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.table {
-  display: none;
-}
-
 @media (min-width: 900px) {
   .page {
     gap: var(--space-18);
   }
 
-  .cards,
   .summary,
   .phoneOnly {
     display: none;
@@ -62,9 +48,5 @@
 
   .desktopOnly {
     display: inline;
-  }
-
-  .table {
-    display: block;
   }
 }

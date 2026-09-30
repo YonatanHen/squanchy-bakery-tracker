@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/Button/Button";
-import { DataTable, type Column } from "../../components/DataTable/DataTable";
+import type { Column } from "../../components/DataTable/DataTable";
 import { EditReadingDialog } from "../../components/EditReadingDialog/EditReadingDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
@@ -9,6 +9,7 @@ import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { Pager } from "../../components/Pager/Pager";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
 import { ReadingFilters } from "../../components/ReadingFilters/ReadingFilters";
+import { ResponsiveList } from "../../components/ResponsiveList/ResponsiveList";
 import { SegmentedToggle } from "../../components/SegmentedToggle/SegmentedToggle";
 import { summarizeAlerts } from "../../lib/alertSummary";
 import { ApiError } from "../../lib/api";
@@ -169,24 +170,14 @@ export function ReadingsPage() {
       )}
       {page && items.length === 0 && <EmptyState message="No readings match these filters." />}
       {items.length > 0 && (
-        <>
-          <ul aria-label="Readings" className={styles.cards}>
-            {items.map((reading) => (
-              <li key={reading.id}>
-                <ReadingCard reading={reading} unit={unit} alerts={alertLevels[reading.id] ?? []} onEdit={onEdit} />
-              </li>
-            ))}
-          </ul>
-          <div className={styles.table}>
-            <DataTable
-              label="Readings"
-              columns={columns(unit, alertLevels, onEdit)}
-              rows={items}
-              rowKey={(r) => r.id}
-              rowTone={(r) => summarizeAlerts(alertLevels[r.id] ?? [])?.tone ?? "default"}
-            />
-          </div>
-        </>
+        <ResponsiveList
+          label="Readings"
+          rows={items}
+          rowKey={(r) => r.id}
+          renderCard={(r) => <ReadingCard reading={r} unit={unit} alerts={alertLevels[r.id] ?? []} onEdit={onEdit} />}
+          columns={columns(unit, alertLevels, onEdit)}
+          rowTone={(r) => summarizeAlerts(alertLevels[r.id] ?? [])?.tone ?? "default"}
+        />
       )}
       <div className={styles.footer}>
         {page && items.length > 0 && (
