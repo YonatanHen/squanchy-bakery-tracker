@@ -3,6 +3,7 @@ import { AppShell } from "./components/AppShell/AppShell";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
+import { ReadingsPage } from "./pages/ReadingsPage/ReadingsPage";
 import { ThresholdsPage } from "./pages/ThresholdsPage/ThresholdsPage";
 
 /** Render the child routes only when logged in; otherwise go to /login. */
@@ -18,7 +19,7 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/readings" element={<PlaceholderPage title="Readings" />} />
+          <Route path="/readings" element={<ReadingsPage />} />
           <Route path="/alerts" element={<PlaceholderPage title="Alerts" />} />
           <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
           <Route path="/branches" element={<PlaceholderPage title="Branches" />} />
