@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import Select, case, delete, func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
-from app.models.archive import ReaderArchive
+from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters, ReadingOut, ReadingPage, ReadingPatch
 from app.services.detection.service import detect, refresh_fridge_stats
 from app.services.errors import get_or_raise
@@ -150,6 +150,25 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
     session.commit()
     logger.info("Updated reading id=%s fields=%s", reading_id, sorted(changes))
     return reader
+
+
+def restore_reading(session, reading_id: int) -> ReadingOut:
+    """Move an archived reading back to its logger in the fridge's current unit, drop its archived alerts and re-detect."""
+    archived = get_or_raise(session, ReaderArchive, reading_id)
+    reading_logger = session.get(Logger, archived.logger_id)
+    fridge = reading_logger.fridge
+    reader = Reader(
+        id=archived.id, logger=reading_logger, time=archived.time, temp=archived.temp,
+        status=archived.status, metric=fridge.metric,
+    )
+    session.add(reader)
+    session.execute(delete(AlertArchive).where(AlertArchive.reader_id == reading_id).execution_options(synchronize_session=False))
+    session.delete(archived)
+    session.flush()
+    detect(session, {fridge.id}, {reader.id})
+    session.commit()
+    logger.info("Restored reading id=%s to logger %s", reading_id, reader.logger_id)
+    return _reading_out(reader, fridge, fridge.branch)
 
 
 def delete_reading(session, reading_id: int) -> None:

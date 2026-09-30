@@ -1,8 +1,10 @@
 from datetime import datetime
 
+import pytest
+
 from app.models import Alert, AlertLevel, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
-from tests.helpers import add_fridge, load_sample
+from tests.helpers import SAMPLE_REGISTRATION, add_fridge, load_sample
 
 
 def _cream_cakes_reading_with_urgent_alert(session) -> Reader:
@@ -63,3 +65,25 @@ def test_clean_archive_deletes_all_archived_readings_and_their_alerts(client, se
     assert response.get_json() == {"readings": 2, "alerts": archived_alerts}
     session.expire_all()
     assert (session.query(ReaderArchive).count(), session.query(AlertArchive).count()) == (0, 0)
+
+
+def test_restore_brings_an_archived_reading_back_with_fresh_alerts(client, session, auth_headers):
+    """Rishon registered as °F by mistake; its 06:45 reading is deleted, the fridge is fixed to °C, then the reading is restored."""
+    wrong_unit = [{**f, "metric": "F"} if f["logger_id"] == "TL-0388" else f for f in SAMPLE_REGISTRATION["fridges"]]
+    load_sample(session, {**SAMPLE_REGISTRATION, "fridges": wrong_unit})
+    reading_id = _sample_reading_id(session, "TL-0388", datetime(2026, 9, 14, 6, 45))
+    client.delete(f"/api/v1/readings/{reading_id}", headers=auth_headers)
+    fridge_id = session.get(Logger, "TL-0388").fridge_id
+    client.patch(f"/api/v1/fridges/{fridge_id}", json={"metric": "C"}, headers=auth_headers)
+
+    response = client.post(f"/api/v1/readings/archive/{reading_id}/restore", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert (response.get_json()["temp"], response.get_json()["metric"]) == (7.1, "C")
+    session.expire_all()
+    assert session.get(Reader, reading_id).metric == Metric.C
+    assert (session.get(ReaderArchive, reading_id), session.query(AlertArchive).filter_by(reader_id=reading_id).count()) == (None, 0)
+    alerts = session.query(Alert).filter_by(reader_id=reading_id).all()
+    assert sorted(a.level.value for a in alerts) == sorted([AlertLevel.NON_URGENT.value, AlertLevel.URGENT.value])
+    assert "Temperature rose 2.5°C over the last 4 readings" in [a.description for a in alerts]
+    assert session.get(Fridge, fridge_id).avg_temp == pytest.approx(5.85, abs=0.01)

@@ -51,6 +51,12 @@ def clean_archive():
     return archive_service.clean_archive(db.session).model_dump()
 
 
+@api_v1.post("/readings/archive/<int:reading_id>/restore")
+def restore_reading(reading_id: int):
+    """Move an archived reading back to the active readings of its logger."""
+    return readings_service.restore_reading(db.session, reading_id).model_dump(mode="json")
+
+
 @api_v1.delete("/readings/<int:reading_id>")
 def delete_reading(reading_id: int):
     """Delete a reading; it is archived with its alerts."""
