@@ -98,6 +98,15 @@ class ReadingIn(BaseModel):
         return self
 
 
+class FridgeNameMismatch(BaseModel):
+    """A saved row whose fridge name matches neither the fridge's name nor its new display name (likely a typo)."""
+
+    row: int
+    logger: str
+    name_in_file: str
+    fridge: str
+
+
 class SaveResult(BaseModel):
     """Outcome of an upload: saved rows, skipped duplicates, and the rejected rows to fix."""
 
@@ -108,4 +117,5 @@ class SaveResult(BaseModel):
     renamed_fridges: list[str] = []
     alerts: int = 0
     errors: list[FieldError] = []
+    fridge_name_mismatches: list[FridgeNameMismatch] = []
     unknown: UnknownEntries | None = None  # left out of the response when nothing is unknown

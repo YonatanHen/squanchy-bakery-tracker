@@ -8,9 +8,9 @@ from app.services.detection.service import detect
 from app.services.ingest.parsers.base import MissingColumns, RawRow, UnsupportedFormat
 from app.services.ingest.parsers.factory import get_parser
 from app.services.ingest.register import apply_registration, parse_registration
-from app.services.ingest.registry import load_registry
+from app.services.ingest.registry import Registry, load_registry
 from app.services.ingest.repository import ReadingRepository
-from app.services.ingest.schemas import ReadingIn, SaveResult
+from app.services.ingest.schemas import FridgeNameMismatch, ReadingIn, SaveResult
 from app.services.ingest.unknown import find_unknown
 
 logger = logging.getLogger(__name__)
@@ -31,17 +31,18 @@ def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None)
     if registration:
         apply_registration(session, registration)
     registry = load_registry(session)
-    result, readings, failed = SaveResult(), [], []
+    result, valid, failed = SaveResult(), [], []
     for raw in rows:
         try:
-            readings.append(ReadingIn.model_validate(raw.values, context={"registry": registry}))
+            valid.append((raw.row, ReadingIn.model_validate(raw.values, context={"registry": registry})))
         except ValidationError as exc:
             result.rejected += 1
             result.errors.extend(field_errors(exc, row=raw.row))
             failed.append((raw.values, {e["type"] for e in exc.errors()}))
     result.unknown = find_unknown(failed, registry)
+    result.fridge_name_mismatches = _name_mismatches(valid, registry)
     repository = ReadingRepository(session, registry)
-    repository.save_many(readings, result)
+    repository.save_many([reading for _, reading in valid], result)
     fridge_ids = {registry.loggers[r.logger_id].fridge_id for r in repository.new_readers}
     result.alerts = detect(session, fridge_ids, {r.id for r in repository.new_readers})
     session.commit()
@@ -51,7 +52,23 @@ def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None)
     )
     if result.rejected:
         logger.warning("Rejected rows have errors in fields: %s", sorted({e.field for e in result.errors}))
+    if result.fridge_name_mismatches:
+        logger.warning("%d saved rows have a fridge name that differs from their fridge", len(result.fridge_name_mismatches))
     return result
+
+
+def _name_mismatches(valid: list[tuple[int, ReadingIn]], registry: Registry) -> list[FridgeNameMismatch]:
+    """Rows whose fridge name is neither the stored name nor the logger's new display name (likely typos)."""
+    newest: dict[str, ReadingIn] = {}
+    for _, reading in valid:
+        if reading.logger not in newest or reading.time > newest[reading.logger].time:
+            newest[reading.logger] = reading
+    mismatches = []
+    for row, reading in valid:
+        stored, latest = registry.loggers[reading.logger].fridge, newest[reading.logger].fridge
+        if reading.fridge.lower() not in {stored.lower(), latest.lower()}:
+            mismatches.append(FridgeNameMismatch(row=row, logger=reading.logger, name_in_file=reading.fridge, fridge=latest))
+    return mismatches
 
 
 def ingest_record(session, values: dict) -> SaveResult:

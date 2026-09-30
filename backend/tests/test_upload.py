@@ -32,6 +32,7 @@ def test_valid_upload_saves_readings_and_reports_counts(client, session, auth_he
     assert response.status_code == 201
     assert response.get_json() == {
         "inserted": 2, "duplicates": 0, "err_rows": 1, "rejected": 0, "renamed_fridges": [], "alerts": 0, "errors": [],
+        "fridge_name_mismatches": [],
     }
 
 
@@ -95,6 +96,21 @@ def test_known_logger_with_a_new_fridge_name_renames_the_fridge(client, session,
     assert response.get_json()["renamed_fridges"] == ["Tel Aviv: Walk-in -> Display 2"]
     session.expire_all()
     assert session.query(Fridge).one().name == "Display 2"
+
+
+def test_fridge_name_typo_in_an_older_row_is_reported(client, session, auth_headers):
+    """Rows Dairy / Diary / Dairy: all 3 are saved, and the user sees the mismatch."""
+    add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
+
+    response = upload(client, auth_headers, [
+        ["TL-0512", "Jerusalem", "Dairy", "2026-09-14 06:00", 3.8],
+        ["TL-0512", "Jerusalem", "Diary", "2026-09-14 06:15", 3.9],
+        ["TL-0512", "Jerusalem", "Dairy", "2026-09-14 06:30", 4.0],
+    ])
+
+    body = response.get_json()
+    assert (body["inserted"], body["renamed_fridges"]) == (3, [])
+    assert body["fridge_name_mismatches"] == [{"row": 3, "logger": "TL-0512", "name_in_file": "Diary", "fridge": "Dairy"}]
 
 
 def test_header_only_sheet_saves_nothing(client, session, auth_headers):
