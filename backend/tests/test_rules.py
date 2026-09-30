@@ -61,6 +61,27 @@ def test_gaps_in_old_readings_are_not_alerted_again():
     assert find_gaps(points(3.8, 3.9, minutes=180, new=False), T) == []
 
 
+@pytest.mark.parametrize("before, after", [
+    (datetime(2026, 9, 14, 23, 45), datetime(2026, 9, 15, 0, 0)),    # next day
+    (datetime(2026, 9, 30, 23, 45), datetime(2026, 10, 1, 0, 0)),    # next month
+    (datetime(2026, 12, 31, 23, 45), datetime(2027, 1, 1, 0, 0)),    # next year
+    (datetime(2028, 2, 28, 23, 45), datetime(2028, 2, 29, 0, 0)),    # leap day
+])
+def test_15_minutes_across_a_day_month_or_year_boundary_is_not_a_gap(before, after):
+    """A reading at 23:45 and the next at 00:00 of the next day/month/year are 15 minutes apart: no gap."""
+    assert find_gaps([Point(1, before, 4.0, True), Point(2, after, 4.1, True)], T) == []
+
+
+def test_gap_across_midnight_is_measured_in_real_time():
+    """23:00 -> 01:30 the next day is 2h 30m, at least gap_urgent_minutes: urgent."""
+    readings = [Point(1, datetime(2026, 9, 14, 23, 0), 4.0, True), Point(2, datetime(2026, 9, 15, 1, 30), 4.1, True)]
+
+    [finding] = find_gaps(readings, T)
+
+    assert (finding.point_id, finding.level) == (2, AlertLevel.URGENT)
+    assert finding.description == "No reading for 2h 30m before this reading"
+
+
 def test_out_of_order_rows_are_sorted_before_checking_gaps():
     """The sample's 05:45 row arrives after 06:00; sorting by time avoids a false gap."""
     shuffled = [Point(1, START + timedelta(minutes=15), 4.1, True), Point(2, START, 4.0, True)]
