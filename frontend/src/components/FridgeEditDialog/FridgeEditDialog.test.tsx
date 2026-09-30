@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../lib/api";
-import type { Fridge } from "../../lib/endpoints";
+import type { Fridge, ThresholdSettings } from "../../lib/endpoints";
 import { FridgeEditDialog } from "./FridgeEditDialog";
 
 const WALK_IN: Fridge = {
@@ -14,9 +14,17 @@ const WALK_IN: Fridge = {
   avg_temp: 3.1,
   last_measured: null,
 };
-const SETTINGS = [
-  { id: 1, name: "default", fridges: 4 },
-  { id: 2, name: "Cream cakes", fridges: 0 },
+const LIMITS = {
+  growth_non_urgent: 0.1,
+  growth_urgent: 1,
+  deviation_non_urgent: 1.5,
+  deviation_urgent: 3,
+  gap_non_urgent_minutes: 15,
+  gap_urgent_minutes: 120,
+};
+const SETTINGS: ThresholdSettings[] = [
+  { id: 1, name: "default", fridges: 4, ...LIMITS },
+  { id: 2, name: "Cream cakes", fridges: 0, ...LIMITS },
 ];
 
 /** Render the dialog for Tel Aviv's walk-in fridge with a spy onSave. */

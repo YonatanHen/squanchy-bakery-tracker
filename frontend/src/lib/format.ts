@@ -26,6 +26,11 @@ export function formatShort(iso: string): string {
   return `${day}/${month} ${clock}`;
 }
 
+/** Format a fridge count as "Used by 1 fridge" / "Used by 4 fridges". */
+export function formatUsedBy(fridges: number): string {
+  return `Used by ${fridges} ${fridges === 1 ? "fridge" : "fridges"}`;
+}
+
 /** Format as a datetime-local input value, "2026-09-14T06:15". */
 export function toDateTimeLocal(iso: string): string {
   return iso.slice(0, 16);

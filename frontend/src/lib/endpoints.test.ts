@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "../testUtils";
 import {
+  createThresholdSettings,
   deleteBranch,
   deleteFridge,
   deleteImpact,
   deleteReading,
+  deleteThresholdSettings,
   listAlerts,
   listReadings,
   listThresholdSettings,
   updateBranch,
   updateFridge,
   updateReading,
+  updateThresholdSettings,
   uploadReadings,
 } from "./endpoints";
 
@@ -161,5 +164,46 @@ describe("uploadReadings", () => {
 
     const form = at(fetchMock.mock.calls, 0)[1].body as FormData;
     expect(JSON.parse(form.get("register") as string)).toEqual(register);
+  });
+});
+
+describe("threshold settings edits", () => {
+  const VALUES = {
+    name: "Dairy",
+    growth_non_urgent: "0.1",
+    growth_urgent: "1.0",
+    deviation_non_urgent: "1.5",
+    deviation_urgent: "3.0",
+    gap_non_urgent_minutes: "15",
+    gap_urgent_minutes: "120",
+  };
+
+  it("creates them with POST and the values as typed", async () => {
+    fetchMock.mockResolvedValue(new Response("{}", { status: 201 }));
+
+    await createThresholdSettings(VALUES);
+
+    expect(calledUrl()).toBe("/api/v1/threshold-settings");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("POST");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual(VALUES);
+  });
+
+  it("replaces them with PUT", async () => {
+    fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+
+    await updateThresholdSettings(3, VALUES);
+
+    expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PUT");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual(VALUES);
+  });
+
+  it("deletes them with DELETE", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await deleteThresholdSettings(3);
+
+    expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("DELETE");
   });
 });

@@ -1,0 +1,16 @@
+.wrap > div {
+  gap: var(--space-4);
+}
+
+.wrap label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.wrap .input {
+  height: var(--touch-target);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-10);
+  font: 500 15px var(--font-mono);
+}

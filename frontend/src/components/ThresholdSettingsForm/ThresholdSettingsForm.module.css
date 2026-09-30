@@ -1,0 +1,51 @@
+.card {
+  border-color: var(--primary);
+  padding: var(--space-14);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.row {
+  display: contents;
+}
+
+.rowTitle {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label);
+}
+
+.nonUrgent,
+.urgent {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nonUrgent {
+  color: var(--warn-text);
+}
+
+.urgent {
+  color: var(--urgent-text);
+}
+
+.confirm {
+  margin: 0;
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--confirm-bg);
+  color: var(--warn-text);
+  font-size: 14px;
+}
