@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import type { AlertLevel } from "../lib/endpoints";
 import styles from "../styles/components/LevelBadge.module.css";
 
-export type AlertLevel = "URGENT" | "NON_URGENT";
 export type BadgeLevel = AlertLevel | "ERR";
 
 const LABELS: Record<BadgeLevel, string> = { URGENT: "Urgent", NON_URGENT: "Non-urgent", ERR: "ERR" };
