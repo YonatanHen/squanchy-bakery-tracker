@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "../testUtils";
 import {
+  addReading,
   createThresholdSettings,
   deleteBranch,
   deleteFridge,
@@ -142,6 +143,26 @@ describe("branch and fridge edits", () => {
     expect(calledUrl()).toBe("/api/v1/fridges/3");
     expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PATCH");
     expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ metric: "F", logger_id: "TL-0231" });
+  });
+});
+
+describe("addReading", () => {
+  const record = { logger: "TL-0231", branch: "Haifa", fridge: "Dairy", time: "2026-09-14T07:00", temp: "38.3" };
+
+  it("posts the typed record as JSON, the datetime-local time as is", async () => {
+    await addReading(record);
+
+    expect(calledUrl()).toBe("/api/v1/readings");
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(record);
+  });
+
+  it("adds the register block when the user confirmed new entries", async () => {
+    const register = { branches: [], fridges: [{ logger_id: "TL-0600", branch: "Haifa", fridge: "Dairy 2", metric: "C" as const }] };
+
+    await addReading(record, register);
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ ...record, register });
   });
 });
 

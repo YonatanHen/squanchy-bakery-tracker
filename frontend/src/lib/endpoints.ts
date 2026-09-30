@@ -177,7 +177,21 @@ export function updateReading(id: number, changes: { time?: string; temp?: strin
   return apiRequest<Reading>(`/readings/${id}`, { method: "PATCH", body: changes });
 }
 
-/** Upload an .xlsx file; `register` adds the confirmed unknown branches and loggers first. */
+/** A reading typed in the app; time is "YYYY-MM-DDTHH:MM", temp is text (a number or "ERR"). */
+export interface NewReading {
+  logger: string;
+  branch: string;
+  fridge: string;
+  time: string;
+  temp: string;
+}
+
+/** Add one reading; a rejected one throws an ApiError whose body is the SaveResult. */
+export function addReading(record: NewReading, register?: Registration): Promise<SaveResult> {
+  return apiRequest<SaveResult>("/readings", { method: "POST", body: register ? { ...record, register } : record });
+}
+
+/** Upload an .xlsx file;`register` adds the confirmed unknown branches and loggers first. */
 export function uploadReadings(file: File, register?: Registration): Promise<SaveResult> {
   const form = new FormData();
   form.append("file", file);
