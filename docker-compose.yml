@@ -16,5 +16,22 @@ services:
       interval: 2s
       retries: 15
 
+  backend:
+    build: ./backend
+    # Secrets and settings from backend/.env; the database URL points at the db service
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
 volumes:
   db-data:
