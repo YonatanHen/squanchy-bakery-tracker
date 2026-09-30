@@ -1,0 +1,13 @@
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-12);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-12);
+}
