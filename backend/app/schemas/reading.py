@@ -1,9 +1,11 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.models import Metric, Status
+from app.schemas.types import LoggerId
 from app.services.ingest.normalizer import collapse_spaces, parse_api_time, parse_temp
 
 Text = Annotated[str, BeforeValidator(collapse_spaces)]
@@ -25,13 +27,14 @@ class LocationFilters(BaseModel):
 
 
 class ReadingFilters(LocationFilters):
-    """Readings query: location, dates, and a temperature range in the given unit."""
+    """Readings query: location, dates, and a temperature range in the given unit; archived=true lists deleted readings."""
 
     temp_min: float | None = None
     temp_max: float | None = None
     unit: Metric = Metric.C
     status: Status | None = None
     metric: Metric | None = None
+    archived: bool = False
 
 
 class ReadingPatch(BaseModel):
@@ -39,6 +42,16 @@ class ReadingPatch(BaseModel):
 
     time: datetime | None = None
     temp: float | None = None
+    logger_id: LoggerId | None = None
+    metric: Metric | None = None
+
+    @field_validator("logger_id")
+    @classmethod
+    def known_logger(cls, value: str | None, info: ValidationInfo) -> str | None:
+        """Require a registered logger; the context holds the known logger ids."""
+        if value is not None and value not in info.context["loggers"]:
+            raise PydanticCustomError("unknown_logger", "Unknown logger")
+        return value
 
     @field_validator("time", mode="before")
     @classmethod
@@ -65,3 +78,4 @@ class ReadingOut(BaseModel):
     fridge: str
     branch: str
     city: str | None
+    archived_at: datetime | None = None

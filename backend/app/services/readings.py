@@ -3,6 +3,7 @@ import logging
 from sqlalchemy import Select, case, delete, func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
+from app.models.archive import ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters
 from app.services.detection.service import detect, refresh_fridge_stats
 from app.services.errors import get_or_raise
@@ -61,17 +62,57 @@ def query_readings(session, f: ReadingFilters) -> tuple[list[tuple[Reader, Fridg
     return [tuple(row) for row in rows], total
 
 
+def apply_archive_filters(stmt: Select, f: LocationFilters) -> Select:
+    """Apply the branch, fridge, logger and date filters to ReaderArchive; city and address are not archived."""
+    for name, column in (("branch", ReaderArchive.branch), ("fridge", ReaderArchive.fridge), ("logger_id", ReaderArchive.logger_id)):
+        value = getattr(f, name)
+        if value:
+            stmt = stmt.where(func.lower(column) == value.lower())
+    if f.date_from:
+        stmt = stmt.where(ReaderArchive.time >= f.date_from)
+    if f.date_to:
+        stmt = stmt.where(ReaderArchive.time <= f.date_to)
+    return stmt
+
+
+def query_archived_readings(session, f: ReadingFilters) -> tuple[list[ReaderArchive], int]:
+    """Filter deleted readings by location and dates.
+
+    Args:
+        session: The SQLAlchemy session.
+        f: Validated filters; only branch, fridge, logger and dates apply.
+
+    Returns:
+        The page of archived readings, newest first, and the total number of matches.
+    """
+    stmt = apply_archive_filters(select(ReaderArchive), f)
+    total = session.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = session.scalars(stmt.order_by(ReaderArchive.time.desc(), ReaderArchive.id).offset(f.offset).limit(f.limit)).all()
+    logger.info("Archived readings query matched %d rows", total)
+    return list(rows), total
+
+
+def known_logger_ids(session) -> set[str]:
+    """Ids of all registered loggers, the validation context of a reading edit."""
+    return set(session.scalars(select(Logger.id)))
+
+
 def update_reading(session, reading_id: int, changes: dict) -> Reader:
-    """Correct a reading in place, re-detect its alerts (old ones removed, not archived); a clashing time -> 409."""
+    """Correct a reading in place (a new logger moves it), re-detect both fridges (old alerts removed); a clashing time -> 409."""
     reader = get_or_raise(session, Reader, reading_id)
+    old_fridge_id = reader.logger.fridge_id
+    if "logger_id" in changes:
+        reader.logger = session.get(Logger, changes["logger_id"])
     if "time" in changes:
         reader.time = changes["time"]
     if "temp" in changes:
         reader.temp = changes["temp"]
         reader.status = Status.ERR if reader.temp is None else Status.OK
+    if "metric" in changes:
+        reader.metric = changes["metric"]
     session.flush()
     session.execute(delete(Alert).where(Alert.reader_id == reader.id).execution_options(synchronize_session=False))
-    detect(session, {reader.logger.fridge_id}, {reader.id})
+    detect(session, {old_fridge_id, reader.logger.fridge_id}, {reader.id})
     session.commit()
     logger.info("Updated reading id=%s fields=%s", reading_id, sorted(changes))
     return reader

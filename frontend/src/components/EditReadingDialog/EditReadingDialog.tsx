@@ -1,52 +1,91 @@
 import { useState } from "react";
 import { ApiError } from "../../lib/api";
-import { deleteReading, updateReading, type Reading } from "../../lib/endpoints";
+import { deleteReading, updateReading, type Branch, type Reading, type ReadingChanges } from "../../lib/endpoints";
 import { formatShort, toDateTimeLocal } from "../../lib/format";
-import { formatTemp } from "../../lib/units";
+import { formatTemp, type Metric } from "../../lib/units";
 import { Button } from "../Button/Button";
 import { DateTimeField } from "../DateTimeField/DateTimeField";
 import { Dialog } from "../Dialog/Dialog";
+import { Field } from "../Field/Field";
+import { SegmentedToggle } from "../SegmentedToggle/SegmentedToggle";
+import { Select, type SelectOption } from "../Select/Select";
 import { TemperatureField } from "../TemperatureField/TemperatureField";
 import styles from "./EditReadingDialog.module.css";
 
 interface EditReadingDialogProps {
   reading: Reading;
+  branches: Branch[];
   onClose: () => void;
   onSaved: () => void;
 }
 
 type Mode = "edit" | "confirm" | "delete";
 
+const UNITS = [
+  { value: "C", label: "°C" },
+  { value: "F", label: "°F" },
+] as const;
+
 /** Show a typed temperature the way the list shows it: "4.4 °C", or ERR. */
-function tempLabel(text: string, reading: Reading): string {
+function tempLabel(text: string, metric: Metric): string {
   if (text.trim().toUpperCase() === "ERR") return "ERR";
   const value = Number(text);
-  return text.trim() === "" || Number.isNaN(value) ? text : formatTemp(value, reading.metric, reading.metric);
+  return text.trim() === "" || Number.isNaN(value) ? text : formatTemp(value, metric, metric);
 }
 
-/** Edit a reading's time or temperature after an "Are you sure?" step, or delete it (it is archived). */
-export function EditReadingDialog({ reading, onClose, onSaved }: EditReadingDialogProps) {
+/** Map each branch to its fridges that have a logger (value: logger id); the reading's own place is always included. */
+function placeOptions(branches: Branch[], reading: Reading): Map<string, SelectOption[]> {
+  const places = new Map<string, SelectOption[]>();
+  for (const branch of branches) {
+    const fridges = branch.fridges.flatMap((f) => (f.logger_id ? [{ value: f.logger_id, label: f.name }] : []));
+    if (fridges.length > 0) places.set(branch.name, fridges);
+  }
+  const own = places.get(reading.branch) ?? [];
+  if (!own.some((option) => option.value === reading.logger_id)) {
+    places.set(reading.branch, [...own, { value: reading.logger_id, label: reading.fridge }]);
+  }
+  return places;
+}
+
+/** Edit a reading's place, time, temperature or unit after an "Are you sure?" step, or delete it (it is archived). */
+export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditReadingDialogProps) {
   const originalTime = toDateTimeLocal(reading.time);
   const originalTemp = reading.temp === null ? "ERR" : String(reading.temp);
+  const places = placeOptions(branches, reading);
+  const [branch, setBranch] = useState<string>(reading.branch);
+  const [loggerId, setLoggerId] = useState<string>(reading.logger_id);
   const [time, setTime] = useState<string>(originalTime);
   const [temp, setTemp] = useState<string>(originalTemp);
+  const [metric, setMetric] = useState<Metric>(reading.metric);
   const [mode, setMode] = useState<Mode>("edit");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string>("");
   const [busy, setBusy] = useState<boolean>(false);
 
-  const changes = {
+  const fridges = places.get(branch) ?? [];
+  const fridgeName = fridges.find((option) => option.value === loggerId)?.label ?? "";
+  const changes: ReadingChanges = {
+    ...(loggerId !== reading.logger_id && { logger_id: loggerId }),
     ...(time !== originalTime && { time }),
     ...(temp.trim() !== originalTemp && { temp: temp.trim() }),
+    ...(metric !== reading.metric && { metric }),
   };
+  const tempChanged = changes.temp !== undefined || changes.metric !== undefined;
   const summary = [
+    changes.logger_id && `${reading.branch} · ${reading.fridge} → ${branch} · ${fridgeName}.`,
     changes.time && `${formatShort(originalTime)} → ${formatShort(changes.time)}.`,
-    changes.temp !== undefined && `${tempLabel(originalTemp, reading)} → ${tempLabel(changes.temp, reading)}.`,
+    tempChanged && `${tempLabel(originalTemp, reading.metric)} → ${tempLabel(temp, metric)}.`,
   ].filter(Boolean);
 
-  const edit = (setter: (value: string) => void) => (value: string) => {
+  const edit = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     setMode("edit");
+  };
+
+  // A new branch picks its first fridge, so the logger id always matches a fridge
+  const changeBranch = (value: string) => {
+    setBranch(value);
+    setLoggerId(places.get(value)?.[0]?.value ?? "");
   };
 
   /** Run a write and map its errors to the fields. */
@@ -102,13 +141,32 @@ export function EditReadingDialog({ reading, onClose, onSaved }: EditReadingDial
 
   return (
     <Dialog open title="Edit reading" subtitle={subtitle} onClose={onClose}>
+      <Field label="Branch">
+        {(control) => (
+          <Select
+            {...control}
+            options={[...places.keys()].map((name) => ({ value: name, label: name }))}
+            value={branch}
+            onChange={edit(changeBranch)}
+          />
+        )}
+      </Field>
+      <Field label="Fridge" hint={`Logger ${loggerId}`} error={errors.logger_id}>
+        {(control) => <Select {...control} options={fridges} value={loggerId} onChange={edit(setLoggerId)} />}
+      </Field>
       <DateTimeField label="Time" value={time} onChange={edit(setTime)} error={errors.time} />
       <TemperatureField
-        label={`Temperature (°${reading.metric}, or ERR)`}
+        label={`Temperature (°${metric}, or ERR)`}
         value={temp}
         onChange={edit(setTemp)}
         error={errors.temp}
       />
+      <div className={styles.unit}>
+        <span className={styles.unitLabel} aria-hidden="true">
+          Unit
+        </span>
+        <SegmentedToggle label="Unit" options={UNITS} value={metric} onChange={edit(setMetric)} />
+      </div>
       {mode === "confirm" && (
         <div className={styles.confirm} role="status">
           <strong className={styles.confirmTitle}>Are you sure?</strong>

@@ -20,6 +20,7 @@ export interface Reading {
   fridge: string;
   branch: string;
   city: string | null;
+  archived_at?: string | null;
 }
 
 export interface Alert {
@@ -137,9 +138,15 @@ function query(params: Record<string, string | number | undefined>): string {
   return text ? `?${text}` : "";
 }
 
-/** Get one page of readings; the temperature range is in `unit`, dates cover whole days. */
-export function listReadings(filters: ReadingFilters, unit: Metric, offset: number): Promise<Page<Reading>> {
+/** Get one page of readings, or deleted ones with archived; the temperature range is in `unit`, dates cover whole days. */
+export function listReadings(
+  filters: ReadingFilters,
+  unit: Metric,
+  offset: number,
+  archived = false,
+): Promise<Page<Reading>> {
   const q = query({
+    archived: archived ? "true" : undefined,
     branch: filters.branch,
     fridge: filters.fridge,
     date_from: filters.dateFrom && `${filters.dateFrom}T00:00:00`,
@@ -172,8 +179,11 @@ export function listBranches(): Promise<Branch[]> {
   return apiRequest<Branch[]>("/branches");
 }
 
-/** Correct a reading's time ("YYYY-MM-DDTHH:MM") or temperature (its own unit, or "ERR"). */
-export function updateReading(id: number, changes: { time?: string; temp?: string }): Promise<Reading> {
+/** Reading corrections: time is "YYYY-MM-DDTHH:MM", temp is in `metric` (or "ERR"), logger_id moves the reading. */
+export type ReadingChanges = Partial<{ time: string; temp: string; metric: Metric; logger_id: string }>;
+
+/** Correct a reading; send only the changed fields. */
+export function updateReading(id: number, changes: ReadingChanges): Promise<Reading> {
   return apiRequest<Reading>(`/readings/${id}`, { method: "PATCH", body: changes });
 }
 

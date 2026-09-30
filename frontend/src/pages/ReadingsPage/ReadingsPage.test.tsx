@@ -197,6 +197,42 @@ describe("ReadingsPage paging", () => {
   });
 });
 
+describe("ReadingsPage archive", () => {
+  it("shows Active first and loads archived readings when the user picks Archived", async () => {
+    const fetchMock = mockReadings();
+    renderLoggedIn("/readings");
+    await screen.findByRole("table", { name: "Readings" });
+
+    const lists = screen.getByRole("group", { name: "Reading list" });
+    expect(within(lists).getByRole("button", { name: "Active" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(lists).getByRole("button", { name: "Archived" }));
+
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings").at(-1)!.get("archived")).toBe("true"));
+    expect(at(paramsOf(fetchMock, "/api/v1/readings"), 0).has("archived")).toBe(false);
+    expect(within(lists).getByRole("button", { name: "Archived" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows archived readings read-only, with when they were archived", async () => {
+    const deleted: Reading = { ...DAIRY_OK, city: null, archived_at: "2026-09-15T10:05:00" };
+    mockApi([
+      ["GET /api/v1/readings", (url: URL) => page(url.searchParams.has("archived") ? [deleted] : [DAIRY_OK])],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([])],
+    ]);
+    renderLoggedIn("/readings");
+    await screen.findByRole("button", { name: "Edit" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Archived" }));
+
+    const table = await screen.findByRole("table", { name: "Readings" });
+    expect(await within(table).findByText("Archived 15/09 10:05")).toBeInTheDocument();
+    expect(within(table).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Readings" });
+    expect(within(list).getByText("Archived 15/09 10:05")).toBeInTheDocument();
+    expect(within(list).queryByRole("button", { name: "Edit reading" })).not.toBeInTheDocument();
+  });
+});
+
 describe("ReadingsPage filters", () => {
   it("reloads the first page with the applied branch and minimum temperature", async () => {
     const fetchMock = mockReadings();

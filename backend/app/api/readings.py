@@ -38,18 +38,33 @@ def _reading_out(reader, fridge, branch) -> dict:
     ).model_dump(mode="json")
 
 
+def _archived_out(reader) -> dict:
+    """An archived reading row; branch and fridge come from its snapshot."""
+    return ReadingOut(
+        id=reader.id, time=reader.time, temp=reader.temp, metric=reader.metric, status=reader.status,
+        logger_id=reader.logger_id, fridge=reader.fridge, branch=reader.branch, city=None, archived_at=reader.archived_at,
+    ).model_dump(mode="json")
+
+
 @api_v1.get("/readings")
 def list_readings():
-    """Query readings by location, dates and temperature range (any unit), newest last, paginated."""
+    """Query readings by location, dates and temperature range (any unit), paginated; archived=true for deleted ones."""
     f = ReadingFilters.model_validate(request.args.to_dict())
-    rows, total = readings_service.query_readings(db.session, f)
-    return {"items": [_reading_out(*row) for row in rows], "total": total, "offset": f.offset, "limit": f.limit}
+    if f.archived:
+        rows, total = readings_service.query_archived_readings(db.session, f)
+        items = [_archived_out(row) for row in rows]
+    else:
+        rows, total = readings_service.query_readings(db.session, f)
+        items = [_reading_out(*row) for row in rows]
+    return {"items": items, "total": total, "offset": f.offset, "limit": f.limit}
 
 
 @api_v1.patch("/readings/<int:reading_id>")
 def update_reading(reading_id: int):
-    """Correct a reading's time or temperature in place."""
-    changes = ReadingPatch.model_validate(request.get_json(silent=True) or {}).model_dump(exclude_unset=True)
+    """Correct a reading's logger, time, temperature or unit in place."""
+    context = {"loggers": readings_service.known_logger_ids(db.session)}
+    patch = ReadingPatch.model_validate(request.get_json(silent=True) or {}, context=context)
+    changes = patch.model_dump(exclude_unset=True)
     reader = readings_service.update_reading(db.session, reading_id, changes)
     fridge = reader.logger.fridge
     return _reading_out(reader, fridge, fridge.branch)
