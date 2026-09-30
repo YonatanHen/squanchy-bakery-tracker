@@ -137,6 +137,58 @@ describe("BranchesPage delete branch", () => {
   });
 });
 
+describe("BranchesPage edit branch", () => {
+  it("adds an address with a PATCH of the changed fields and shows it in the list", async () => {
+    let branches = [JERUSALEM, HAIFA];
+    const fetchMock = mockApi([
+      ["GET /api/v1/branches", () => branches],
+      ["GET /api/v1/threshold-settings", PROFILES],
+      [
+        "PATCH /api/v1/branches/2",
+        (_url: URL, init?: RequestInit) => {
+          branches = [JERUSALEM, { ...HAIFA, ...JSON.parse(String(init?.body)) }];
+          return branches[1];
+        },
+      ],
+    ]);
+    renderLoggedIn("/branches");
+
+    const haifaCard = (await screen.findByRole("list", { name: "Haifa fridges" })).parentElement!;
+    await userEvent.click(within(haifaCard).getByRole("button", { name: "+ Add address" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit branch" });
+    await userEvent.type(within(dialog).getByLabelText("Street"), "Herzl");
+    await userEvent.type(within(dialog).getByLabelText("Building number"), "5");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Herzl 5")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const patch = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH")!;
+    expect(JSON.parse(String(patch[1]!.body))).toEqual({ street: "Herzl", building_number: "5" });
+  });
+
+  it("shows 422 field errors from the API under the field", async () => {
+    mockApi([
+      ["GET /api/v1/branches", [JERUSALEM, HAIFA]],
+      ["GET /api/v1/threshold-settings", PROFILES],
+      [
+        "PATCH /api/v1/branches/2",
+        () =>
+          new Response(JSON.stringify({ errors: [{ field: "name", message: "String should have at least 1 character" }] }), {
+            status: 422,
+          }),
+      ],
+    ]);
+    renderLoggedIn("/branches");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Edit Haifa" }));
+    await userEvent.clear(screen.getByLabelText("Name"));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("String should have at least 1 character")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveAccessibleDescription("String should have at least 1 character");
+  });
+});
+
 describe("BranchesPage delete fridge", () => {
   it("shows the fridge impact, then deletes the fridge only after the user confirms", async () => {
     const deletes = mockApi([

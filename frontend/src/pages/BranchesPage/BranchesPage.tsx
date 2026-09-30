@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BranchCard } from "../../components/BranchCard/BranchCard";
+import { BranchEditDialog } from "../../components/BranchEditDialog/BranchEditDialog";
 import { DeleteImpactDialog } from "../../components/DeleteImpactDialog/DeleteImpactDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import {
@@ -8,7 +9,9 @@ import {
   deleteImpact,
   listBranches,
   listThresholdProfiles,
+  updateBranch,
   type Branch,
+  type BranchChanges,
   type DeleteImpact,
 } from "../../lib/endpoints";
 import styles from "./BranchesPage.module.css";
@@ -28,6 +31,7 @@ export function BranchesPage() {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -70,7 +74,16 @@ export function BranchesPage() {
     }
   };
 
+  /** Save the branch edit, then close the dialog and reload the list; errors stay in the dialog. */
+  const saveBranch = async (changes: BranchChanges) => {
+    if (!editingBranch) return;
+    await updateBranch(editingBranch.id, changes);
+    setEditingBranch(null);
+    await load();
+  };
+
   const closeDelete = useCallback(() => setPendingDelete(null), []);
+  const closeBranchEdit = useCallback(() => setEditingBranch(null), []);
   const noop = () => {};
 
   return (
@@ -88,12 +101,13 @@ export function BranchesPage() {
           key={branch.id}
           branch={branch}
           profileNames={profileNames}
-          onEdit={noop}
+          onEdit={setEditingBranch}
           onDelete={(b) => askDelete("branch", b)}
           onEditFridge={noop}
           onDeleteFridge={(f) => askDelete("fridge", f)}
         />
       ))}
+      {editingBranch && <BranchEditDialog branch={editingBranch} onSave={saveBranch} onCancel={closeBranchEdit} />}
       {pendingDelete && (
         <DeleteImpactDialog
           kind={pendingDelete.kind}
