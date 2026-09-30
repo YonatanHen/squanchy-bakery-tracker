@@ -1,0 +1,17 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.description {
+  font-size: 15px;
+}
+
+.light {
+  font-weight: 500;
+}
+
+.meta {
+  font-size: 13px;
+}
