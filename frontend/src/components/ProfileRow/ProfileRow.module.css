@@ -1,0 +1,43 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.open {
+  flex-grow: 1;
+  min-height: var(--touch-target);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: 16px var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.name {
+  display: block;
+}
+
+.count {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.row .delete {
+  width: var(--touch-target);
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--urgent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
