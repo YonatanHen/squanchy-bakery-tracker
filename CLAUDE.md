@@ -62,3 +62,8 @@ All personal preferences for allowed commands and permissions go in `.claude/set
 - Add allow/deny/ask rules there, never in the shared `.claude/settings.json`.
 - Read the file before editing and merge into the existing arrays. Never replace them.
 - Keep it out of git. If `.gitignore` loses the entry, add it back.
+
+### 11. Docstrings
+Every function you create gets a docstring.
+- First line: what the function does, in one line.
+- Then `Args:` / `Returns:` sections only when needed.
