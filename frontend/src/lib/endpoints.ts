@@ -205,7 +205,7 @@ export function addReading(record: NewReading, register?: Registration): Promise
   return apiRequest<SaveResult>("/readings", { method: "POST", body: register ? { ...record, register } : record });
 }
 
-/** Upload an .xlsx file;`register` adds the confirmed unknown branches and loggers first. */
+/** Upload an .xlsx or .csv file; `register` adds the confirmed unknown branches and loggers first. */
 export function uploadReadings(file: File, register?: Registration): Promise<SaveResult> {
   const form = new FormData();
   form.append("file", file);
