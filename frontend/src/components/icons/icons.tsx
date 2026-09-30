@@ -12,6 +12,15 @@ export function LogoIcon({ size = 40 }: { size?: number }) {
   );
 }
 
+/** Pencil icon for the Edit reading button. */
+export function EditIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 20h4L19 9l-4-4L4 16z" />
+    </svg>
+  );
+}
+
 /** Wrap nav icon paths in the shared 22px outline SVG. */
 function NavIcon({ children }: { children: ReactNode }) {
   return (
