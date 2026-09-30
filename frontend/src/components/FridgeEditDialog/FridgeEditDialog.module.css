@@ -20,6 +20,12 @@
   font-family: var(--font-mono);
 }
 
+.note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .error {
   margin: 0;
   font-weight: 500;
