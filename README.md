@@ -137,10 +137,11 @@ Commands are for Git Bash, macOS or Linux. On Windows, the virtualenv's Python i
 **Option A — Docker (default)**
 
 ```bash
+cp .env.example .env        # then set POSTGRES_PASSWORD
 docker compose up -d --wait
 ```
 
-This starts PostgreSQL on `localhost:5432` with the user `squanchy` / `squanchy`, the app database `squanchy_bakery`, and the test database `squanchy_bakery_test`.
+This starts PostgreSQL on `localhost:5432` with the user, password and database names from the root `.env` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `POSTGRES_TEST_DB` for the test database). The root `.env` is only for Docker Compose; keep the same user and password in the URLs in `backend/.env`. The init script runs only when the volume is new: after changing these values, reset the volume with `docker compose down -v`.
 
 **Option B — a local PostgreSQL 16, without Docker**
 
