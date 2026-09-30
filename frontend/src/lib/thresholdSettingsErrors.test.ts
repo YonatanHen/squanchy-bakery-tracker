@@ -14,11 +14,11 @@ describe("thresholdSettingsErrors", () => {
     });
   });
 
-  it("puts a non-urgent-not-below-urgent error under the non-urgent field", () => {
+  it("keeps a non-urgent-not-below-urgent error on the non-urgent field", () => {
     const errors = thresholdSettingsErrors([
-      { field: "body", message: "deviation_non_urgent must be lower than deviation_urgent" },
+      { field: "deviation_non_urgent", message: "Must be lower than the urgent limit" },
     ]);
 
-    expect(errors).toEqual({ deviation_non_urgent: "Must be lower than urgent" });
+    expect(errors).toEqual({ deviation_non_urgent: "Must be lower than the urgent limit" });
   });
 });

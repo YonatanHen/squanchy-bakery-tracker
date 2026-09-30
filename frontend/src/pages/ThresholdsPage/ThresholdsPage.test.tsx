@@ -102,7 +102,7 @@ describe("ThresholdsPage save", () => {
         () =>
           errorResponse(422, {
             errors: [
-              { field: "body", message: "growth_non_urgent must be lower than growth_urgent" },
+              { field: "growth_non_urgent", message: "Must be lower than the urgent limit" },
               { field: "gap_urgent_minutes", message: "Input should be a valid integer, unable to parse string as an integer" },
             ],
           }),
@@ -113,26 +113,29 @@ describe("ThresholdsPage save", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(
-      "Must be lower than urgent",
+      "Must be lower than the urgent limit",
     );
     expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveAccessibleDescription(
       "Input should be a valid integer, unable to parse string as an integer",
     );
   });
 
-  it("shows the backend's message when the name is already taken", async () => {
+  it("shows the 409 duplicate-name message under the name", async () => {
     mockApi([
       ["GET /api/v1/threshold-settings", [DEFAULT]],
       [
         "PUT /api/v1/threshold-settings/1",
-        () => errorResponse(409, { error: "Conflicts with existing data (duplicate name, logger id or reading time)" }),
+        () => errorResponse(409, { errors: [{ field: "name", message: "This name is already used" }] }),
       ],
     ]);
     renderLoggedIn("/thresholds");
 
     await userEvent.click(await screen.findByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
+    expect(await screen.findByRole("textbox", { name: "Name" })).toHaveAccessibleDescription(
+      "Used by 4 fridges This name is already used",
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
 
@@ -170,7 +173,7 @@ describe("ThresholdsPage delete", () => {
       ["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]],
       [
         "DELETE /api/v1/threshold-settings/2",
-        () => errorResponse(409, { error: "Conflicts with existing data (duplicate name, logger id or reading time)" }),
+        () => errorResponse(409, { error: "Used by 1 fridges. Move them to other threshold settings first." }),
       ],
     ]);
     renderLoggedIn("/thresholds");
@@ -178,7 +181,9 @@ describe("ThresholdsPage delete", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Delete threshold settings Cold room" }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Used by 1 fridges. Move them to other threshold settings first.",
+    );
     expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
   });
 });

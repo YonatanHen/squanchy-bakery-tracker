@@ -21,10 +21,10 @@ describe("ThresholdField", () => {
   });
 
   it("links the error to the input", () => {
-    render(<ThresholdField label="Rise non-urgent, degrees C" unit="°C" value="2" onChange={() => {}} error="Must be lower than urgent" />);
+    render(<ThresholdField label="Rise non-urgent, degrees C" unit="°C" value="2" onChange={() => {}} error="Must be lower than the urgent limit" />);
 
     const input = screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" });
-    expect(input).toHaveAccessibleDescription("Must be lower than urgent");
+    expect(input).toHaveAccessibleDescription("Must be lower than the urgent limit");
     expect(input).toHaveAttribute("aria-invalid", "true");
   });
 });

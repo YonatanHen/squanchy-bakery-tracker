@@ -65,7 +65,7 @@ describe("ThresholdSettingsForm", () => {
         initial={DEFAULT}
         fridges={4}
         onSave={() => {}}
-        errors={{ name: "String should have at least 1 character", growth_non_urgent: "Must be lower than urgent" }}
+        errors={{ name: "String should have at least 1 character", growth_non_urgent: "Must be lower than the urgent limit" }}
       />,
     );
 
@@ -73,7 +73,7 @@ describe("ThresholdSettingsForm", () => {
       "Used by 4 fridges String should have at least 1 character",
     );
     expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(
-      "Must be lower than urgent",
+      "Must be lower than the urgent limit",
     );
   });
 });

@@ -66,7 +66,7 @@ export function ThresholdsPage() {
     setSaved(false);
   }
 
-  /** Create or replace the open settings; show 422 errors under the fields and other errors above. */
+  /** Create or replace the open settings; show field errors under the fields and other errors above. */
   async function handleSave(values: ThresholdSettingsValues) {
     setBusy(true);
     setSaved(false);
@@ -83,7 +83,7 @@ export function ThresholdsPage() {
       setError("");
       setSaved(true);
     } catch (err) {
-      const fields = err instanceof ApiError && err.status === 422 ? thresholdSettingsErrors(err.fieldErrors) : {};
+      const fields = err instanceof ApiError ? thresholdSettingsErrors(err.fieldErrors) : {};
       setFieldErrors(fields);
       setError(Object.keys(fields).length ? "" : err instanceof ApiError ? err.message : "Could not save the threshold settings. Try again.");
     } finally {
