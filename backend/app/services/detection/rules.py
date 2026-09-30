@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from app.models import AlertLevel
+from app.models import AlertKind, AlertLevel
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,7 @@ class Finding:
     point_id: int
     level: AlertLevel
     description: str
+    kind: AlertKind
 
 
 WINDOW = 4  # readings in a growth trend
@@ -60,7 +61,9 @@ def find_growth(points: list[Point], t: Thresholds) -> list[Finding]:
         total = round(current.temp_c - window[0].temp_c, 2)
         level = _level(total, t.growth_non_urgent, t.growth_urgent)
         if level:
-            findings.append(Finding(current.id, level, f"Temperature rose {total:.1f}°C over the last {WINDOW} readings"))
+            findings.append(Finding(
+                current.id, level, f"Temperature rose {total:.1f}°C over the last {WINDOW} readings", AlertKind.GROWTH,
+            ))
     return findings
 
 
@@ -92,6 +95,7 @@ def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], 
             if point.is_new:
                 findings.append(Finding(
                     point.id, AlertLevel.NON_URGENT, f"Spike: {point.temp_c:.1f}°C against an average of {average:.1f}°C",
+                    AlertKind.LIMIT,
                 ))
             continue
         if point.is_new:
@@ -100,6 +104,7 @@ def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], 
             findings.append(Finding(
                 point.id, level,
                 f"{point.temp_c:.1f}°C is {abs(deviation):.1f}°C {direction} the fridge average of {average:.1f}°C",
+                AlertKind.LIMIT,
             ))
         total, count = total + point.temp_c, count + 1
     return findings, (total / count if count else None)
@@ -125,5 +130,5 @@ def find_gaps(points: list[Point], t: Thresholds) -> list[Finding]:
         else:
             continue
         duration = f"{int(minutes // 60)}h {int(minutes % 60)}m"
-        findings.append(Finding(current.id, level, f"No reading for {duration} before this reading"))
+        findings.append(Finding(current.id, level, f"No reading for {duration} before this reading", AlertKind.GAP))
     return findings

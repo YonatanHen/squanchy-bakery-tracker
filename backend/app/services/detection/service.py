@@ -51,7 +51,9 @@ def detect(session, fridge_ids: set[int], new_reader_ids: set[int]) -> int:
         t = _thresholds(fridge)
         deviations, average_c = find_deviations(points, t)
         for finding in find_gaps(points, t) + find_growth(points, t) + deviations:
-            session.add(Alert(reader_id=finding.point_id, level=finding.level, description=finding.description))
+            session.add(Alert(
+                reader_id=finding.point_id, level=finding.level, description=finding.description, kind=finding.kind,
+            ))
             added += 1
         _store_stats(fridge, points, average_c)
     logger.info("Detection on %d fridges added %d alerts", len(fridge_ids), added)

@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Branch, Fridge, Metric, Reader, Status
+from app.models import Alert, AlertKind, AlertLevel, Branch, Fridge, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from app.services.tokens import create_token
 from tests.helpers import add_fridge
@@ -108,7 +108,7 @@ def test_changing_a_fridge_unit_relabels_its_readings(client, session, auth_head
 def _reading_with_alert(session, logger_id, hour):
     """Store one 9.4°C reading with a spike alert for the logger."""
     reading = Reader(logger_id=logger_id, time=datetime(2026, 9, 14, hour), temp=9.4, metric=Metric.C, status=Status.OK)
-    reading.alerts.append(Alert(description="Spike", level=AlertLevel.NON_URGENT))
+    reading.alerts.append(Alert(description="Spike", level=AlertLevel.NON_URGENT, kind=AlertKind.LIMIT))
     session.add(reading)
     session.commit()
 

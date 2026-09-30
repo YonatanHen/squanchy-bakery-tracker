@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Logger, Metric, ThresholdSettings
+from app.models import Alert, AlertKind, AlertLevel, Logger, Metric, ThresholdSettings
 from app.services.ingest.parsers.base import RawRow
 from app.services.ingest.service import ingest_rows
 from tests.helpers import add_fridge, load_sample
@@ -25,6 +25,16 @@ def test_sample_week_creates_exactly_the_expected_alerts(session):
         ("TL-0417", datetime(2026, 9, 17, 6, 0), AlertLevel.URGENT),       # 3-day gap
         ("TL-0512", datetime(2026, 9, 14, 8, 30), AlertLevel.URGENT),      # 2h15 gap
     ]
+
+
+def test_each_alert_has_the_kind_of_rule_that_raised_it(session):
+    """Gap alerts are GAP and growth alerts are GROWTH, so detection can find and replace them later."""
+    load_sample(session)
+
+    kinds = {a.kind for a in session.query(Alert) if a.description.startswith("No reading")}
+    growth = {a.kind for a in session.query(Alert) if "rose" in a.description}
+
+    assert (kinds, growth) == ({AlertKind.GAP}, {AlertKind.GROWTH})
 
 
 def test_fridge_average_and_last_measured_are_stored_in_the_fridge_unit(session):

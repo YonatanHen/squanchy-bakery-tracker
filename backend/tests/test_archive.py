@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Branch, Fridge, Logger, Metric, Reader, Status
+from app.models import Alert, AlertKind, AlertLevel, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from tests.helpers import SAMPLE_REGISTRATION, add_fridge, load_sample
 
@@ -11,7 +11,9 @@ def _cream_cakes_reading_with_urgent_alert(session) -> Reader:
     """Rishon's Cream cakes 7.1°C reading with its URGENT growth alert."""
     add_fridge(session, branch="Rishon LeZion", fridge="Cream cakes", logger="TL-0388")
     reading = Reader(logger_id="TL-0388", time=datetime(2026, 9, 14, 6, 45), temp=7.1, metric=Metric.C, status=Status.OK)
-    reading.alerts.append(Alert(description="Temperature rose 2.5°C over the last 4 readings", level=AlertLevel.URGENT))
+    reading.alerts.append(Alert(
+        description="Temperature rose 2.5°C over the last 4 readings", level=AlertLevel.URGENT, kind=AlertKind.GROWTH,
+    ))
     session.add(reading)
     session.commit()
     return reading
@@ -32,7 +34,7 @@ def test_deleting_a_branch_moves_its_readings_and_alerts_to_the_archive(session)
     )
     assert archived.archived_at is not None
     alert = session.query(AlertArchive).one()
-    assert (alert.reader_id, alert.level) == (archived.id, AlertLevel.URGENT)
+    assert (alert.reader_id, alert.level, alert.kind) == (archived.id, AlertLevel.URGENT, AlertKind.GROWTH)
 
 
 def test_deleting_one_reading_archives_it_and_keeps_the_fridge(session):
