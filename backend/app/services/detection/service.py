@@ -19,7 +19,7 @@ def _points(session, fridge_id: int, new_ids: set[int]) -> list[Point]:
 
 
 def _thresholds(fridge: Fridge) -> Thresholds:
-    """The fridge's profile values as rule input."""
+    """The fridge's threshold settings as rule input."""
     s = fridge.threshold_settings
     return Thresholds(
         s.growth_non_urgent, s.growth_urgent, s.deviation_non_urgent, s.deviation_urgent,

@@ -38,8 +38,8 @@ def test_fridge_average_and_last_measured_are_stored_in_the_fridge_unit(session)
     assert haifa.avg_temp == pytest.approx(38.65, abs=0.01)
 
 
-def test_a_fridges_profile_changes_only_its_alerts(session):
-    """Moving Cream cakes to a profile with growth_urgent 3.0 makes its 2.5°C rise non-urgent; others keep the default."""
+def test_a_fridges_threshold_settings_change_only_its_alerts(session):
+    """Moving Cream cakes to threshold settings with growth_urgent 3.0 makes its 2.5°C rise non-urgent; others keep the default."""
     add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
     add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
     add_fridge(session, branch="Haifa", fridge="Dairy", logger="TL-0231", metric=Metric.F)

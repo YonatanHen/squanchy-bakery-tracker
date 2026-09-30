@@ -10,7 +10,7 @@ PAIRS = (
 
 
 class ThresholdsIn(BaseModel):
-    """A threshold profile the user creates or edits; °C for growth/deviation, minutes for gaps."""
+    """Threshold settings the user creates or edits; °C for growth/deviation, minutes for gaps."""
 
     name: Name
     growth_non_urgent: float = Field(gt=0)
@@ -30,7 +30,7 @@ class ThresholdsIn(BaseModel):
 
 
 class ThresholdsOut(ThresholdsIn):
-    """A threshold profile with its id and how many fridges use it."""
+    """Threshold settings with their id and how many fridges use them."""
 
     id: int
     fridges: int
