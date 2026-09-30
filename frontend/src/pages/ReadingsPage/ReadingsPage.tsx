@@ -213,7 +213,11 @@ export function ReadingsPage() {
         </Link>
       </div>
       {editing && (
-        <EditReadingDialog key={editing.id} reading={editing} onClose={() => setEditing(null)} onSaved={onSaved} />
+        <EditReadingDialog
+          key={editing.id}
+          reading={editing}
+          branches={branches}
+          onClose={() => setEditing(null)} onSaved={onSaved} />
       )}
     </section>
   );

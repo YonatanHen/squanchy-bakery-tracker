@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Reading } from "../../lib/endpoints";
-import { mockApi } from "../../testUtils";
+import { makeBranch, makeFridge, mockApi } from "../../testUtils";
 import { EditReadingDialog } from "./EditReadingDialog";
 
 const JERUSALEM: Reading = {
@@ -17,11 +17,16 @@ const JERUSALEM: Reading = {
   city: "Jerusalem",
 };
 
+const BRANCHES = [
+  makeBranch(1, "Jerusalem", [makeFridge(1, "Dairy", "TL-0512")]),
+  makeBranch(2, "Rishon LeZion", [makeFridge(2, "Cream cakes", "TL-0388")]),
+];
+
 /** Render the dialog for `reading` with spies for its callbacks. */
 function renderDialog(reading: Reading = JERUSALEM) {
   const onClose = vi.fn();
   const onSaved = vi.fn();
-  render(<EditReadingDialog reading={reading} onClose={onClose} onSaved={onSaved} />);
+  render(<EditReadingDialog reading={reading} branches={BRANCHES} onClose={onClose} onSaved={onSaved} />);
   return { onClose, onSaved };
 }
 
@@ -76,6 +81,37 @@ describe("EditReadingDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
 
     await waitFor(() => expect(writes(fetchMock)).toEqual([["PATCH", "/api/v1/readings/12", { time: "2026-09-14T08:45" }]]));
+  });
+
+  it("moves the reading to another fridge: the logger id follows the chosen branch and fridge", async () => {
+    const fetchMock = mockApi([["PATCH /api/v1/readings/12", { ...JERUSALEM, logger_id: "TL-0388" }]]);
+    renderDialog();
+
+    expect(screen.getByLabelText("Fridge")).toHaveAccessibleDescription("Logger TL-0512");
+    await userEvent.selectOptions(screen.getByLabelText("Branch"), "Rishon LeZion");
+    expect(screen.getByLabelText("Fridge")).toHaveDisplayValue("Cream cakes");
+    expect(screen.getByLabelText("Fridge")).toHaveAccessibleDescription("Logger TL-0388");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByText(/Jerusalem · Dairy → Rishon LeZion · Cream cakes\./)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
+
+    await waitFor(() => expect(writes(fetchMock)).toEqual([["PATCH", "/api/v1/readings/12", { logger_id: "TL-0388" }]]));
+  });
+
+  it("shows a rejected logger under the Fridge field", async () => {
+    mockApi([
+      [
+        "PATCH /api/v1/readings/12",
+        new Response(JSON.stringify({ errors: [{ field: "logger_id", message: "Unknown logger" }] }), { status: 422 }),
+      ],
+    ]);
+    renderDialog();
+
+    await userEvent.selectOptions(screen.getByLabelText("Branch"), "Rishon LeZion");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Fridge")).toHaveAccessibleDescription("Logger TL-0388 Unknown logger"));
   });
 
   it("changes only the unit of a Haifa value entered as °C by mistake, keeping the typed value", async () => {
