@@ -193,7 +193,7 @@ describe("ReadingsPage paging", () => {
     const links = await screen.findAllByRole("link", { name: "+ Add a reading" });
     await userEvent.click(at(links, 0));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Add a reading" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Add one reading" })).toBeInTheDocument();
   });
 });
 

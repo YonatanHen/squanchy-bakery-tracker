@@ -1,0 +1,47 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  max-width: 480px;
+}
+
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 26px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.saved {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .title {
+    font-size: 30px;
+  }
+}
