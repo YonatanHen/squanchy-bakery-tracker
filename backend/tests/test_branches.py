@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from app.models import Alert, AlertLevel, Branch, Fridge, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from app.services.tokens import create_token
@@ -74,6 +76,18 @@ def test_fridge_edit_rejects_bad_logger_id_and_empty_name(client, session, auth_
 
     assert response.status_code == 422
     assert {e["field"] for e in response.get_json()["errors"]} == {"name", "logger_id"}
+
+
+@pytest.mark.parametrize("field", ["logger_id", "name", "metric", "threshold_settings_id"])
+def test_fridge_edit_rejects_null(client, session, auth_headers, field):
+    """A fridge always has a logger, name, unit and threshold settings, so null is a 422 on that field."""
+    fridge = add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
+
+    response = client.patch(f"/api/v1/fridges/{fridge.id}", json={field: None}, headers=auth_headers)
+
+    assert response.status_code == 422
+    assert [e["field"] for e in response.get_json()["errors"]] == [field]
+    assert fridge.logger_id == "TL-0417"
 
 
 def _reading_with_alert(session, logger_id, hour):

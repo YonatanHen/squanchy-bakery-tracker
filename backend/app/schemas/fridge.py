@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models import Metric
 from app.schemas.types import LoggerId, Name
@@ -27,6 +28,14 @@ class FridgePatch(BaseModel):
     metric: Metric | None = None
     logger_id: LoggerId | None = None
     threshold_settings_id: int | None = None
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def not_null(cls, value: Any) -> Any:
+        """Reject an explicit null; a field that is not sent stays unchanged."""
+        if value is None:
+            raise ValueError("Cannot be empty")
+        return value
 
 
 class DeleteImpact(BaseModel):
