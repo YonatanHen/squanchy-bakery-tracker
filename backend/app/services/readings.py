@@ -3,10 +3,10 @@ import logging
 from sqlalchemy import Select, case, delete, func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
-from app.models.archive import ReaderArchive
+from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters, ReadingOut, ReadingPage, ReadingPatch
 from app.services.detection.service import detect, refresh_fridge_stats
-from app.services.errors import get_or_raise
+from app.services.errors import ConflictError, get_or_raise
 from app.services.units import to_celsius
 
 logger = logging.getLogger(__name__)
@@ -138,19 +138,41 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
     old_fridge_id = reader.logger.fridge_id
     if "logger_id" in changes:
         reader.logger = session.get(Logger, changes["logger_id"])
+        reader.metric = reader.logger.fridge.metric  # value unchanged, relabeled in the new fridge's unit
     if "time" in changes:
         reader.time = changes["time"]
     if "temp" in changes:
         reader.temp = changes["temp"]
         reader.status = Status.ERR if reader.temp is None else Status.OK
-    if "metric" in changes:
-        reader.metric = changes["metric"]
     session.flush()
     session.execute(delete(Alert).where(Alert.reader_id == reader.id).execution_options(synchronize_session=False))
     detect(session, {old_fridge_id, reader.logger.fridge_id}, {reader.id})
     session.commit()
     logger.info("Updated reading id=%s fields=%s", reading_id, sorted(changes))
     return reader
+
+
+def restore_reading(session, reading_id: int) -> ReadingOut:
+    """Move an archived reading back to its logger in the fridge's current unit, drop its archived alerts and re-detect."""
+    archived = get_or_raise(session, ReaderArchive, reading_id)
+    reading_logger = session.get(Logger, archived.logger_id)
+    if reading_logger is None:
+        raise ConflictError(f"Logger {archived.logger_id} no longer exists, so this reading cannot be restored")
+    if session.scalar(select(Reader.id).where(Reader.logger_id == archived.logger_id, Reader.time == archived.time)):
+        raise ConflictError(f"Logger {archived.logger_id} already has a reading at {archived.time:%Y-%m-%d %H:%M}")
+    fridge = reading_logger.fridge
+    reader = Reader(
+        id=archived.id, logger=reading_logger, time=archived.time, temp=archived.temp,
+        status=archived.status, metric=fridge.metric,
+    )
+    session.add(reader)
+    session.execute(delete(AlertArchive).where(AlertArchive.reader_id == reading_id).execution_options(synchronize_session=False))
+    session.delete(archived)
+    session.flush()
+    detect(session, {fridge.id}, {reader.id})
+    session.commit()
+    logger.info("Restored reading id=%s to logger %s", reading_id, reader.logger_id)
+    return _reading_out(reader, fridge, fridge.branch)
 
 
 def delete_reading(session, reading_id: int) -> None:

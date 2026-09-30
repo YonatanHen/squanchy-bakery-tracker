@@ -29,6 +29,10 @@
   color: var(--muted);
 }
 
+.restore {
+  align-self: flex-start;
+}
+
 .mono {
   font-family: var(--font-mono);
 }

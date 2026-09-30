@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Alert, Branch, Fridge, Logger, Reader
 from app.models.archive import AlertArchive, ReaderArchive
+from app.schemas.reading import ArchiveCounts
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,15 @@ def archive_readings(session, where, delete_readings: bool = True) -> int:
     if readings:
         logger.info("Archived %d readings and %d alerts", readings, alerts)
     return readings
+
+
+def clean_archive(session) -> ArchiveCounts:
+    """Delete all archived readings and their archived alerts for good."""
+    alerts = session.execute(delete(AlertArchive)).rowcount
+    readings = session.execute(delete(ReaderArchive)).rowcount
+    session.commit()
+    logger.info("Cleaned the archive: deleted %d readings and %d alerts", readings, alerts)
+    return ArchiveCounts(readings=readings, alerts=alerts)
 
 
 _ARCHIVE_FILTER = {Branch: Branch.id, Fridge: Fridge.id, Logger: Logger.id, Reader: Reader.id}

@@ -8,18 +8,6 @@
   color: var(--label);
 }
 
-.unit {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.unitLabel {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--label);
-}
-
 .confirm {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationInfo, field_validator
 from pydantic_core import PydanticCustomError
 
 from app.models import Metric, Status
@@ -38,12 +38,13 @@ class ReadingFilters(LocationFilters):
 
 
 class ReadingPatch(BaseModel):
-    """Fields the user can correct on a reading; the UI asks "Are you sure?" first."""
+    """Fields the user can correct on a reading; the unit comes only from the fridge, so metric is rejected."""
+
+    model_config = ConfigDict(extra="forbid")
 
     time: datetime | None = None
     temp: float | None = None
     logger_id: LoggerId | None = None
-    metric: Metric | None = None
 
     @field_validator("logger_id")
     @classmethod
@@ -79,6 +80,13 @@ class ReadingOut(BaseModel):
     branch: str
     city: str | None
     archived_at: datetime | None = None
+
+
+class ArchiveCounts(BaseModel):
+    """How many archived readings and archived alerts a clean deleted."""
+
+    readings: int
+    alerts: int
 
 
 class ReadingPage(BaseModel):

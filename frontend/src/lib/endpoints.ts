@@ -179,8 +179,8 @@ export function listBranches(): Promise<Branch[]> {
   return apiRequest<Branch[]>("/branches");
 }
 
-/** Reading corrections: time is "YYYY-MM-DDTHH:MM", temp is in `metric` (or "ERR"), logger_id moves the reading. */
-export type ReadingChanges = Partial<{ time: string; temp: string; metric: Metric; logger_id: string }>;
+/** Reading corrections: time is "YYYY-MM-DDTHH:MM", temp is in the fridge's unit (or "ERR"), logger_id moves the reading. */
+export type ReadingChanges = Partial<{ time: string; temp: string; logger_id: string }>;
 
 /** Correct a reading; send only the changed fields. */
 export function updateReading(id: number, changes: ReadingChanges): Promise<Reading> {
@@ -212,6 +212,22 @@ export function uploadReadings(file: File, register?: Registration): Promise<Sav
 /** Delete a reading; the backend archives it with its alerts. */
 export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
+}
+
+/** Move an archived reading back to its logger; the backend re-runs the alert rules on it. */
+export function restoreReading(id: number): Promise<Reading> {
+  return apiRequest<Reading>(`/readings/archive/${id}/restore`, { method: "POST" });
+}
+
+/** Archived readings and archived alerts, counted or deleted. */
+export interface ArchiveCounts {
+  readings: number;
+  alerts: number;
+}
+
+/** Delete all archived readings and their alerts for good; returns what was deleted. */
+export function cleanArchive(): Promise<ArchiveCounts> {
+  return apiRequest<ArchiveCounts>("/readings/archive", { method: "DELETE" });
 }
 
 /** Edit a branch; send only the changed fields. */
