@@ -121,6 +121,40 @@ describe("UploadPage", () => {
     expect(screen.getByRole("dialog", { name: "New in this file" })).toBeInTheDocument();
   });
 
+  it("re-sends the same file with the confirmed entries and shows the new result", async () => {
+    const eilat = result({ rejected: 2, unknown: { branches: [{ name: "Eilat" }], loggers: [] } });
+    const fetchMock = mockApi([
+      ["POST /api/v1/readings/upload", (_url, init) => ((init?.body as FormData).has("register") ? result({ inserted: 2 }) : eilat)],
+    ]);
+
+    await uploadWeek();
+    await userEvent.click(await screen.findByRole("button", { name: /Review/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    const resent = fetchMock.mock.calls[1][1]?.body as FormData;
+    expect(resent.get("file")).toBe(WEEK);
+    expect(JSON.parse(resent.get("register") as string)).toEqual({ branches: [{ name: "Eilat", city: "Eilat" }], fridges: [] });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const counts = screen.getByRole("list", { name: "Upload result" });
+    expect(within(counts).getAllByRole("listitem")[0]).toHaveTextContent("2saved");
+    expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps the dialog open with the backend's reason when the entries are refused", async () => {
+    const eilat = result({ rejected: 1, unknown: { branches: [], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }] } });
+    const refused = { errors: [{ field: "body", message: "Fridge 'Dairy' in Haifa already has logger TL-0231" }] };
+    mockApi([
+      ["POST /api/v1/readings/upload", (_url, init) => ((init?.body as FormData).has("register") ? json(422, refused) : eilat)],
+    ]);
+
+    await uploadWeek();
+    await userEvent.click(await screen.findByRole("button", { name: /Review/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    const dialog = screen.getByRole("dialog", { name: "New in this file" });
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Fridge 'Dairy' in Haifa already has logger TL-0231");
+  });
+
   it("shows the backend message when the file is not an .xlsx file", async () => {
     mockApi([["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx file" })]]);
 

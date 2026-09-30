@@ -5,6 +5,7 @@ import { ApiError } from "../../lib/api";
 import { UnknownEntries } from "../../components/UnknownEntries/UnknownEntries";
 import {
   uploadReadings,
+  type Registration,
   type RowError,
   type SaveResult,
   type UnknownEntries as Entries,
@@ -54,6 +55,8 @@ export function UploadPage() {
   const [fileErrors, setFileErrors] = useState<RowError[]>([]);
   const [error, setError] = useState("");
   const [reviewing, setReviewing] = useState(false);
+  const [registerErrors, setRegisterErrors] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
   /** Upload the file and show its result, or why the whole file was rejected. */
   async function upload(chosen: File) {
@@ -67,6 +70,29 @@ export function UploadPage() {
       if (caught instanceof ApiError && caught.fieldErrors.length) setFileErrors(caught.fieldErrors);
       else setError(caught instanceof ApiError ? caught.message : "Could not upload the file. Try again.");
     }
+  }
+
+  /** Re-send the same file with the confirmed entries; a refusal stays in the dialog. */
+  async function register(registration: Registration) {
+    if (!file) return;
+    setBusy(true);
+    setRegisterErrors([]);
+    try {
+      setResult(await uploadReadings(file, registration));
+      setReviewing(false);
+    } catch (caught) {
+      const apiError = caught instanceof ApiError ? caught : null;
+      const messages = apiError?.fieldErrors.map((e) => e.message) ?? [];
+      setRegisterErrors(messages.length ? messages : [apiError?.message ?? "Could not add them. Try again."]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Close the review dialog and forget its errors. */
+  function closeReview() {
+    setReviewing(false);
+    setRegisterErrors([]);
   }
 
   const errors = result?.errors ?? fileErrors;
@@ -179,8 +205,10 @@ export function UploadPage() {
           entries={result.unknown}
           confirmLabel="Add and upload again"
           suggestionHint="fix the file and upload again"
-          onConfirm={() => {}}
-          onClose={() => setReviewing(false)}
+          onConfirm={register}
+          onClose={closeReview}
+          errors={registerErrors}
+          busy={busy}
         />
       )}
     </section>
