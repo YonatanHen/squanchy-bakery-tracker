@@ -48,6 +48,14 @@ function unknownNames(unknown: Entries): string {
   return [...unknown.branches.map((b) => b.name), ...unknown.loggers.map((l) => l.logger)].join(", ");
 }
 
+/** Note the saved ERR readings and new alerts, e.g. "1 ERR reading saved · 2 alerts created". */
+function extras(result: SaveResult): string {
+  const parts = [];
+  if (result.err_rows) parts.push(`${plural(result.err_rows, "ERR reading", "ERR readings")} saved`);
+  if (result.alerts) parts.push(`${plural(result.alerts, "alert", "alerts")} created`);
+  return parts.join(" · ");
+}
+
 /** Upload screen: pick an .xlsx file, then see what was saved and which rows to fix. */
 export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -146,6 +154,12 @@ export function UploadPage() {
               </li>
             </ul>
           )}
+          {result && extras(result) && <p className={styles.extra}>{extras(result)}</p>}
+          {result?.renamed_fridges.map((rename) => (
+            <p key={rename} className={styles.extra}>
+              Renamed: {rename}
+            </p>
+          ))}
           {result?.unknown && (
             <button type="button" className={styles.unknown} onClick={() => setReviewing(true)}>
               <span className={styles.unknownText}>

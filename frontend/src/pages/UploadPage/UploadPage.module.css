@@ -98,6 +98,12 @@
   color: var(--muted);
 }
 
+.extra {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .unknown {
   display: flex;
   align-items: center;

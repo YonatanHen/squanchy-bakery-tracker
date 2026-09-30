@@ -51,6 +51,20 @@ describe("UploadPage", () => {
     expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
   });
 
+  it("notes the saved ERR readings, the new alerts and the renamed fridges", async () => {
+    mockApi([
+      [
+        "POST /api/v1/readings/upload",
+        result({ inserted: 4, err_rows: 1, alerts: 2, renamed_fridges: ["Haifa: Dairy -> Dairy 2"] }),
+      ],
+    ]);
+
+    await uploadWeek();
+
+    expect(await screen.findByText("1 ERR reading saved · 2 alerts created")).toBeInTheDocument();
+    expect(screen.getByText("Renamed: Haifa: Dairy -> Dairy 2")).toBeInTheDocument();
+  });
+
   it("lists each rejected row with its field, value and message", async () => {
     mockApi([
       [
