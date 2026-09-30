@@ -1,0 +1,25 @@
+.badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-8);
+  border: 1px solid transparent;
+  border-radius: var(--radius-badge);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.URGENT {
+  background: var(--urgent);
+  color: var(--surface);
+}
+
+.NON_URGENT {
+  border-color: var(--warn-accent);
+  color: var(--warn-text);
+}
+
+.ERR {
+  background: var(--neutral-bg);
+  color: var(--label);
+}

@@ -1,0 +1,18 @@
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-14);
+  background: var(--surface);
+}
+
+.urgent {
+  background: var(--urgent-bg);
+  border-color: var(--urgent-border);
+  color: var(--urgent-ink);
+}
+
+.light {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  color: var(--warn-ink);
+}

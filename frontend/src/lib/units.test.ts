@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatTemp, fromCelsius, toCelsius } from "./units";
+import { convertTypedTemp, formatTemp, fromCelsius, toCelsius } from "./units";
 
 describe("toCelsius", () => {
   it("converts a Fahrenheit logger value (Haifa 38.3°F ≈ 3.5°C)", () => {
@@ -21,6 +21,18 @@ describe("fromCelsius", () => {
   });
 });
 
+describe("convertTypedTemp", () => {
+  it("converts a typed filter value to the new unit, one decimal at most", () => {
+    expect(convertTypedTemp("5", "C", "F")).toBe("41");
+    expect(convertTypedTemp("38.3", "F", "C")).toBe("3.5");
+  });
+
+  it("keeps empty or non-numeric text as typed", () => {
+    expect(convertTypedTemp("", "C", "F")).toBe("");
+    expect(convertTypedTemp("abc", "C", "F")).toBe("abc");
+  });
+});
+
 describe("formatTemp", () => {
   it("shows a Fahrenheit reading in Celsius with one decimal", () => {
     expect(formatTemp(38.3, "F", "C")).toBe("3.5 °C");
@@ -36,5 +48,10 @@ describe("formatTemp", () => {
 
   it("shows an ERR reading (null temp) as a dash", () => {
     expect(formatTemp(null, "F", "C")).toBe("—");
+  });
+
+  it("drops the unit letter in the compact card format", () => {
+    expect(formatTemp(38.3, "F", "C", { compact: true })).toBe("3.5°");
+    expect(formatTemp(null, "F", "C", { compact: true })).toBe("—");
   });
 });

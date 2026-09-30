@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
 
 describe("Button", () => {
-  it.each(["primary", "secondary", "danger"] as const)("renders the %s variant and fires onClick", async (variant) => {
+  it.each(["primary", "secondary", "danger", "link", "danger-link"] as const)("renders the %s variant and fires onClick", async (variant) => {
     const onClick = vi.fn();
     render(
       <Button variant={variant} onClick={onClick}>

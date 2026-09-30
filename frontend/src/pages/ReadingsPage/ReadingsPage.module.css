@@ -1,0 +1,52 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.addLink {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.pager {
+  flex-grow: 1;
+}
+
+.desktopOnly {
+  display: none;
+}
+
+.summary {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.error {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
+@media (min-width: 900px) {
+  .page {
+    gap: var(--space-18);
+  }
+
+  .summary,
+  .phoneOnly {
+    display: none;
+  }
+
+  .desktopOnly {
+    display: inline;
+  }
+}

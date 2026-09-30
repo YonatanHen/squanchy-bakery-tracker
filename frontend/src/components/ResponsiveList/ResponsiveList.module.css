@@ -1,0 +1,22 @@
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.table {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .cards {
+    display: none;
+  }
+
+  .table {
+    display: block;
+  }
+}

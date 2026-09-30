@@ -1,0 +1,15 @@
+.select {
+  height: var(--touch-target);
+  width: 100%;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-10);
+  font: 14px var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

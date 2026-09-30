@@ -1,0 +1,60 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+/* Urgent readings keep the white card with only the urgent border, as in the phone mockup */
+.card[data-tone="urgent"] {
+  background: var(--surface);
+  border-color: var(--urgent);
+  color: var(--ink);
+}
+
+.info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.when {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.where {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.temp {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.urgentTemp {
+  color: var(--urgent-text);
+}
+
+.edit {
+  flex-shrink: 0;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--label);
+  cursor: pointer;
+}
+
+.edit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

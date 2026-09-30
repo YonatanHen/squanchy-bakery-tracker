@@ -56,3 +56,28 @@
 .danger:hover:not(:disabled) {
   background: var(--urgent-text);
 }
+
+/* Text-only buttons: Edit, pager and the delete action */
+.link,
+.danger-link {
+  background: transparent;
+  padding: 0 var(--space-4);
+}
+
+.link {
+  color: var(--primary);
+}
+
+.link:hover:not(:disabled) {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.danger-link {
+  color: var(--urgent);
+}
+
+.danger-link:hover:not(:disabled) {
+  color: var(--urgent-text);
+  text-decoration: underline;
+}
