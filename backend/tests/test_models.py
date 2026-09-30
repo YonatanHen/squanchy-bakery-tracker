@@ -47,7 +47,7 @@ def test_new_fridge_is_celsius_and_uses_the_default_thresholds(session):
     t = fridge.threshold_settings
     assert t.name == "default"
     assert (t.growth_non_urgent, t.growth_urgent) == (0.1, 1.0)
-    assert (t.deviation_non_urgent, t.deviation_urgent) == (1.5, 3.0)
+    assert (t.min_temp, t.max_temp) == (0.0, 5.0)
     assert (t.gap_non_urgent_minutes, t.gap_urgent_minutes) == (15, 120)
 
 

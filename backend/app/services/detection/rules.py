@@ -20,8 +20,8 @@ class Thresholds:
 
     growth_non_urgent: float
     growth_urgent: float
-    deviation_non_urgent: float
-    deviation_urgent: float
+    min_temp: float
+    max_temp: float
     gap_non_urgent_minutes: int
     gap_urgent_minutes: int
 
@@ -36,6 +36,7 @@ class Finding:
 
 
 WINDOW = 4  # readings in a growth trend
+DEVIATION_NON_URGENT, DEVIATION_URGENT = 1.5, 3.0  # °C; removed when the limit rule replaces the deviation rule
 
 
 def _level(value: float, non_urgent: float, urgent: float) -> AlertLevel | None:
@@ -82,11 +83,11 @@ def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], 
             continue
         average = total / count
         deviation = round(point.temp_c - average, 2)
-        if abs(deviation) < t.deviation_non_urgent:
+        if abs(deviation) < DEVIATION_NON_URGENT:
             total, count = total + point.temp_c, count + 1
             continue
         following = ok[index + 1] if index + 1 < len(ok) else None
-        if following is not None and abs(following.temp_c - average) < t.deviation_non_urgent:
+        if following is not None and abs(following.temp_c - average) < DEVIATION_NON_URGENT:
             # Spike: the next reading is back to normal, e.g. a door opened for a delivery.
             if point.is_new:
                 findings.append(Finding(
@@ -94,7 +95,7 @@ def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], 
                 ))
             continue
         if point.is_new:
-            level = _level(abs(deviation), t.deviation_non_urgent, t.deviation_urgent)
+            level = _level(abs(deviation), DEVIATION_NON_URGENT, DEVIATION_URGENT)
             direction = "above" if deviation > 0 else "below"
             findings.append(Finding(
                 point.id, level,

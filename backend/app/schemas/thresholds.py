@@ -4,33 +4,33 @@ from pydantic_core import InitErrorDetails, PydanticCustomError
 from app.schemas.types import Name
 
 PAIRS = (
-    ("growth_non_urgent", "growth_urgent"),
-    ("deviation_non_urgent", "deviation_urgent"),
-    ("gap_non_urgent_minutes", "gap_urgent_minutes"),
+    ("growth_non_urgent", "growth_urgent", "Must be lower than the urgent limit"),
+    ("min_temp", "max_temp", "Must be lower than the max limit"),
+    ("gap_non_urgent_minutes", "gap_urgent_minutes", "Must be lower than the urgent limit"),
 )
 
 
 class ThresholdsIn(BaseModel):
-    """Threshold settings the user creates or edits; °C for growth/deviation, minutes for gaps."""
+    """Threshold settings the user creates or edits; °C for growth and limits, minutes for gaps."""
 
     name: Name
     growth_non_urgent: float = Field(gt=0)
     growth_urgent: float = Field(gt=0)
-    deviation_non_urgent: float = Field(gt=0)
-    deviation_urgent: float = Field(gt=0)
+    min_temp: float
+    max_temp: float
     gap_non_urgent_minutes: int = Field(gt=0)
     gap_urgent_minutes: int = Field(gt=0)
 
     @model_validator(mode="after")
-    def non_urgent_below_urgent(self):
-        """Each non-urgent limit must be lower than its urgent limit; the error is on the non-urgent field."""
+    def low_below_high(self):
+        """Each low value (non-urgent, min) must be lower than its pair; the error is on the low field."""
         errors = [
             InitErrorDetails(
-                type=PydanticCustomError("non_urgent_not_below_urgent", "Must be lower than the urgent limit"),
+                type=PydanticCustomError("low_not_below_high", message),
                 loc=(low,),
                 input=getattr(self, low),
             )
-            for low, high in PAIRS
+            for low, high, message in PAIRS
             if getattr(self, low) >= getattr(self, high)
         ]
         if errors:

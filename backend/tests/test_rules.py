@@ -6,7 +6,7 @@ from app.models import AlertLevel, Metric
 from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth
 from app.services.units import from_celsius, to_celsius
 
-T = Thresholds(0.1, 1.0, 1.5, 3.0, 15, 120)  # the default threshold settings
+T = Thresholds(0.1, 1.0, 0.0, 5.0, 15, 120)  # the default threshold settings
 START = datetime(2026, 9, 14, 6, 0)
 
 
@@ -49,7 +49,7 @@ def test_gap_between_the_non_urgent_and_urgent_thresholds_is_non_urgent():
 
 def test_the_fridges_threshold_settings_set_the_gap_levels():
     """The same 45-minute gap is urgent for threshold settings whose gap_urgent_minutes is 30."""
-    strict = Thresholds(0.1, 1.0, 1.5, 3.0, 10, 30)
+    strict = Thresholds(0.1, 1.0, 0.0, 5.0, 10, 30)
 
     [finding] = find_gaps(points(3.8, 3.9, minutes=45), strict)
 
@@ -112,7 +112,7 @@ def test_rise_below_growth_non_urgent_is_not_alerted():
 def test_the_fridges_threshold_settings_set_the_growth_levels():
     """The same 0.5°C rise is non-urgent with the default threshold settings and urgent when growth_urgent is 0.4."""
     rising = points(4.0, 4.2, 4.3, 4.5)
-    strict = Thresholds(0.1, 0.4, 1.5, 3.0, 15, 120)
+    strict = Thresholds(0.1, 0.4, 0.0, 5.0, 15, 120)
 
     assert find_growth(rising, T)[0].level is AlertLevel.NON_URGENT
     assert find_growth(rising, strict)[0].level is AlertLevel.URGENT
@@ -166,18 +166,6 @@ def test_drop_at_or_above_deviation_urgent_is_urgent():
 def test_change_within_deviation_non_urgent_is_not_alerted():
     """4.0, 4.1, 4.3, 3.9 stay within deviation_non_urgent of the average: no alert."""
     assert find_deviations(points(4.0, 4.1, 4.3, 3.9), T)[0] == []
-
-
-def test_the_fridges_threshold_settings_set_the_deviation_levels():
-    """Rishon's 1.7°C rise is non-urgent with the default threshold settings and urgent when deviation_urgent is 1.5."""
-    rishon = points(4.6, 5.4, 6.3, 7.1)
-    strict = Thresholds(0.1, 1.0, 0.5, 1.5, 15, 120)
-
-    default_last = find_deviations(rishon, T)[0][-1]
-    strict_last = find_deviations(rishon, strict)[0][-1]
-
-    assert (default_last.point_id, default_last.level) == (3, AlertLevel.NON_URGENT)
-    assert (strict_last.point_id, strict_last.level) == (3, AlertLevel.URGENT)
 
 
 def test_first_reading_has_no_average_to_compare():

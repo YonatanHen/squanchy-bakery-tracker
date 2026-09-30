@@ -6,7 +6,7 @@ from tests.helpers import add_fridge
 DAIRY = {
     "name": "Dairy",
     "growth_non_urgent": 0.2, "growth_urgent": 1.5,
-    "deviation_non_urgent": 1.0, "deviation_urgent": 2.0,
+    "min_temp": 0.0, "max_temp": 4.0,
     "gap_non_urgent_minutes": 20, "gap_urgent_minutes": 90,
 }
 
@@ -51,11 +51,25 @@ def test_edit_threshold_settings_rejects_non_urgent_above_urgent(client, session
     url = f"/api/v1/threshold-settings/{settings_id}"
 
     bad = client.put(url, json={**DAIRY, "name": "default", "growth_non_urgent": 2.0, "growth_urgent": 1.0}, headers=auth_headers)
-    good = client.put(url, json={**DAIRY, "name": "default", "deviation_non_urgent": 1.2}, headers=auth_headers)
+    good = client.put(url, json={**DAIRY, "name": "default", "max_temp": 6.0}, headers=auth_headers)
 
     assert bad.status_code == 422
     assert good.status_code == 200
-    assert good.get_json()["deviation_non_urgent"] == 1.2
+    assert good.get_json()["max_temp"] == 6.0
+
+
+def test_min_temp_not_below_max_temp_is_reported_on_min_temp(client, session, auth_headers):
+    """The min limit must be lower than the max limit; the error is shown under the min field."""
+    add_fridge(session)
+    settings_id = threshold_settings(client, auth_headers)["default"]["id"]
+
+    response = client.put(
+        f"/api/v1/threshold-settings/{settings_id}", json={**DAIRY, "min_temp": 5.0, "max_temp": 5.0}, headers=auth_headers
+    )
+
+    assert response.status_code == 422
+    errors = {e["field"]: e["message"] for e in response.get_json()["errors"]}
+    assert errors == {"min_temp": "Must be lower than the max limit"}
 
 
 def test_non_urgent_above_urgent_is_reported_on_each_non_urgent_field(client, session, auth_headers):

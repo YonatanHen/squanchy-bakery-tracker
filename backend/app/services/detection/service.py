@@ -22,7 +22,7 @@ def _thresholds(fridge: Fridge) -> Thresholds:
     """The fridge's threshold settings as rule input."""
     s = fridge.threshold_settings
     return Thresholds(
-        s.growth_non_urgent, s.growth_urgent, s.deviation_non_urgent, s.deviation_urgent,
+        s.growth_non_urgent, s.growth_urgent, s.min_temp, s.max_temp,
         s.gap_non_urgent_minutes, s.gap_urgent_minutes,
     )
 
