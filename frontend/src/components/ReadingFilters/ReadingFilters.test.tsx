@@ -1,13 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { Branch } from "../../lib/endpoints";
+import type { Branch, Fridge } from "../../lib/endpoints";
 import { ReadingFilters } from "./ReadingFilters";
 
-const BRANCHES: Branch[] = [
-  { id: 1, name: "Haifa", fridges: [{ id: 1, name: "Dairy" }] },
-  { id: 2, name: "Rishon LeZion", fridges: [{ id: 2, name: "Cream cakes" }] },
-];
+/** A branch with one fridge; only the names matter to the filters. */
+function branch(id: number, name: string, fridge: string): Branch {
+  const f: Fridge = { id, name: fridge, metric: "C", logger_id: null, threshold_settings_id: 1, avg_temp: null, last_measured: null };
+  return { id, name, city: null, street: null, building_number: null, fridges: [f] };
+}
+
+const BRANCHES: Branch[] = [branch(1, "Haifa", "Dairy"), branch(2, "Rishon LeZion", "Cream cakes")];
 
 describe("ReadingFilters", () => {
   it("applies the branch, fridge, dates and temperature range together", async () => {
