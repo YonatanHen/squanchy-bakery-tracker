@@ -127,6 +127,28 @@ describe("SingleRecordPage", () => {
     });
   });
 
+  it("puts the suggested branch name in the Branch field when the user picks it", async () => {
+    const misspelled = result({
+      rejected: 1,
+      errors: [{ row: 1, field: "branch", value: "Haifaa", message: "Unknown branch name" }],
+      unknown: { branches: [{ name: "Haifaa", suggestion: "Haifa" }], loggers: [] },
+    });
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      ["POST /api/v1/readings", () => json(422, misspelled)],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await typeInto("Branch", "Haifaa");
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+    const dialog = await screen.findByRole("dialog", { name: "New in this reading" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Haifa" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Branch" })).toHaveValue("Haifa");
+  });
+
   it("keeps the dialog open with the backend's reason when the new entries are refused", async () => {
     const unknown = result({
       rejected: 1,

@@ -165,6 +165,11 @@ export function SingleRecordPage() {
           confirmLabel="Add and save"
           suggestionHint="use it instead"
           onConfirm={(registration) => void send(registration)}
+          onPickSuggestion={(name) => {
+            set("branch", name);
+            setFieldErrors(({ branch: _fixed, ...rest }) => rest);
+            setUnknown(null);
+          }}
           onClose={() => {
             setUnknown(null);
             setRegisterErrors([]);
