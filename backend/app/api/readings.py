@@ -11,5 +11,5 @@ def upload_readings():
     file = request.files.get("file")
     if file is None or not file.filename:
         return {"error": "No file uploaded"}, 400
-    result = ingest_file(db.session, file.filename, file.read())
+    result = ingest_file(db.session, file.filename, file.read(), request.form.get("register"))
     return result.model_dump(exclude={"unknown"} if result.unknown is None else None), 201

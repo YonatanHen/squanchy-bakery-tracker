@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.errors import field_errors
 from app.services.ingest.parsers.base import MissingColumns, RawRow, UnsupportedFormat
 from app.services.ingest.parsers.factory import get_parser
+from app.services.ingest.register import apply_registration, parse_registration
 from app.services.ingest.registry import load_registry
 from app.services.ingest.repository import ReadingRepository
 from app.services.ingest.schemas import ReadingIn, SaveResult
@@ -14,16 +15,20 @@ from app.services.ingest.unknown import find_unknown
 logger = logging.getLogger(__name__)
 
 
-def ingest_rows(session, rows: list[RawRow]) -> SaveResult:
-    """Save the valid rows in one transaction and report the invalid ones for the user to fix.
+def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None) -> SaveResult:
+    """Register confirmed entities, save the valid rows in one transaction, and report the invalid ones.
 
     Args:
         session: The SQLAlchemy session.
         rows: Parsed rows with their file row numbers.
+        register: Optional register block (JSON text or dict); an invalid block raises ValidationError.
 
     Returns:
         Counts of inserted, duplicate, ERR and rejected rows, plus the errors of the rejected rows.
     """
+    registration = parse_registration(session, register)
+    if registration:
+        apply_registration(session, registration)
     registry = load_registry(session)
     result, readings, failed = SaveResult(), [], []
     for raw in rows:
@@ -45,7 +50,7 @@ def ingest_rows(session, rows: list[RawRow]) -> SaveResult:
     return result
 
 
-def ingest_file(session, filename: str, content: bytes) -> SaveResult:
+def ingest_file(session, filename: str, content: bytes, register: str | None = None) -> SaveResult:
     """Parse an uploaded file and ingest its rows; raises UnsupportedFormat or MissingColumns."""
     logger.info("Upload received: %s (%d bytes)", filename, len(content))
     try:
@@ -56,4 +61,4 @@ def ingest_file(session, filename: str, content: bytes) -> SaveResult:
     except MissingColumns as exc:
         logger.warning("Rejected upload: missing columns %s", exc.missing)
         raise
-    return ingest_rows(session, rows)
+    return ingest_rows(session, rows, register)

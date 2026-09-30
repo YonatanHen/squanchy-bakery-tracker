@@ -1,14 +1,22 @@
 import io
+import json
 
-from app.models import Fridge, Reader
+from app.models import Branch, Fridge, Metric, Reader
 from tests.helpers import add_fridge, xlsx_bytes
 
 HEADER = ["Logger", "Branch", "Fridge", "Time", "Temp"]
 
+EILAT = {
+    "branches": [{"name": "Eilat", "city": "Eilat"}],
+    "fridges": [{"logger_id": "TL-0600", "branch": "eilat", "fridge": "Dairy", "metric": "F"}],
+}
 
-def upload(client, headers, rows, filename="week.xlsx", header=HEADER):
-    """Upload an .xlsx built from the rows."""
+
+def upload(client, headers, rows, filename="week.xlsx", header=HEADER, register=None):
+    """Upload an .xlsx built from the rows, with an optional register block of confirmed new entities."""
     data = {"file": (io.BytesIO(xlsx_bytes(header, rows)), filename)}
+    if register is not None:
+        data["register"] = json.dumps(register)
     return client.post("/api/v1/readings/upload", data=data, headers=headers, content_type="multipart/form-data")
 
 
@@ -127,6 +135,42 @@ def test_branch_typo_gets_a_did_you_mean_suggestion(client, session, auth_header
     response = upload(client, auth_headers, [["TL-0388", "Rishon LeZoin", "Cream cakes", "2026-09-14 06:00", 4.6]])
 
     assert response.get_json()["unknown"]["branches"] == [{"name": "Rishon LeZoin", "suggestion": "Rishon LeZion"}]
+
+
+def test_confirmed_new_branch_fridge_and_logger_are_saved_with_the_readings(client, session, auth_headers):
+    """After the user confirms, Eilat, its Dairy fridge and logger TL-0600 (°F) are created and the row is saved."""
+    response = upload(client, auth_headers, [["TL-0600", "Eilat", "Dairy", "2026-09-14 06:00", 38.3]], register=EILAT)
+
+    assert response.status_code == 201
+    fridge = session.query(Fridge).one()
+    assert (fridge.branch.name, fridge.branch.city, fridge.branch.street, fridge.name, fridge.metric) == (
+        "Eilat", "Eilat", None, "Dairy", Metric.F,
+    )
+    assert session.query(Reader).one().metric == Metric.F
+
+
+def test_registration_is_kept_when_another_row_is_still_invalid(client, session, auth_headers):
+    """A bad row in the file does not undo the confirmed registration or the valid rows."""
+    rows = [
+        ["TL-0600", "Eilat", "Dairy", "2026-09-14 06:00", 38.3],
+        ["TL-0600", "Eilat", "Dairy", "32/09/2026 06:15", 38.5],
+    ]
+
+    response = upload(client, auth_headers, rows, register=EILAT)
+
+    assert response.status_code == 201
+    assert (response.get_json()["inserted"], response.get_json()["rejected"]) == (1, 1)
+    assert (session.query(Branch).count(), session.query(Fridge).count()) == (1, 1)
+
+
+def test_new_fridge_needs_a_known_or_confirmed_branch(client, auth_headers):
+    """An invalid register block rejects the request, since it is the user's own form."""
+    register = {"fridges": [{"logger_id": "TL-0600", "branch": "Eilat", "fridge": "Dairy"}]}
+
+    response = upload(client, auth_headers, [["TL-0600", "Eilat", "Dairy", "2026-09-14 06:00", 3.8]], register=register)
+
+    assert response.status_code == 422
+    assert response.get_json()["errors"][0]["message"] == "Branch 'Eilat' does not exist. Add it to branches"
 
 
 def test_missing_columns_and_unsupported_files_are_rejected(client, auth_headers):
