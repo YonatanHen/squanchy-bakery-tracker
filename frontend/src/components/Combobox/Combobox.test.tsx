@@ -8,7 +8,7 @@ const BRANCHES = ["Haifa", "Rishon LeZion", "Tel Aviv"];
 
 /** A Combobox with its own value state; reports each change to `onChange`. */
 function Harness({ onChange = () => {}, initial = "" }: { onChange?: (value: string) => void; initial?: string }) {
-  const [value, setValue] = useState(initial);
+  const [value, setValue] = useState<string>(initial);
   return (
     <Combobox
       label="Branch"

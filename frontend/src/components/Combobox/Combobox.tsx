@@ -23,8 +23,8 @@ interface Option {
 /** Pick from a list or type a new value; the list filters as the user types. */
 export function Combobox({ label, value, options, onChange, newOptionLabel, hint, error, mono }: ComboboxProps) {
   const listId = useId();
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(-1);
+  const [open, setOpen] = useState<boolean>(false);
+  const [active, setActive] = useState<number>(-1);
   const text = value.trim().toLowerCase();
   const matches: Option[] = options.filter((o) => o.toLowerCase().includes(text)).map((o) => ({ value: o, label: o }));
   const exact = options.some((o) => o.toLowerCase() === text);

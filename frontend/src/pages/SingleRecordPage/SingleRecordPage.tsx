@@ -41,12 +41,11 @@ export function SingleRecordPage() {
   const [record, setRecord] = useState<NewReading>(EMPTY);
   const [saved, setSaved] = useState<SaveResult | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const [unknown, setUnknown] = useState<Entries | null>(null);
   const [registerErrors, setRegisterErrors] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-
-  const [branchesVersion, setBranchesVersion] = useState(0);
+  const [busy, setBusy] = useState<boolean>(false);
+  const [branchesVersion, setBranchesVersion] = useState<number>(0);
 
   // Reload after each save: a save can add a branch or logger, or rename a fridge
   useEffect(() => {
