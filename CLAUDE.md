@@ -1,4 +1,3 @@
-
 # Squanchy Bakery Fridge Tracker
 
 ## Rules
