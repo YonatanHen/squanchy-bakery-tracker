@@ -4,6 +4,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 from app.models import Metric, Status
+from app.schemas.types import LoggerId
 from app.services.ingest.normalizer import collapse_spaces, parse_api_time, parse_temp
 
 Text = Annotated[str, BeforeValidator(collapse_spaces)]
@@ -40,6 +41,7 @@ class ReadingPatch(BaseModel):
 
     time: datetime | None = None
     temp: float | None = None
+    logger_id: LoggerId | None = None
 
     @field_validator("time", mode="before")
     @classmethod

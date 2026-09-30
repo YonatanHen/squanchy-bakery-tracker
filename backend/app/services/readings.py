@@ -93,8 +93,11 @@ def query_archived_readings(session, f: ReadingFilters) -> tuple[list[ReaderArch
 
 
 def update_reading(session, reading_id: int, changes: dict) -> Reader:
-    """Correct a reading in place, re-detect its alerts (old ones removed, not archived); a clashing time -> 409."""
+    """Correct a reading in place (a new logger moves it), re-detect both fridges (old alerts removed); a clashing time -> 409."""
     reader = get_or_raise(session, Reader, reading_id)
+    old_fridge_id = reader.logger.fridge_id
+    if "logger_id" in changes:
+        reader.logger = session.get(Logger, changes["logger_id"])
     if "time" in changes:
         reader.time = changes["time"]
     if "temp" in changes:
@@ -102,7 +105,7 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
         reader.status = Status.ERR if reader.temp is None else Status.OK
     session.flush()
     session.execute(delete(Alert).where(Alert.reader_id == reader.id).execution_options(synchronize_session=False))
-    detect(session, {reader.logger.fridge_id}, {reader.id})
+    detect(session, {old_fridge_id, reader.logger.fridge_id}, {reader.id})
     session.commit()
     logger.info("Updated reading id=%s fields=%s", reading_id, sorted(changes))
     return reader
