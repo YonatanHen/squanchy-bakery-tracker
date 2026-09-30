@@ -1,7 +1,10 @@
+from datetime import datetime
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Branch, Fridge, Metric
+from app.models import Branch, Fridge, Logger, Metric, Reader, Status
+from tests.helpers import add_fridge
 
 
 def test_branch_name_is_unique_ignoring_case(session):
@@ -45,3 +48,35 @@ def test_new_fridge_is_celsius_with_default_thresholds(session):
     assert (t.growth_non_urgent, t.growth_urgent) == (0.1, 1.0)
     assert (t.deviation_non_urgent, t.deviation_urgent) == (1.5, 3.0)
     assert (t.gap_non_urgent_minutes, t.gap_urgent_minutes) == (15, 120)
+
+
+def test_fridge_has_at_most_one_logger(session):
+    """A second logger cannot be attached to a fridge that already has one."""
+    fridge = add_fridge(session, logger="TL-0512")
+
+    session.add(Logger(id="TL-0999", fridge_id=fridge.id))
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_reading_is_unique_per_logger_and_time(session):
+    """The duplicate 06:15 row from the sample cannot be stored twice."""
+    add_fridge(session, logger="TL-0512")
+    at = datetime(2026, 9, 14, 6, 15)
+    session.add(Reader(logger_id="TL-0512", time=at, temp=3.9, metric=Metric.C, status=Status.OK))
+    session.commit()
+
+    session.add(Reader(logger_id="TL-0512", time=at, temp=3.9, metric=Metric.C, status=Status.OK))
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_err_reading_has_no_temperature_and_ok_reading_needs_one(session):
+    """An ERR reading is stored without a temperature; an OK reading without one is rejected."""
+    add_fridge(session, branch="Haifa", logger="TL-0231", metric=Metric.F)
+    session.add(Reader(logger_id="TL-0231", time=datetime(2026, 9, 14, 6, 30), temp=None, metric=Metric.F, status=Status.ERR))
+    session.commit()
+
+    session.add(Reader(logger_id="TL-0231", time=datetime(2026, 9, 14, 6, 45), temp=None, metric=Metric.F, status=Status.OK))
+    with pytest.raises(IntegrityError):
+        session.commit()

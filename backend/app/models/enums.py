@@ -11,3 +11,13 @@ class Metric(str, enum.Enum):
 
 
 metric_enum = Enum(Metric, name="metric")
+
+
+class Status(str, enum.Enum):
+    """Reading status; ERR means the logger reported no temperature."""
+
+    OK = "OK"
+    ERR = "ERR"
+
+
+status_enum = Enum(Status, name="status")
