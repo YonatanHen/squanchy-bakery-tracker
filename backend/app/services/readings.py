@@ -143,8 +143,6 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
     if "temp" in changes:
         reader.temp = changes["temp"]
         reader.status = Status.ERR if reader.temp is None else Status.OK
-    if "metric" in changes:
-        reader.metric = changes["metric"]
     session.flush()
     session.execute(delete(Alert).where(Alert.reader_id == reader.id).execution_options(synchronize_session=False))
     detect(session, {old_fridge_id, reader.logger.fridge_id}, {reader.id})

@@ -39,7 +39,7 @@ def list_readings():
 
 @api_v1.patch("/readings/<int:reading_id>")
 def update_reading(reading_id: int):
-    """Correct a reading's logger, time, temperature or unit in place."""
+    """Correct a reading's logger, time or temperature in place; the unit follows the fridge."""
     body = request.get_json(silent=True) or {}
     return readings_service.edit_reading(db.session, reading_id, body).model_dump(mode="json")
 

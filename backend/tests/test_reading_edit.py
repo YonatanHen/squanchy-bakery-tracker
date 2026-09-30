@@ -4,7 +4,7 @@ import pytest
 
 from app.models import Alert, AlertLevel, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
-from tests.helpers import SAMPLE_REGISTRATION, load_sample
+from tests.helpers import load_sample
 
 
 def reading(session, logger_id, time) -> Reader:
@@ -100,15 +100,15 @@ def test_patch_moves_a_reading_to_another_logger(client, session, auth_headers):
     assert alerts == [(AlertLevel.NON_URGENT, "No reading for 1h 45m before this reading")]
 
 
-def test_patch_changes_the_unit_of_a_reading(client, session, auth_headers):
-    """Haifa registered as °C by mistake: setting 38.3 to °F keeps the typed value and stores it as °F."""
-    registration = {**SAMPLE_REGISTRATION, "fridges": [{k: v for k, v in f.items() if k != "metric"} for f in SAMPLE_REGISTRATION["fridges"]]}
-    load_sample(session, registration)
+def test_patch_cannot_change_a_reading_unit(client, session, auth_headers):
+    """The unit comes only from the fridge: a PATCH with metric is a 422 on metric and Haifa's 38.3°F stays as it is."""
+    load_sample(session)
     target = reading(session, "TL-0231", datetime(2026, 9, 14, 6, 0))
 
-    response = client.patch(f"/api/v1/readings/{target.id}", json={"metric": "F"}, headers=auth_headers)
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"metric": "C"}, headers=auth_headers)
 
-    assert response.status_code == 200
+    assert response.status_code == 422
+    assert [e["field"] for e in response.get_json()["errors"]] == ["metric"]
     session.expire_all()
     stored = session.get(Reader, target.id)
     assert (stored.temp, stored.metric) == (38.3, Metric.F)
