@@ -1,0 +1,42 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.unitLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label);
+}
+
+.form .mono {
+  font-family: var(--font-mono);
+}
+
+.error {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-10);
+}
+
+.actions .action {
+  flex-grow: 1;
+  height: 50px;
+  font-size: 16px;
+}
+
+.actions .action[data-variant="secondary"] {
+  color: var(--ink);
+}
