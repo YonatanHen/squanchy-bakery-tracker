@@ -39,13 +39,15 @@ type AlertLevels = Record<number, AlertLevel[]>;
 
 /** Get the alert levels of each reading on the page, from the alerts of the page's time span. */
 async function loadAlertLevels(items: Reading[], filters: Filters): Promise<AlertLevels> {
-  if (items.length === 0) return {};
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (!first || !last) return {};
   const alerts = await listAlerts({
     archived: false,
     branch: filters.branch,
     fridge: filters.fridge,
-    dateFrom: items[0].time,
-    dateTo: items[items.length - 1].time,
+    dateFrom: first.time,
+    dateTo: last.time,
     limit: ALERTS_LIMIT,
   });
   const levels: AlertLevels = {};

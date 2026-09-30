@@ -7,6 +7,13 @@ import { AuthProvider } from "./lib/AuthContext";
 
 type Handler = (url: URL, init?: RequestInit) => unknown;
 
+/** Return items[index], failing the test when it does not exist. */
+export function at<T>(items: readonly T[], index: number): T {
+  const item = items[index];
+  if (item === undefined) throw new Error(`No item at index ${index} (length ${items.length})`);
+  return item;
+}
+
 /** Stub fetch: the first route whose path prefix matches answers with its JSON body (or handler result). */
 export function mockApi(routes: [string, unknown | Handler][]) {
   const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {

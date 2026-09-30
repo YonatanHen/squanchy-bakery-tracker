@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Alert } from "../../lib/endpoints";
-import { mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
+import { at, mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
 
 const GAP: Alert = {
   id: 1,
@@ -45,7 +45,7 @@ describe("AlertsPage list", () => {
 
     const table = await screen.findByRole("table", { name: "Alerts" });
     const rows = within(table).getAllByRole("row");
-    expect(within(rows[1]).getAllByRole("cell").map((c) => c.textContent)).toEqual([
+    expect(within(at(rows, 1)).getAllByRole("cell").map((c) => c.textContent)).toEqual([
       "Urgent",
       "No reading for 71h 30m before this reading",
       "3.7 °C",

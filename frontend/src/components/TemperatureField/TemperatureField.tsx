@@ -6,9 +6,9 @@ interface TemperatureFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
-  hint?: string;
-  placeholder?: string;
+  error?: string | undefined;
+  hint?: string | undefined;
+  placeholder?: string | undefined;
 }
 
 /** A labeled temperature input; the text is kept as typed so "ERR" can be entered. */

@@ -15,7 +15,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   rows: T[];
   rowKey: (row: T) => Key;
-  rowTone?: (row: T) => Tone;
+  rowTone?: ((row: T) => Tone) | undefined;
 }
 
 /** Render a labeled table; rows can take the urgent or light alert tone. */

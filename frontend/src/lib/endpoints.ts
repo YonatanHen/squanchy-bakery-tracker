@@ -45,23 +45,23 @@ export interface Branch {
 
 /** Reading filters as typed in the form; dates are "YYYY-MM-DD", temperatures are text. */
 export interface ReadingFilters {
-  branch?: string;
-  fridge?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  tempMin?: string;
-  tempMax?: string;
+  branch?: string | undefined;
+  fridge?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+  tempMin?: string | undefined;
+  tempMax?: string | undefined;
 }
 
 export interface AlertQuery {
   archived: boolean;
-  level?: AlertLevel | "";
-  offset?: number;
-  branch?: string;
-  fridge?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  limit?: number;
+  level?: AlertLevel | "" | undefined;
+  offset?: number | undefined;
+  branch?: string | undefined;
+  fridge?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+  limit?: number | undefined;
 }
 
 /** Build a query string from the params that have a value. */

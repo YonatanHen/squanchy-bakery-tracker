@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AppRoutes } from "../../App";
 import { setToken } from "../../lib/api";
 import { AuthProvider } from "../../lib/AuthContext";
+import { at } from "../../testUtils";
 
 /** Render the logged-in app at `path`. */
 function renderAt(path: string) {
@@ -58,7 +59,7 @@ describe("AppShell", () => {
   it("opens a page from the nav", async () => {
     renderAt("/readings");
 
-    await userEvent.click(screen.getAllByRole("link", { name: "Branches" })[0]);
+    await userEvent.click(at(screen.getAllByRole("link", { name: "Branches" }), 0));
 
     expect(screen.getByRole("heading", { level: 1, name: "Branches" })).toBeInTheDocument();
   });

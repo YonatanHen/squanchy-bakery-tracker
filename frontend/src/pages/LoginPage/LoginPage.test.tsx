@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../../App";
 import { getToken } from "../../lib/api";
 import { AuthProvider } from "../../lib/AuthContext";
+import { at } from "../../testUtils";
 
 const fetchMock = vi.fn();
 
@@ -57,7 +58,7 @@ describe("LoginPage", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Readings" })).toBeInTheDocument();
     expect(getToken()).toBe("jwt-1");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ username: "admin", password: "password" });
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ username: "admin", password: "password" });
   });
 
   it("shows the wrong-credentials message on 401", async () => {

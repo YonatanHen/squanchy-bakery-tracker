@@ -3,7 +3,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 /** Split an API time "YYYY-MM-DDTHH:MM[:SS]" into its parts; no timezone shift. */
 function parts(iso: string) {
-  const [date, time = "00:00"] = iso.split("T");
+  const [date = "", time = "00:00"] = iso.split("T");
   const [year, month, day] = date.split("-");
   return { year, month, day, clock: time.slice(0, 5) };
 }

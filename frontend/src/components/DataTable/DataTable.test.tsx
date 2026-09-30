@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { at } from "../../testUtils";
 import { DataTable, type Column } from "./DataTable";
 
 interface Row {
@@ -26,7 +27,7 @@ describe("DataTable", () => {
     const table = screen.getByRole("table", { name: "Readings" });
     const rows = within(table).getAllByRole("row");
     expect(rows).toHaveLength(3);
-    expect(within(rows[2]).getAllByRole("cell").map((c) => c.textContent)).toEqual(["Display 2", "9.4 °C", "Edit"]);
+    expect(within(at(rows, 2)).getAllByRole("cell").map((c) => c.textContent)).toEqual(["Display 2", "9.4 °C", "Edit"]);
   });
 
   it("keeps a visually hidden header readable by screen readers", () => {

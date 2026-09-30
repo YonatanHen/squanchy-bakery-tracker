@@ -7,8 +7,8 @@ interface DateTimeFieldProps {
   value: string;
   onChange: (value: string) => void;
   dateOnly?: boolean;
-  error?: string;
-  hint?: string;
+  error?: string | undefined;
+  hint?: string | undefined;
 }
 
 /** A labeled native date-time picker; its value is "YYYY-MM-DDTHH:MM" (or "YYYY-MM-DD" when dateOnly). */
