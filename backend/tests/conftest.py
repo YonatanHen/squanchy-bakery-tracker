@@ -31,3 +31,11 @@ def client(app):
 def session(app):
     """Database session of the test app."""
     return db.session
+
+
+@pytest.fixture
+def auth_headers(app):
+    """Authorization header with a valid admin token."""
+    from app.services.tokens import create_token
+
+    return {"Authorization": f"Bearer {create_token('admin')}"}
