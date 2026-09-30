@@ -2,16 +2,17 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: squanchy
-      POSTGRES_PASSWORD: squanchy
-      POSTGRES_DB: squanchy_bakery
+      POSTGRES_USER: ${POSTGRES_USER:?set it in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set it in .env}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:?set it in .env}
     ports:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+      - ./docker/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U squanchy -d squanchy_bakery"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 2s
       retries: 15
 
