@@ -1,0 +1,21 @@
+.shell {
+  min-height: 100vh;
+}
+
+/* Bottom padding keeps content clear of the 68px fixed nav */
+.content {
+  padding: var(--space-20) var(--space-16) calc(68px + var(--space-20));
+}
+
+@media (min-width: 900px) {
+  .shell {
+    display: flex;
+  }
+
+  .content {
+    flex-grow: 1;
+    min-width: 0;
+    max-width: 1200px;
+    padding: var(--space-28) var(--space-32);
+  }
+}

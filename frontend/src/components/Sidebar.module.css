@@ -1,0 +1,55 @@
+.sidebar {
+  display: none;
+}
+
+.appName {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  padding: 0 var(--space-12) var(--space-20);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  height: var(--touch-target);
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-sm);
+  color: var(--label);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.link:hover {
+  background: var(--bg);
+  color: var(--primary-hover);
+}
+
+.active,
+.active:hover {
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font-weight: 600;
+}
+
+/* Pinned to the bottom of the sidebar, 14px text as in the desktop mockups */
+.sidebar .signOut {
+  margin-top: auto;
+  font-size: 14px;
+}
+
+@media (min-width: 900px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-24) var(--space-14);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+}

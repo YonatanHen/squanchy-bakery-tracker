@@ -1,0 +1,58 @@
+.button {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-14);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.md {
+  height: var(--touch-target);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+}
+
+.lg {
+  height: 52px;
+  border-radius: var(--radius-md);
+  font-size: 17px;
+}
+
+.primary {
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.secondary {
+  background: var(--surface);
+  border-color: var(--input-border);
+  color: var(--label);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.danger {
+  background: var(--urgent);
+  color: var(--surface);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--urgent-text);
+}
