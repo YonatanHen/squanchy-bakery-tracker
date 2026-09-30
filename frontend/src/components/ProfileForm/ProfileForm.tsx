@@ -47,8 +47,8 @@ export function ProfileForm({ initial, fridges, errors = {}, busy, onSave }: Pro
 
   return (
     <Card className={styles.card}>
-      <form className={styles.form} onSubmit={handleSubmit} aria-label="Threshold profile">
-        <Field label="Profile name" hint={fridges === undefined ? undefined : formatUsedBy(fridges)} error={errors.name}>
+      <form className={styles.form} onSubmit={handleSubmit} aria-label="Threshold settings">
+        <Field label="Name" hint={fridges === undefined ? undefined : formatUsedBy(fridges)} error={errors.name}>
           {(control) => <TextInput {...control} value={values.name} onChange={(event) => set("name")(event.target.value)} />}
         </Field>
         <div className={styles.grid}>
@@ -78,11 +78,11 @@ export function ProfileForm({ initial, fridges, errors = {}, busy, onSave }: Pro
         {!!fridges && (
           <p className={styles.confirm}>
             <strong>Are you sure?</strong> Saving changes future alerts for{" "}
-            {fridges === 1 ? "the 1 fridge that uses" : `all ${fridges} fridges that use`} this profile.
+            {fridges === 1 ? "the 1 fridge that uses" : `all ${fridges} fridges that use`} these settings.
           </p>
         )}
         <Button type="submit" size="lg" disabled={busy}>
-          Save profile
+          Save
         </Button>
       </form>
     </Card>

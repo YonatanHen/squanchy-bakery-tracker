@@ -17,7 +17,7 @@ describe("ProfileRow", () => {
     const onDelete = vi.fn();
     render(<ProfileRow name="Cold room" fridges={0} onOpen={() => {}} onDelete={onDelete} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Delete profile Cold room" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete threshold settings Cold room" }));
 
     expect(onDelete).toHaveBeenCalled();
   });
@@ -25,6 +25,6 @@ describe("ProfileRow", () => {
   it("hides delete while fridges use the profile", () => {
     render(<ProfileRow name="Dairy" fridges={2} onOpen={() => {}} onDelete={() => {}} />);
 
-    expect(screen.queryByRole("button", { name: /Delete profile/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delete threshold settings/ })).not.toBeInTheDocument();
   });
 });

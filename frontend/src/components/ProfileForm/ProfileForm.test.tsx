@@ -18,7 +18,7 @@ describe("ProfileForm", () => {
   it("shows the name, the fridge count and the six limits", () => {
     render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
 
-    expect(screen.getByRole("textbox", { name: "Profile name" })).toHaveValue("default");
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("default");
     expect(screen.getByText("Used by 4 fridges")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveValue("0.1");
     expect(screen.getByRole("textbox", { name: "Rise urgent, degrees C" })).toHaveValue("1");
@@ -31,14 +31,14 @@ describe("ProfileForm", () => {
   it("warns that saving changes alerts for every fridge using the profile", () => {
     render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
 
-    expect(screen.getByText(/Saving changes future alerts for all 4 fridges that use this profile/)).toBeInTheDocument();
+    expect(screen.getByText(/Saving changes future alerts for all 4 fridges that use these settings/)).toBeInTheDocument();
   });
 
   it("uses the singular for one fridge", () => {
     render(<ProfileForm initial={DEFAULT} fridges={1} onSave={() => {}} />);
 
     expect(screen.getByText("Used by 1 fridge")).toBeInTheDocument();
-    expect(screen.getByText(/Saving changes future alerts for the 1 fridge that uses this profile/)).toBeInTheDocument();
+    expect(screen.getByText(/Saving changes future alerts for the 1 fridge that uses these settings/)).toBeInTheDocument();
   });
 
   it("does not warn for a profile no fridge uses", () => {
@@ -54,7 +54,7 @@ describe("ProfileForm", () => {
     const gap = screen.getByRole("textbox", { name: "Gap non-urgent, minutes" });
     await userEvent.clear(gap);
     await userEvent.type(gap, "30");
-    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(onSave).toHaveBeenCalledWith({ ...DEFAULT, gap_non_urgent_minutes: "30" });
   });
@@ -69,7 +69,7 @@ describe("ProfileForm", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Profile name" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription(
       "Used by 4 fridges String should have at least 1 character",
     );
     expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(

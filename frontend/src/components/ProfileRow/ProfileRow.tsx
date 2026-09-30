@@ -20,7 +20,7 @@ export function ProfileRow({ name, fridges, onOpen, onDelete }: ProfileRowProps)
         <span className={styles.count}>{formatUsedBy(fridges)}</span>
       </button>
       {fridges === 0 && (
-        <Button variant="secondary" className={styles.delete} aria-label={`Delete profile ${name}`} onClick={onDelete}>
+        <Button variant="secondary" className={styles.delete} aria-label={`Delete threshold settings ${name}`} onClick={onDelete}>
           <TrashIcon />
         </Button>
       )}

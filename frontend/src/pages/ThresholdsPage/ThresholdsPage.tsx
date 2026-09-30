@@ -50,7 +50,7 @@ export function ThresholdsPage() {
     let active = true;
     listProfiles()
       .then((result) => active && (setProfiles(result), setOpenId(result[0]?.id ?? null)))
-      .catch(() => active && setError("Could not load the threshold profiles. Try again."));
+      .catch(() => active && setError("Could not load the threshold settings. Try again."));
     return () => {
       active = false;
     };
@@ -85,7 +85,7 @@ export function ThresholdsPage() {
     } catch (err) {
       const fields = err instanceof ApiError && err.status === 422 ? profileErrors(err.fieldErrors) : {};
       setFieldErrors(fields);
-      setError(Object.keys(fields).length ? "" : err instanceof ApiError ? err.message : "Could not save the profile. Try again.");
+      setError(Object.keys(fields).length ? "" : err instanceof ApiError ? err.message : "Could not save the threshold settings. Try again.");
     } finally {
       setBusy(false);
     }
@@ -100,7 +100,7 @@ export function ThresholdsPage() {
       setProfiles((prev) => prev.filter((p) => p.id !== deleting.id));
       setError("");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not delete the profile. Try again.");
+      setError(err instanceof ApiError ? err.message : "Could not delete the threshold settings. Try again.");
     } finally {
       setBusy(false);
       setDeleting(null);
@@ -112,7 +112,7 @@ export function ThresholdsPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Thresholds</h1>
         <Button variant="secondary" className={styles.newButton} onClick={() => openProfile("new")}>
-          + New profile
+          + New threshold settings
         </Button>
       </div>
       {error && (
@@ -122,7 +122,7 @@ export function ThresholdsPage() {
       )}
       {saved && (
         <p role="status" className={styles.saved}>
-          Profile saved.
+          Threshold settings saved.
         </p>
       )}
       {openId === "new" && <ProfileForm key="new" initial={NEW_PROFILE} errors={fieldErrors} busy={busy} onSave={handleSave} />}
@@ -142,17 +142,17 @@ export function ThresholdsPage() {
           <ProfileRow key={p.id} name={p.name} fridges={p.fridges} onOpen={() => openProfile(p.id)} onDelete={() => setDeleting(p)} />
         ))}
       <Dialog open={!!deleting} title={`Delete ${deleting?.name}?`} onClose={closeDelete}>
-        <p className={styles.dialogText}>No fridge uses this profile.</p>
+        <p className={styles.dialogText}>No fridge uses these settings.</p>
         <div className={styles.actions}>
           <Button variant="secondary" size="lg" onClick={closeDelete}>
             Cancel
           </Button>
           <Button variant="danger" size="lg" disabled={busy} onClick={handleDelete}>
-            Delete profile
+            Delete
           </Button>
         </div>
       </Dialog>
-      <p className={styles.note}>Move a fridge to another profile from Branches → edit fridge.</p>
+      <p className={styles.note}>Move a fridge to other threshold settings from Branches → edit fridge.</p>
       <SignOutButton className={styles.signOut} />
     </section>
   );

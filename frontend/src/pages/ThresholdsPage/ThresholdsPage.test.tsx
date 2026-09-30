@@ -37,7 +37,7 @@ describe("ThresholdsPage list", () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
     renderLoggedIn("/thresholds");
 
-    expect(await screen.findByRole("textbox", { name: "Profile name" })).toHaveValue("default");
+    expect(await screen.findByRole("textbox", { name: "Name" })).toHaveValue("default");
     expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveValue("0.1");
     expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveValue("120");
     expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("ThresholdsPage list", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Cold room Used by 0 fridges" }));
 
-    expect(screen.getByRole("textbox", { name: "Profile name" })).toHaveValue("Cold room");
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Cold room");
     expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveValue("60");
     expect(screen.getByRole("button", { name: "default Used by 4 fridges" })).toBeInTheDocument();
   });
@@ -58,14 +58,14 @@ describe("ThresholdsPage list", () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT]]]);
     renderLoggedIn("/thresholds");
 
-    expect(await screen.findByText("Move a fridge to another profile from Branches → edit fridge.")).toBeInTheDocument();
+    expect(await screen.findByText("Move a fridge to other threshold settings from Branches → edit fridge.")).toBeInTheDocument();
   });
 
   it("shows an error when the profiles cannot be loaded", async () => {
     mockApi([]);
     renderLoggedIn("/thresholds");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the threshold profiles. Try again.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the threshold settings. Try again.");
   });
 });
 
@@ -80,9 +80,9 @@ describe("ThresholdsPage save", () => {
 
     await userEvent.clear(gap);
     await userEvent.type(gap, "30");
-    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Profile saved.");
+    expect(await screen.findByRole("status")).toHaveTextContent("Threshold settings saved.");
     expect(sentBody(fetchMock, "PUT", "/threshold-settings/1")).toEqual({
       name: "default",
       growth_non_urgent: "0.1",
@@ -110,7 +110,7 @@ describe("ThresholdsPage save", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Save profile" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(
       "Must be lower than urgent",
@@ -130,7 +130,7 @@ describe("ThresholdsPage save", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Save profile" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
   });
@@ -144,9 +144,9 @@ describe("ThresholdsPage delete", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Delete threshold settings Cold room" }));
     const dialog = screen.getByRole("dialog", { name: "Delete Cold room?" });
-    await userEvent.click(within(dialog).getByRole("button", { name: "Delete profile" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(screen.queryByRole("button", { name: /Cold room/ })).not.toBeInTheDocument());
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -157,7 +157,7 @@ describe("ThresholdsPage delete", () => {
     const fetchMock = mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Delete threshold settings Cold room" }));
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -175,8 +175,8 @@ describe("ThresholdsPage delete", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
-    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete profile" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Delete threshold settings Cold room" }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
     expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
@@ -191,14 +191,14 @@ describe("ThresholdsPage new profile", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "+ New profile" }));
-    const name = screen.getByRole("textbox", { name: "Profile name" });
+    await userEvent.click(await screen.findByRole("button", { name: "+ New threshold settings" }));
+    const name = screen.getByRole("textbox", { name: "Name" });
     expect(name).toHaveValue("");
     expect(screen.getByRole("textbox", { name: "Deviation urgent, degrees C" })).toHaveValue("3");
     expect(screen.getByRole("button", { name: "default Used by 4 fridges" })).toBeInTheDocument();
 
     await userEvent.type(name, "Dairy");
-    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Used by 0 fridges")).toBeInTheDocument();
     expect(sentBody(fetchMock, "POST", "/threshold-settings")).toEqual({
@@ -222,10 +222,10 @@ describe("ThresholdsPage new profile", () => {
     ]);
     renderLoggedIn("/thresholds");
 
-    await userEvent.click(await screen.findByRole("button", { name: "+ New profile" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    await userEvent.click(await screen.findByRole("button", { name: "+ New threshold settings" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("textbox", { name: "Profile name" })).toHaveAccessibleDescription(
+    expect(await screen.findByRole("textbox", { name: "Name" })).toHaveAccessibleDescription(
       "String should have at least 1 character",
     );
   });
