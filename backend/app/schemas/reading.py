@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 from app.models import Metric, Status
-from app.services.ingest.normalizer import collapse_spaces
+from app.services.ingest.normalizer import collapse_spaces, parse_temp, parse_time
 
 Text = Annotated[str, BeforeValidator(collapse_spaces)]
 
@@ -32,6 +32,25 @@ class ReadingFilters(LocationFilters):
     unit: Metric = Metric.C
     status: Status | None = None
     metric: Metric | None = None
+
+
+class ReadingPatch(BaseModel):
+    """Fields the user can correct on a reading; the UI asks "Are you sure?" first."""
+
+    time: datetime | None = None
+    temp: float | None = None
+
+    @field_validator("time", mode="before")
+    @classmethod
+    def normalized_time(cls, value: Any) -> datetime:
+        """Accept the same date formats as the upload."""
+        return parse_time(value)
+
+    @field_validator("temp", mode="before")
+    @classmethod
+    def normalized_temp(cls, value: Any) -> float | None:
+        """A number, or ERR for no temperature."""
+        return parse_temp(value)
 
 
 class ReadingOut(BaseModel):
