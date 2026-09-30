@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Branch, SaveResult } from "../../lib/endpoints";
@@ -96,6 +96,59 @@ describe("SingleRecordPage", () => {
     await waitFor(() => expect(temp).toHaveAccessibleDescription("Temperature is required"));
     expect(screen.getByLabelText("Time")).toHaveAccessibleDescription("Time is required");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("asks to add an unknown logger, then re-sends the reading with the register block", async () => {
+    const unknown = result({
+      rejected: 1,
+      errors: [{ row: 1, field: "logger", value: "TL-0600", message: "Unknown logger" }],
+      unknown: { branches: [], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy 2" }] },
+    });
+    const fetchMock = mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      [
+        "POST /api/v1/readings",
+        (_url: URL, init?: RequestInit) =>
+          JSON.parse(init?.body as string).register ? result({ inserted: 1 }) : json(422, unknown),
+      ],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await fillDairy();
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+    const dialog = await screen.findByRole("dialog", { name: "New in this reading" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add and save" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Reading saved.");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(postedBody(fetchMock, 1)).toMatchObject({
+      register: { branches: [], fridges: [{ logger_id: "TL-0600", branch: "Haifa", fridge: "Dairy 2", metric: "C" }] },
+    });
+  });
+
+  it("keeps the dialog open with the backend's reason when the new entries are refused", async () => {
+    const unknown = result({
+      rejected: 1,
+      unknown: { branches: [], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }] },
+    });
+    const refused = { errors: [{ field: "body", message: "Fridge 'Dairy' in Haifa already has logger TL-0231" }] };
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      [
+        "POST /api/v1/readings",
+        (_url: URL, init?: RequestInit) => json(422, JSON.parse(init?.body as string).register ? refused : unknown),
+      ],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await fillDairy();
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+    const dialog = await screen.findByRole("dialog", { name: "New in this reading" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add and save" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Fridge 'Dairy' in Haifa already has logger TL-0231");
   });
 
   it("sends the typed reading, the datetime-local time as is, and shows it was saved", async () => {

@@ -7,8 +7,17 @@ import { DateTimeField } from "../../components/DateTimeField/DateTimeField";
 import { FridgeField } from "../../components/FridgeField/FridgeField";
 import { LoggerField } from "../../components/LoggerField/LoggerField";
 import { TemperatureField } from "../../components/TemperatureField/TemperatureField";
+import { UnknownEntries } from "../../components/UnknownEntries/UnknownEntries";
 import { ApiError } from "../../lib/api";
-import { addReading,listBranches, type Branch, type NewReading, type SaveResult } from "../../lib/endpoints";
+import {
+  addReading,
+  listBranches,
+  type Branch,
+  type NewReading,
+  type Registration,
+  type SaveResult,
+  type UnknownEntries as Entries,
+} from "../../lib/endpoints";
 import styles from "./SingleRecordPage.module.css";
 
 const EMPTY: NewReading = { logger: "", branch: "", fridge: "", time: "", temp: "" };
@@ -32,6 +41,9 @@ export function SingleRecordPage() {
   const [saved, setSaved] = useState<SaveResult | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [unknown, setUnknown] = useState<Entries | null>(null);
+  const [registerErrors, setRegisterErrors] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -56,25 +68,51 @@ export function SingleRecordPage() {
     setRecord((current) => ({ ...current, fridge: name, logger: fridge?.logger_id ?? current.logger }));
   }
 
-  /** Send the record; show the result, or the errors under their fields. */
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setSaved(null);
-    setFieldErrors({});
-    setError("");
+  /** Send the record, with the confirmed new entries when given; show the result or the errors. */
+  async function send(register?: Registration) {
+    setBusy(true);
+    setRegisterErrors([]);
     try {
-      setSaved(await addReading(record));
+      const result = await addReading(record, register);
+      setSaved(result);
+      setFieldErrors({});
+      setError("");
+      setUnknown(null);
     } catch (caught) {
-      if (!(caught instanceof ApiError)) return setError("Could not save the reading. Try again.");
-      const byField: Record<string, string> = {};
-      const other: string[] = [];
-      for (const e of caught.fieldErrors) {
-        if (e.field in EMPTY) byField[e.field] ??= e.message;
-        else other.push(e.message);
+      const body = caught instanceof ApiError ? (caught.body as Partial<SaveResult> | null) : null;
+      if (register && caught instanceof ApiError && body?.rejected === undefined) {
+        // The register block itself was refused; the reason belongs in the dialog
+        setRegisterErrors(caught.fieldErrors.map((e) => e.message));
+      } else {
+        showRejected(caught);
+        setUnknown(body?.unknown ?? null);
       }
-      setFieldErrors(byField);
-      if (other.length || !caught.fieldErrors.length) setError(other.join(" ") || caught.message);
+    } finally {
+      setBusy(false);
     }
+  }
+
+  /** Put the rejected fields' messages under their fields; other messages go above the form. */
+  function showRejected(caught: unknown) {
+    setSaved(null);
+    if (!(caught instanceof ApiError)) {
+      setFieldErrors({});
+      return setError("Could not save the reading. Try again.");
+    }
+    const byField: Record<string, string> = {};
+    const other: string[] = [];
+    for (const e of caught.fieldErrors) {
+      if (e.field in EMPTY) byField[e.field] ??= e.message;
+      else other.push(e.message);
+    }
+    setFieldErrors(byField);
+    setError(other.length || !caught.fieldErrors.length ? other.join(" ") || caught.message : "");
+  }
+
+  /** Send the typed record. */
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void send();
   }
 
   return (
@@ -119,6 +157,22 @@ export function SingleRecordPage() {
         </Button>
       </form>
       <p className={styles.note}>Same checks as an upload. A new branch or logger opens the “add it?” step.</p>
+      {unknown && (
+        <UnknownEntries
+          open
+          title="New in this reading"
+          entries={unknown}
+          confirmLabel="Add and save"
+          suggestionHint="use it instead"
+          onConfirm={(registration) => void send(registration)}
+          onClose={() => {
+            setUnknown(null);
+            setRegisterErrors([]);
+          }}
+          errors={registerErrors}
+          busy={busy}
+        />
+      )}
     </section>
   );
 }
