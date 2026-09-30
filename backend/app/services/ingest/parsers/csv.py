@@ -4,12 +4,17 @@ import logging
 from typing import BinaryIO
 
 from app.services.ingest.parsers.base import REQUIRED_COLUMNS, RawRow, map_columns
+from app.services.ingest.parsers.excel import XLSX_MAGIC
 
 logger = logging.getLogger(__name__)
 
 
 class CsvParser:
     """Reads .csv logger exports; columns are matched by header name, in any order and case."""
+
+    def can_parse(self, filename: str, head: bytes) -> bool:
+        """Return True for a .csv name whose content is not an xlsx (ZIP) file."""
+        return filename.lower().endswith(".csv") and not head.startswith(XLSX_MAGIC)
 
     def parse(self, stream: BinaryIO) -> list[RawRow]:
         """Read every data row of the CSV file; the delimiter (',' or ';') is detected from the header."""

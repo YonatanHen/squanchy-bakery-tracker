@@ -2,8 +2,10 @@ import io
 
 import pytest
 
-from app.services.ingest.parsers.base import MissingColumns
+from app.services.ingest.parsers.base import MissingColumns, UnsupportedFormat
 from app.services.ingest.parsers.csv import CsvParser
+from app.services.ingest.parsers.factory import get_parser
+from tests.helpers import xlsx_bytes
 
 
 def parse(text: str, encoding: str = "utf-8"):
@@ -47,3 +49,10 @@ def test_empty_rows_are_skipped():
     rows = parse("Logger,Branch,Fridge,Time,Temp\n\nTL-0512,Jerusalem,Dairy,2026-09-14 06:00,3.8\n,,,,\n")
 
     assert [r.row for r in rows] == [3]
+
+
+def test_factory_picks_csv_by_name_and_rejects_a_renamed_xlsx():
+    """A .csv text file gets the CSV parser; an .xlsx (ZIP) file renamed to .csv is rejected."""
+    assert isinstance(get_parser("week.csv", b"Logger,Br"), CsvParser)
+    with pytest.raises(UnsupportedFormat):
+        get_parser("week.csv", xlsx_bytes(["Logger"], [])[:8])

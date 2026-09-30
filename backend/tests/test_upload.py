@@ -227,8 +227,8 @@ def test_new_fridge_needs_a_known_or_confirmed_branch(client, auth_headers):
 
 
 def test_missing_columns_and_unsupported_files_are_rejected(client, auth_headers):
-    """Missing columns give 422; a CSV gives 415."""
+    """Missing columns give 422; a format with no parser (.txt) gives 415."""
     assert upload(client, auth_headers, [], header=["Time", "Temp"]).status_code == 422
-    csv = {"file": (io.BytesIO(b"Logger,Branch\n"), "week.csv")}
-    response = client.post("/api/v1/readings/upload", data=csv, headers=auth_headers, content_type="multipart/form-data")
+    txt = {"file": (io.BytesIO(b"Logger,Branch\n"), "week.txt")}
+    response = client.post("/api/v1/readings/upload", data=txt, headers=auth_headers, content_type="multipart/form-data")
     assert response.status_code == 415

@@ -56,7 +56,7 @@ def unknown_url(exc: NotFound):
 @api_v1.errorhandler(UnsupportedFormat)
 def unsupported_format(exc: UnsupportedFormat):
     """Return 415 when no parser accepts the uploaded file."""
-    return {"error": "Unsupported file format. Upload an .xlsx file"}, 415
+    return {"error": "Unsupported file format. Upload an .xlsx or .csv file"}, 415
 
 
 @api_v1.errorhandler(MissingColumns)

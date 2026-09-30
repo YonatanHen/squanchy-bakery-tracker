@@ -16,7 +16,7 @@ def _body(result: SaveResult) -> dict:
 
 @api_v1.post("/readings/upload")
 def upload_readings():
-    """Upload an .xlsx file; valid rows are saved and invalid rows are returned to fix."""
+    """Upload an .xlsx or .csv file; valid rows are saved and invalid rows are returned to fix."""
     file = request.files.get("file")
     if file is None or not file.filename:
         return {"error": "No file uploaded"}, 400
