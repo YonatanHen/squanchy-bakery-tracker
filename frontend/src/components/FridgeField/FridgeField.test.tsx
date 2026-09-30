@@ -1,17 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import type { Branch } from "../../lib/endpoints";
+import { makeBranch, makeFridge } from "../../testUtils";
 import { FridgeField } from "./FridgeField";
 
-const HAIFA: Branch = {
-  id: 1,
-  name: "Haifa",
-  fridges: [
-    { id: 1, name: "Dairy", logger_id: "TL-0231" },
-    { id: 2, name: "Cream cakes", logger_id: "TL-0388" },
-  ],
-};
+const HAIFA = makeBranch(1, "Haifa", [makeFridge(1, "Dairy", "TL-0231"), makeFridge(2, "Cream cakes", "TL-0388")]);
 
 describe("FridgeField", () => {
   it("offers only the fridges of the chosen branch", async () => {

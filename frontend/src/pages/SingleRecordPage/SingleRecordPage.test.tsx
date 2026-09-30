@@ -2,18 +2,11 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Branch, SaveResult } from "../../lib/endpoints";
-import { at, mockApi, renderLoggedIn } from "../../testUtils";
+import { at, makeBranch, makeFridge, mockApi, renderLoggedIn } from "../../testUtils";
 
 const BRANCHES: Branch[] = [
-  {
-    id: 1,
-    name: "Haifa",
-    fridges: [
-      { id: 1, name: "Dairy", logger_id: "TL-0231" },
-      { id: 2, name: "Cream cakes", logger_id: "TL-0388" },
-    ],
-  },
-  { id: 2, name: "Rishon LeZion", fridges: [{ id: 3, name: "Display", logger_id: "TL-0400" }] },
+  makeBranch(1, "Haifa", [makeFridge(1, "Dairy", "TL-0231"), makeFridge(2, "Cream cakes", "TL-0388")]),
+  makeBranch(2, "Rishon LeZion", [makeFridge(3, "Display", "TL-0400")]),
 ];
 
 /** A SaveResult with the given fields over an empty result. */
@@ -150,7 +143,7 @@ describe("SingleRecordPage", () => {
   });
 
   it("offers a branch added through the dialog on the next reading", async () => {
-    const eilat: Branch = { id: 3, name: "Eilat", fridges: [{ id: 4, name: "Display", logger_id: "TL-0700" }] };
+    const eilat = makeBranch(3, "Eilat", [makeFridge(4, "Display", "TL-0700")]);
     let branchCalls = 0;
     const unknown = result({ rejected: 1, unknown: { branches: [{ name: "Eilat" }], loggers: [] } });
     mockApi([

@@ -1,13 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import type { Branch } from "../../lib/endpoints";
+import { makeBranch } from "../../testUtils";
 import { BranchField } from "./BranchField";
 
-const BRANCHES: Branch[] = [
-  { id: 1, name: "Haifa", fridges: [] },
-  { id: 2, name: "Rishon LeZion", fridges: [] },
-];
+const BRANCHES = [makeBranch(1, "Haifa"), makeBranch(2, "Rishon LeZion")];
 
 describe("BranchField", () => {
   it("offers the registered branch names, or the typed name as a new branch", async () => {

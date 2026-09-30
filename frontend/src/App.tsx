@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { AlertsPage } from "./pages/AlertsPage/AlertsPage";
 import { BranchesPage } from "./pages/BranchesPage/BranchesPage";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
 import { ReadingsPage } from "./pages/ReadingsPage/ReadingsPage";
 import { SingleRecordPage } from "./pages/SingleRecordPage/SingleRecordPage";
 import { ThresholdsPage } from "./pages/ThresholdsPage/ThresholdsPage";
