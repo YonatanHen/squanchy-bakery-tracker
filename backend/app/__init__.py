@@ -25,6 +25,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     from app import models  # noqa: F401  registers tables
     from app.services import archive, thresholds  # noqa: F401  registers the archive and default-profile hooks
     from app.api import api_v1
+    from app.api.errors import unknown_url
 
     app.register_blueprint(api_v1)
+    app.register_error_handler(404, unknown_url)
     return app
