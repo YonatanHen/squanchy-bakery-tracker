@@ -18,7 +18,7 @@ class Branch(db.Model):
     name: Mapped[str] = mapped_column(String(100))
     city: Mapped[str | None] = mapped_column(String(100))
     street: Mapped[str | None] = mapped_column(String(200))
-    building_number: Mapped[str | None] = mapped_column(String(20))  # text, not int: "12a", "12b"
+    building_number: Mapped[str | None] = mapped_column(String(10))  # text, not int: "12a", "12b"
 
     fridges: Mapped[list["Fridge"]] = relationship(
         back_populates="branch", cascade="all, delete-orphan", passive_deletes=True
