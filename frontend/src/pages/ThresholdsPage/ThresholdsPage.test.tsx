@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ThresholdProfile } from "../../lib/endpoints";
@@ -133,6 +133,53 @@ describe("ThresholdsPage save", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Save profile" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
+  });
+});
+
+describe("ThresholdsPage delete", () => {
+  it("deletes an unused profile after the user confirms", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]],
+      ["DELETE /api/v1/threshold-settings/2", () => new Response(null, { status: 204 })],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
+    const dialog = screen.getByRole("dialog", { name: "Delete Cold room?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete profile" }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Cold room/ })).not.toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
+  });
+
+  it("keeps the profile when the user cancels", async () => {
+    const fetchMock = mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("shows the backend's message when a fridge started using the profile", async () => {
+    mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]],
+      [
+        "DELETE /api/v1/threshold-settings/2",
+        () => errorResponse(409, { error: "Conflicts with existing data (duplicate name, logger id or reading time)" }),
+      ],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Delete profile Cold room" }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete profile" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
+    expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
   });
 });
 

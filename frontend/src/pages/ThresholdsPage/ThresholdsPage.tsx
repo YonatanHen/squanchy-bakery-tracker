@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../components/Button/Button";
+import { Dialog } from "../../components/Dialog/Dialog";
 import { ProfileForm } from "../../components/ProfileForm/ProfileForm";
 import { ProfileRow } from "../../components/ProfileRow/ProfileRow";
 import { SignOutButton } from "../../components/SignOutButton/SignOutButton";
 import { ApiError } from "../../lib/api";
 import {
   createProfile,
+  deleteProfile,
   listProfiles,
   THRESHOLD_KEYS,
   updateProfile,
@@ -41,6 +43,8 @@ export function ThresholdsPage() {
   const [fieldErrors, setFieldErrors] = useState<ProfileErrors>({});
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState<ThresholdProfile | null>(null);
+  const closeDelete = useCallback(() => setDeleting(null), []);
 
   useEffect(() => {
     let active = true;
@@ -87,6 +91,22 @@ export function ThresholdsPage() {
     }
   }
 
+  /** Delete the profile the user confirmed; the backend refuses (409) if a fridge uses it. */
+  async function handleDelete() {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      await deleteProfile(deleting.id);
+      setProfiles((prev) => prev.filter((p) => p.id !== deleting.id));
+      setError("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete the profile. Try again.");
+    } finally {
+      setBusy(false);
+      setDeleting(null);
+    }
+  }
+
   return (
     <section className={styles.page}>
       <div className={styles.header}>
@@ -119,8 +139,19 @@ export function ThresholdsPage() {
       {profiles
         .filter((p) => p !== open)
         .map((p) => (
-          <ProfileRow key={p.id} name={p.name} fridges={p.fridges} onOpen={() => openProfile(p.id)} onDelete={() => {}} />
+          <ProfileRow key={p.id} name={p.name} fridges={p.fridges} onOpen={() => openProfile(p.id)} onDelete={() => setDeleting(p)} />
         ))}
+      <Dialog open={!!deleting} title={`Delete ${deleting?.name}?`} onClose={closeDelete}>
+        <p className={styles.dialogText}>No fridge uses this profile.</p>
+        <div className={styles.actions}>
+          <Button variant="secondary" size="lg" onClick={closeDelete}>
+            Cancel
+          </Button>
+          <Button variant="danger" size="lg" disabled={busy} onClick={handleDelete}>
+            Delete profile
+          </Button>
+        </div>
+      </Dialog>
       <p className={styles.note}>Move a fridge to another profile from Branches → edit fridge.</p>
       <SignOutButton className={styles.signOut} />
     </section>
