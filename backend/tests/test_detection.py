@@ -54,6 +54,19 @@ def test_a_fridges_profile_changes_only_its_alerts(session):
     assert ("TL-0512", datetime(2026, 9, 14, 8, 30), AlertLevel.URGENT) in alerts(session)
 
 
+def test_readings_across_midnight_in_an_upload_raise_no_gap(session):
+    """An upload with 14/09 23:45 and 15/09 00:00 (in both date formats) creates no gap alert."""
+    add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
+    rows = [
+        RawRow(2, {"logger": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy", "time": "2026-09-14 23:45", "temp": 3.8}),
+        RawRow(3, {"logger": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy", "time": "15/09/2026 00:00", "temp": 3.9}),
+    ]
+
+    result = ingest_rows(session, rows)
+
+    assert (result.inserted, result.alerts) == (2, 0)
+
+
 def test_fahrenheit_rise_below_the_celsius_threshold_is_not_a_deviation(session):
     """A 2°F rise is about 1.1°C, below the 1.5°C deviation threshold: no deviation alert for Haifa."""
     add_fridge(session, branch="Haifa", fridge="Dairy", logger="TL-0231", metric=Metric.F)
