@@ -4,6 +4,7 @@ import { DeleteImpactDialog } from "../../components/DeleteImpactDialog/DeleteIm
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import {
   deleteBranch,
+  deleteFridge,
   deleteImpact,
   listBranches,
   listThresholdProfiles,
@@ -44,11 +45,11 @@ export function BranchesPage() {
   }, [load]);
 
   /** Fetch the delete impact and open the confirmation; nothing is deleted yet. */
-  const askDeleteBranch = async (branch: Branch) => {
+  const askDelete = async (kind: PendingDelete["kind"], { id, name }: { id: number; name: string }) => {
     try {
-      const impact = await deleteImpact("branches", branch.id);
+      const impact = await deleteImpact(kind === "branch" ? "branches" : "fridges", id);
       setDeleteError("");
-      setPendingDelete({ kind: "branch", id: branch.id, name: branch.name, impact });
+      setPendingDelete({ kind, id, name, impact });
     } catch {
       setError("Could not check what the delete removes. Try again.");
     }
@@ -59,7 +60,7 @@ export function BranchesPage() {
     if (!pendingDelete) return;
     setDeleting(true);
     try {
-      await deleteBranch(pendingDelete.id);
+      await (pendingDelete.kind === "branch" ? deleteBranch : deleteFridge)(pendingDelete.id);
       setPendingDelete(null);
       await load();
     } catch {
@@ -88,9 +89,9 @@ export function BranchesPage() {
           branch={branch}
           profileNames={profileNames}
           onEdit={noop}
-          onDelete={askDeleteBranch}
+          onDelete={(b) => askDelete("branch", b)}
           onEditFridge={noop}
-          onDeleteFridge={noop}
+          onDeleteFridge={(f) => askDelete("fridge", f)}
         />
       ))}
       {pendingDelete && (

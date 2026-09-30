@@ -136,3 +136,26 @@ describe("BranchesPage delete branch", () => {
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Could not delete. Try again.");
   });
 });
+
+describe("BranchesPage delete fridge", () => {
+  it("shows the fridge impact, then deletes the fridge only after the user confirms", async () => {
+    const deletes = mockApi([
+      ["GET /api/v1/fridges/3/delete-impact", { fridges: 1, loggers: 1, readings: 40, alerts: 3 }],
+      ["GET /api/v1/branches", [JERUSALEM, HAIFA]],
+      ["GET /api/v1/threshold-settings", PROFILES],
+      ["DELETE /api/v1/fridges/3", () => new Response(null, { status: 204 })],
+    ]);
+    renderLoggedIn("/branches");
+
+    const haifa = await screen.findByRole("list", { name: "Haifa fridges" });
+    await userEvent.click(within(haifa).getByRole("button", { name: "Delete fridge Dairy" }));
+    await screen.findByRole("dialog", { name: "Delete Dairy?" });
+    expect(screen.getByText("readings archived").previousSibling).toHaveTextContent("40");
+    expect(calls(deletes)).not.toContain("DELETE /api/v1/fridges/3");
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete fridge" }));
+
+    await waitFor(() => expect(calls(deletes)).toContain("DELETE /api/v1/fridges/3"));
+    expect(calls(deletes)).not.toContain("DELETE /api/v1/branches/2");
+  });
+});
