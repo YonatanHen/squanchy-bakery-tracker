@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from app.models import AlertLevel, Metric
-from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth
+from app.models import AlertKind, AlertLevel, Metric
+from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth, find_limits
 from app.services.units import from_celsius, to_celsius
 
 T = Thresholds(0.1, 1.0, 0.0, 5.0, 15, 120)  # the default threshold settings
@@ -180,3 +180,71 @@ def test_old_readings_build_the_average_without_new_alerts():
     old = points(4.0, 4.1, 9.4, 4.3, new=False)
 
     assert find_deviations(old, T)[0] == []
+
+
+def at(*pairs, new=True):
+    """Readings at (minutes after START, °C) pairs."""
+    return [Point(i, START + timedelta(minutes=m), t, new) for i, (m, t) in enumerate(pairs)]
+
+
+def test_readings_still_above_max_are_one_urgent_period_on_its_first_reading():
+    """Rishon 4.6 -> 7.1: above 5°C from 06:15 and not back yet; one URGENT alert covering the 3 readings."""
+    [finding] = find_limits(points(4.6, 5.4, 6.3, 7.1), T)
+
+    assert (finding.point_id, finding.level, finding.kind) == (1, AlertLevel.URGENT, AlertKind.LIMIT)
+    assert finding.covers == frozenset({1, 2, 3})
+    assert finding.description == (
+        "Above 5.0°C since 14/09 06:15, still above at the last reading 06:45 (30 min so far), peak 7.1°C"
+    )
+
+
+def test_period_ends_at_the_first_reading_back_within_the_limits():
+    """The period runs from the first reading above 5°C to the reading back within the limits."""
+    [finding] = find_limits(points(4.6, 5.4, 6.3, 7.1, 4.2), T)
+
+    assert finding.description == "Above 5.0°C from 14/09 06:15 to 07:00 (45 min), peak 7.1°C"
+
+
+def test_one_reading_above_max_then_back_is_non_urgent():
+    """Tel Aviv's single 9.4°C, back to 4.3°C at the next reading (a delivery, per the email)."""
+    [finding] = find_limits(points(4.0, 9.4, 4.3), T)
+
+    assert (finding.point_id, finding.level) == (1, AlertLevel.NON_URGENT)
+    assert finding.description == "Above 5.0°C at 14/09 06:15 for one reading (9.4°C), back to 4.3°C at 06:30"
+
+
+def test_readings_below_min_are_an_urgent_period():
+    """A freezing fridge: -1.0 and -1.5 are below the 0°C min limit."""
+    [finding] = find_limits(points(2.0, -1.0, -1.5, 1.0), T)
+
+    assert finding.level is AlertLevel.URGENT
+    assert finding.description == "Below 0.0°C from 14/09 06:15 to 06:45 (30 min), lowest -1.5°C"
+
+
+def test_an_err_reading_does_not_end_a_period():
+    """The logger failed once while the fridge was warm: still one period."""
+    [finding] = find_limits(points(4.0, 6.0, None, 6.5, 4.0), T)
+
+    assert finding.covers == frozenset({1, 2, 3})
+    assert finding.description == "Above 5.0°C from 14/09 06:15 to 07:00 (45 min), peak 6.5°C"
+
+
+def test_a_gap_inside_a_period_is_named_in_the_alert():
+    """No readings for 2 hours while above 5°C: the inspector sees the duration is not fully measured."""
+    [finding] = find_limits(at((0, 4.0), (15, 6.0), (135, 6.5), (150, 4.0)), T)
+
+    assert finding.description == (
+        "Above 5.0°C from 14/09 06:15 to 08:30 (2h 15m), peak 6.5°C; no readings for 2h 0m inside this period"
+    )
+
+
+def test_a_period_of_old_readings_is_not_alerted_again():
+    """Readings from earlier uploads already have their alert."""
+    assert find_limits(points(4.6, 5.4, 6.3, 7.1, new=False), T) == []
+
+
+def test_the_fridges_threshold_settings_set_the_limits():
+    """Rishon's 7.1°C is within the limits when max_temp is 8."""
+    loose = Thresholds(0.1, 1.0, 0.0, 8.0, 15, 120)
+
+    assert find_limits(points(4.6, 5.4, 6.3, 7.1), loose) == []
