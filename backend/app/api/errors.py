@@ -8,7 +8,7 @@ from werkzeug.exceptions import NotFound
 from app.api import api_v1
 from app.db import db
 from app.errors import field_errors
-from app.services.errors import NotFoundError
+from app.services.errors import ConflictError, NotFoundError
 from app.services.ingest.parsers.base import MissingColumns, UnsupportedFormat
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,16 @@ def conflict(exc: IntegrityError):
     db.session.rollback()
     logger.warning("Rejected write: conflicts with existing data")
     return {"error": "Conflicts with existing data (duplicate name, logger id or reading time)"}, 409
+
+
+@api_v1.errorhandler(ConflictError)
+def known_conflict(exc: ConflictError):
+    """Return 409 with the service's message, as a field error when it names a field."""
+    db.session.rollback()
+    logger.warning("Rejected write: conflict on %s", exc.field or "the request")
+    if exc.field:
+        return {"errors": [{"field": exc.field, "message": exc.message}]}, 409
+    return {"error": exc.message}, 409
 
 
 @api_v1.errorhandler(404)

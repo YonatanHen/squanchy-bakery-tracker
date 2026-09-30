@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from app.schemas.types import Name
 
@@ -22,10 +23,18 @@ class ThresholdsIn(BaseModel):
 
     @model_validator(mode="after")
     def non_urgent_below_urgent(self):
-        """Each non-urgent limit must be lower than its urgent limit."""
-        for low, high in PAIRS:
-            if getattr(self, low) >= getattr(self, high):
-                raise ValueError(f"{low} must be lower than {high}")
+        """Each non-urgent limit must be lower than its urgent limit; the error is on the non-urgent field."""
+        errors = [
+            InitErrorDetails(
+                type=PydanticCustomError("non_urgent_not_below_urgent", "Must be lower than the urgent limit"),
+                loc=(low,),
+                input=getattr(self, low),
+            )
+            for low, high in PAIRS
+            if getattr(self, low) >= getattr(self, high)
+        ]
+        if errors:
+            raise ValidationError.from_exception_data(type(self).__name__, errors)
         return self
 
 
