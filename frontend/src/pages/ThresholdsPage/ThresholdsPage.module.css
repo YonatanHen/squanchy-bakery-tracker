@@ -23,6 +23,12 @@
   color: var(--urgent-text);
 }
 
+.saved {
+  margin: 0;
+  font-weight: 500;
+  color: var(--primary);
+}
+
 .note {
   margin: 0;
   font-size: 13px;

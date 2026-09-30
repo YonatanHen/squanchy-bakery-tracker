@@ -21,6 +21,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** A JSON error response. */
+function errorResponse(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+/** Return the parsed body of the first call with `method` to `path`. */
+function sentBody(fetchMock: ReturnType<typeof mockApi>, method: string, path: string) {
+  const call = fetchMock.mock.calls.find(([input, init]) => init?.method === method && input === `/api/v1${path}`);
+  return call && JSON.parse(call[1]!.body as string);
+}
+
 describe("ThresholdsPage list", () => {
   it("opens the first profile with its values and lists the others", async () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
@@ -55,5 +66,72 @@ describe("ThresholdsPage list", () => {
     renderLoggedIn("/thresholds");
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the threshold profiles. Try again.");
+  });
+});
+
+describe("ThresholdsPage save", () => {
+  it("replaces the open profile with the typed values and shows the saved values", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT]],
+      ["PUT /api/v1/threshold-settings/1", { ...DEFAULT, gap_non_urgent_minutes: 30 }],
+    ]);
+    renderLoggedIn("/thresholds");
+    const gap = await screen.findByRole("textbox", { name: "Gap non-urgent, minutes" });
+
+    await userEvent.clear(gap);
+    await userEvent.type(gap, "30");
+    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Profile saved.");
+    expect(sentBody(fetchMock, "PUT", "/threshold-settings/1")).toEqual({
+      name: "default",
+      growth_non_urgent: "0.1",
+      growth_urgent: "1",
+      deviation_non_urgent: "1.5",
+      deviation_urgent: "3",
+      gap_non_urgent_minutes: "30",
+      gap_urgent_minutes: "120",
+    });
+  });
+
+  it("shows the backend's 422 messages under the matching fields", async () => {
+    mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT]],
+      [
+        "PUT /api/v1/threshold-settings/1",
+        () =>
+          errorResponse(422, {
+            errors: [
+              { field: "body", message: "growth_non_urgent must be lower than growth_urgent" },
+              { field: "gap_urgent_minutes", message: "Input should be a valid integer, unable to parse string as an integer" },
+            ],
+          }),
+      ],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(
+      "Must be lower than urgent",
+    );
+    expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveAccessibleDescription(
+      "Input should be a valid integer, unable to parse string as an integer",
+    );
+  });
+
+  it("shows the backend's message when the name is already taken", async () => {
+    mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT]],
+      [
+        "PUT /api/v1/threshold-settings/1",
+        () => errorResponse(409, { error: "Conflicts with existing data (duplicate name, logger id or reading time)" }),
+      ],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
   });
 });
