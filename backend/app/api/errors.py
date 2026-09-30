@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from app.api import api_v1
 from app.db import db
 from app.errors import field_errors
+from app.services.errors import NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -29,4 +30,10 @@ def conflict(exc: IntegrityError):
 @api_v1.errorhandler(404)
 def not_found(exc):
     """Return 404 as JSON."""
+    return {"error": "Not found"}, 404
+
+
+@api_v1.errorhandler(NotFoundError)
+def missing_row(exc: NotFoundError):
+    """Return 404 when a service cannot find the requested row."""
     return {"error": "Not found"}, 404
