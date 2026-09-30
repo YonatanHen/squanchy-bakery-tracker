@@ -40,3 +40,10 @@ def test_missing_columns_are_reported():
         parse("Time,Temp\n2026-09-14 06:00,3.8\n")
 
     assert exc.value.missing == ["logger", "branch", "fridge"]
+
+
+def test_empty_rows_are_skipped():
+    """Blank lines and rows of only delimiters are not readings; later rows keep their file row number."""
+    rows = parse("Logger,Branch,Fridge,Time,Temp\n\nTL-0512,Jerusalem,Dairy,2026-09-14 06:00,3.8\n,,,,\n")
+
+    assert [r.row for r in rows] == [3]

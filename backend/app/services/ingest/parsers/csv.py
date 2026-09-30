@@ -21,6 +21,7 @@ class CsvParser:
         result = [
             RawRow(number, {c: values[columns[c]] for c in REQUIRED_COLUMNS})
             for number, values in enumerate(rows, start=2)
+            if any(v.strip() for v in values)
         ]
         logger.info("Parsed CSV file: %d data rows", len(result))
         return result
