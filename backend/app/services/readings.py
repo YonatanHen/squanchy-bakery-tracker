@@ -92,6 +92,11 @@ def query_archived_readings(session, f: ReadingFilters) -> tuple[list[ReaderArch
     return list(rows), total
 
 
+def known_logger_ids(session) -> set[str]:
+    """Ids of all registered loggers, the validation context of a reading edit."""
+    return set(session.scalars(select(Logger.id)))
+
+
 def update_reading(session, reading_id: int, changes: dict) -> Reader:
     """Correct a reading in place (a new logger moves it), re-detect both fridges (old alerts removed); a clashing time -> 409."""
     reader = get_or_raise(session, Reader, reading_id)

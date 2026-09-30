@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 
 from app.models import Metric, Status
 from app.schemas.types import LoggerId
@@ -43,6 +44,14 @@ class ReadingPatch(BaseModel):
     temp: float | None = None
     logger_id: LoggerId | None = None
     metric: Metric | None = None
+
+    @field_validator("logger_id")
+    @classmethod
+    def known_logger(cls, value: str | None, info: ValidationInfo) -> str | None:
+        """Require a registered logger; the context holds the known logger ids."""
+        if value is not None and value not in info.context["loggers"]:
+            raise PydanticCustomError("unknown_logger", "Unknown logger")
+        return value
 
     @field_validator("time", mode="before")
     @classmethod

@@ -114,6 +114,19 @@ def test_patch_changes_the_unit_of_a_reading(client, session, auth_headers):
     assert (stored.temp, stored.metric) == (38.3, Metric.F)
 
 
+def test_patch_to_an_unknown_logger_is_a_422_on_logger_id(client, session, auth_headers):
+    """A logger that is not registered is rejected on its field and the reading stays where it was."""
+    load_sample(session)
+    target = reading(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
+
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"logger_id": "TL-9999"}, headers=auth_headers)
+
+    assert response.status_code == 422
+    assert [e["field"] for e in response.get_json()["errors"]] == ["logger_id"]
+    session.expire_all()
+    assert session.get(Reader, target.id).logger_id == "TL-0512"
+
+
 def test_patch_to_a_time_the_new_logger_already_has_is_a_409(client, session, auth_headers):
     """Jerusalem's 06:00 reading cannot move to Rishon's logger, which already has a 06:00 reading."""
     load_sample(session)
