@@ -17,6 +17,7 @@ interface ComboboxProps {
 interface Option {
   value: string;
   label: string;
+  isNew?: boolean;
 }
 
 /** Pick from a list or type a new value; the list filters as the user types. */
@@ -27,7 +28,8 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
   const text = value.trim().toLowerCase();
   const matches: Option[] = options.filter((o) => o.toLowerCase().includes(text)).map((o) => ({ value: o, label: o }));
   const exact = options.some((o) => o.toLowerCase() === text);
-  const shown = text && !exact && newOptionLabel ? [...matches, { value, label: newOptionLabel(value) }] : matches;
+  const shown =
+    text && !exact && newOptionLabel ? [...matches, { value, label: newOptionLabel(value), isNew: true }] : matches;
 
   const expanded = open && shown.length > 0;
   const optionId = (index: number) => `${listId}-${index}`;
@@ -77,6 +79,7 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
               setActive(-1);
             }}
             onKeyDown={onKeyDown}
+            onBlur={() => setOpen(false)}
           />
           <svg className={styles.chevron} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <path d="M6 9l6 6 6-6" />
@@ -89,7 +92,7 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
                   id={optionId(index)}
                   role="option"
                   aria-selected={index === active}
-                  className={styles.option}
+                  className={[styles.option, option.isNew && styles.new].filter(Boolean).join(" ")}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => pick(option)}
                 >

@@ -60,6 +60,35 @@ describe("Combobox", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
+  it("offers the typed text as a new value only when no option matches it exactly", async () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    const input = screen.getByRole("combobox", { name: "Branch" });
+    await userEvent.type(input, "haifa");
+    expect(optionTexts()).toEqual(["Haifa"]);
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "Eilat");
+    await userEvent.click(screen.getByRole("option", { name: "Use “Eilat” as a new branch…" }));
+    expect(onChange).toHaveBeenLastCalledWith("Eilat");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("closes the list when focus leaves the input", async () => {
+    render(
+      <>
+        <Harness />
+        <button type="button">Next</button>
+      </>,
+    );
+
+    await userEvent.type(screen.getByRole("combobox", { name: "Branch" }), "Hai");
+    await userEvent.tab();
+
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
   it("closes the list on Escape and keeps the typed text", async () => {
     render(<Harness />);
 
