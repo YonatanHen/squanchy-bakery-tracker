@@ -100,6 +100,27 @@ describe("UploadPage", () => {
     expect(within(rows).getByRole("listitem")).toHaveTextContent("Row 7“Dary” — saved to Dairy (TL-0231)");
   });
 
+  it("sums up the unknown branches and loggers, and opens the add-it dialog on Review", async () => {
+    mockApi([
+      [
+        "POST /api/v1/readings/upload",
+        result({
+          rejected: 2,
+          unknown: { branches: [{ name: "Eilat" }], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }] },
+        }),
+      ],
+    ]);
+
+    await uploadWeek();
+
+    const review = await screen.findByRole("button", { name: /Review/ });
+    expect(review).toHaveTextContent(
+      "1 branch and 1 logger not registeredEilat, TL-0600 — did you mean something else, or add it?Review →",
+    );
+    await userEvent.click(review);
+    expect(screen.getByRole("dialog", { name: "New in this file" })).toBeInTheDocument();
+  });
+
   it("shows the backend message when the file is not an .xlsx file", async () => {
     mockApi([["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx file" })]]);
 

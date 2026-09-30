@@ -2,7 +2,13 @@ import { useState, type ChangeEvent } from "react";
 import { Card } from "../../components/Card/Card";
 import { UploadIcon } from "../../components/icons/icons";
 import { ApiError } from "../../lib/api";
-import { uploadReadings, type RowError, type SaveResult } from "../../lib/endpoints";
+import { UnknownEntries } from "../../components/UnknownEntries/UnknownEntries";
+import {
+  uploadReadings,
+  type RowError,
+  type SaveResult,
+  type UnknownEntries as Entries,
+} from "../../lib/endpoints";
 import styles from "./UploadPage.module.css";
 
 const FIELD_LABELS: Record<string, string> = {
@@ -23,12 +29,31 @@ function lowerFirst(text: string): string {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
+/** Say "1 branch" or "2 branches". */
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** Sum up what is unknown, e.g. "1 branch and 1 logger not registered". */
+function unknownSummary(unknown: Entries): string {
+  const parts = [];
+  if (unknown.branches.length) parts.push(plural(unknown.branches.length, "branch", "branches"));
+  if (unknown.loggers.length) parts.push(plural(unknown.loggers.length, "logger", "loggers"));
+  return `${parts.join(" and ")} not registered`;
+}
+
+/** List the unknown branch names and logger ids. */
+function unknownNames(unknown: Entries): string {
+  return [...unknown.branches.map((b) => b.name), ...unknown.loggers.map((l) => l.logger)].join(", ");
+}
+
 /** Upload screen: pick an .xlsx file, then see what was saved and which rows to fix. */
 export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [fileErrors, setFileErrors] = useState<RowError[]>([]);
   const [error, setError] = useState("");
+  const [reviewing, setReviewing] = useState(false);
 
   /** Upload the file and show its result, or why the whole file was rejected. */
   async function upload(chosen: File) {
@@ -95,6 +120,16 @@ export function UploadPage() {
               </li>
             </ul>
           )}
+          {result?.unknown && (
+            <button type="button" className={styles.unknown} onClick={() => setReviewing(true)}>
+              <span className={styles.unknownText}>
+                <strong>{unknownSummary(result.unknown)}</strong>
+                <br />
+                {unknownNames(result.unknown)} — did you mean something else, or add it?
+              </span>
+              <span className={styles.review}>Review →</span>
+            </button>
+          )}
         </div>
         <div className={styles.column}>
           {errors.length > 0 && (
@@ -137,6 +172,17 @@ export function UploadPage() {
           )}
         </div>
       </div>
+      {result?.unknown && (
+        <UnknownEntries
+          open={reviewing}
+          title="New in this file"
+          entries={result.unknown}
+          confirmLabel="Add and upload again"
+          suggestionHint="fix the file and upload again"
+          onConfirm={() => {}}
+          onClose={() => setReviewing(false)}
+        />
+      )}
     </section>
   );
 }
