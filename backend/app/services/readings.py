@@ -1,10 +1,10 @@
 import logging
 
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Select, case, delete, func, select
 
-from app.models import Branch, Fridge, Logger, Metric, Reader, Status
+from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
 from app.schemas.reading import LocationFilters, ReadingFilters
-from app.services.detection.service import refresh_fridge_stats
+from app.services.detection.service import detect, refresh_fridge_stats
 from app.services.errors import get_or_raise
 from app.services.units import to_celsius
 
@@ -62,7 +62,7 @@ def query_readings(session, f: ReadingFilters) -> tuple[list[tuple[Reader, Fridg
 
 
 def update_reading(session, reading_id: int, changes: dict) -> Reader:
-    """Correct a reading in place and recompute its fridge's average; a clashing time raises IntegrityError (409)."""
+    """Correct a reading in place, re-detect its alerts (old ones removed, not archived); a clashing time -> 409."""
     reader = get_or_raise(session, Reader, reading_id)
     if "time" in changes:
         reader.time = changes["time"]
@@ -70,7 +70,8 @@ def update_reading(session, reading_id: int, changes: dict) -> Reader:
         reader.temp = changes["temp"]
         reader.status = Status.ERR if reader.temp is None else Status.OK
     session.flush()
-    refresh_fridge_stats(session, reader.logger.fridge)
+    session.execute(delete(Alert).where(Alert.reader_id == reader.id).execution_options(synchronize_session=False))
+    detect(session, {reader.logger.fridge_id}, {reader.id})
     session.commit()
     logger.info("Updated reading id=%s fields=%s", reading_id, sorted(changes))
     return reader

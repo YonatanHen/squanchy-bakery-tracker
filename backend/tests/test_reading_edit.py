@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, Logger, Reader, Status
+from app.models import Alert, AlertLevel, Logger, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from tests.helpers import load_sample
 
@@ -33,6 +33,20 @@ def test_patch_to_err_clears_the_temperature(client, session, auth_headers):
     body = client.patch(f"/api/v1/readings/{target.id}", json={"temp": "ERR"}, headers=auth_headers).get_json()
 
     assert (body["temp"], body["status"]) == (None, Status.ERR.value)
+
+
+def test_editing_a_reading_replaces_its_alerts(client, session, auth_headers):
+    """Rishon 06:45 corrected 7.1 -> 6.5°C: its 2 old alerts are removed (edits are not archived) and detection runs again."""
+    load_sample(session)
+    target = reading(session, "TL-0388", datetime(2026, 9, 14, 6, 45))
+
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"temp": 6.5}, headers=auth_headers)
+
+    assert response.status_code == 200
+    session.expire_all()
+    alerts = [(a.level, a.description) for a in session.query(Alert).filter_by(reader_id=target.id)]
+    assert alerts == [(AlertLevel.URGENT, "Temperature rose 1.9°C over the last 4 readings")]
+    assert session.query(AlertArchive).count() == 0
 
 
 def test_moving_a_reading_onto_an_existing_time_is_a_conflict(client, session, auth_headers):
