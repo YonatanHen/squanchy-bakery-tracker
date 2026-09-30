@@ -18,6 +18,8 @@ interface UnknownEntriesProps {
   onConfirm: (registration: Registration) => void;
   onClose: () => void;
   onPickSuggestion?: (name: string) => void;
+  errors?: string[];
+  busy?: boolean;
 }
 
 const UNITS = [
@@ -54,6 +56,8 @@ function EntriesForm({
   onConfirm,
   onClose,
   onPickSuggestion,
+  errors = [],
+  busy = false,
 }: Omit<UnknownEntriesProps, "open" | "title">) {
   const suggested = entries.branches.filter((branch) => branch.suggestion);
   const newBranches = entries.branches.filter((branch) => !branch.suggestion);
@@ -192,12 +196,21 @@ function EntriesForm({
           </span>
         </Card>
       ))}
+      {errors.length > 0 && (
+        <div role="alert" className={styles.errors}>
+          {errors.map((message) => (
+            <p key={message} className={styles.error}>
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
       <div className={styles.actions}>
         <Button variant="secondary" size="lg" className={styles.cancel} onClick={onClose}>
           Not now
         </Button>
         {(newBranches.length > 0 || newLoggers.length > 0) && (
-          <Button type="submit" size="lg" className={styles.confirm}>
+          <Button type="submit" size="lg" className={styles.confirm} disabled={busy}>
             {confirmLabel}
           </Button>
         )}

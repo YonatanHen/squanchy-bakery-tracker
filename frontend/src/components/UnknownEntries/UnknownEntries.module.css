@@ -36,6 +36,19 @@
   font-family: var(--font-mono);
 }
 
+.errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
 .actions {
   display: flex;
   gap: var(--space-10);

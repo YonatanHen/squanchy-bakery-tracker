@@ -101,6 +101,16 @@ describe("UnknownEntries", () => {
     expect(screen.queryByRole("button", { name: "Add and upload again" })).not.toBeInTheDocument();
   });
 
+  it("shows why the backend refused the entries, and blocks a second send while busy", () => {
+    renderEntries(
+      { branches: [], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }] },
+      { errors: ["Fridge 'Dairy' in Haifa already has logger TL-0231; edit the fridge's logger instead"], busy: true },
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Fridge 'Dairy' in Haifa already has logger TL-0231");
+    expect(screen.getByRole("button", { name: "Add and upload again" })).toBeDisabled();
+  });
+
   it("closes without adding anything on Not now", async () => {
     const { onConfirm, onClose } = renderEntries({ branches: [{ name: "Eilat" }], loggers: [] });
 
