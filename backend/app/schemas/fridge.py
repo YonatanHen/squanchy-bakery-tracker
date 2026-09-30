@@ -15,6 +15,7 @@ class FridgeOut(BaseModel):
     name: str
     metric: Metric
     logger_id: str | None
+    threshold_settings_id: int
     avg_temp: float | None
     last_measured: datetime | None
 
@@ -25,6 +26,7 @@ class FridgePatch(BaseModel):
     name: Name | None = None
     metric: Metric | None = None
     logger_id: LoggerId | None = None
+    threshold_settings_id: int | None = None
 
 
 class DeleteImpact(BaseModel):

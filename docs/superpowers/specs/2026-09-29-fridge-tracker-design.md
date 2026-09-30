@@ -69,7 +69,8 @@ Based on the ERD, with the changes agreed during design.
 | `reader` | id, logger_id, time, temp, metric, status (OK/ERR) | unique (logger_id, time); `temp` NULL only when status is ERR; no delete cascade (archived) |
 | `alerts` | id, reader_id, description, level (URGENT/NON_URGENT) | no delete cascade (archived) |
 | `reader_archive`, `alert_archive` | archived readings (with branch and fridge names) and their alerts, `archived_at` | filled automatically before any delete |
-| `threshold_settings` | id, fridge_id, 6 threshold values | fridge_id unique; created with defaults for each new fridge; cascade from fridge |
+| `threshold_settings` | id, name, 6 threshold values | a named profile shared by many fridges; unique `LOWER(name)`; new fridges use `default` (suggested values, created on first use); cannot be deleted while fridges use it |
+| `fridge.threshold_settings_id` | FK to `threshold_settings` | one profile, many fridges (e.g. the same limits for all dairy fridges across branches) |
 | `users` | id, username, password_hash | unique username |
 
 Rules:
@@ -103,7 +104,7 @@ Upload response (HTTP 201):
 
 ## 7. Alert detection
 
-Deterministic rules in code. The thresholds come from the fridge's `threshold_settings` row and are compared in °C. Values of an F fridge are converted in memory.
+Deterministic rules in code. The thresholds come from the fridge's threshold profile (`fridge.threshold_settings`) and are compared in °C. Values of an F fridge are converted in memory.
 
 | Rule | Non-urgent (default) | Urgent (default) |
 |---|---|---|
@@ -142,7 +143,8 @@ Expected results on `data/sample_week.xlsx` (the 16 sample rows from the assignm
 | PATCH / DELETE | `/api/v1/branches/<id>` | Edit name, city, address; delete |
 | PATCH / DELETE | `/api/v1/fridges/<id>` | Edit or delete a fridge with its logger |
 | GET | `/api/v1/branches/<id>/delete-impact`, `/api/v1/fridges/<id>/delete-impact` | Read-only counts of what a delete would remove |
-| GET / PUT | `/api/v1/fridges/<id>/thresholds` | Thresholds of one fridge |
+| GET / POST | `/api/v1/threshold-settings` | List profiles with fridge counts; create a named profile |
+| PUT / DELETE | `/api/v1/threshold-settings/<id>` | Edit a profile (affects every fridge using it; UI confirms); delete an unused profile (409 if in use) |
 
 Every route except health and login needs a valid JWT. Missing or invalid token → 401.
 

@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy import func, select
 
-from app.models import Alert, Fridge, Logger, Reader
+from app.models import Alert, Fridge, Logger, Reader, ThresholdSettings
 from app.services.errors import get_or_raise
 
 logger = logging.getLogger(__name__)
@@ -53,13 +53,15 @@ def update_fridge(session, fridge_id: int, changes: dict) -> Fridge:
     Args:
         session: The SQLAlchemy session.
         fridge_id: The fridge to edit; NotFoundError if it does not exist.
-        changes: Validated values for name, metric and/or logger_id.
+        changes: Validated values for name, metric, logger_id and/or threshold_settings_id.
 
     Returns:
         The updated fridge.
     """
     fridge = get_or_raise(session, Fridge, fridge_id)
     changes = dict(changes)
+    if "threshold_settings_id" in changes:
+        fridge.threshold_settings = get_or_raise(session, ThresholdSettings, changes.pop("threshold_settings_id"))
     if "logger_id" in changes:
         new_id = changes.pop("logger_id")
         if fridge.logger:
