@@ -75,3 +75,11 @@ Log process states and errors on the server with Python `logging` (`logger = log
 - `ERROR` / `logger.exception`: unexpected failures, with the stack trace.
 - Never log sensitive data: passwords, password hashes, JWTs, `Authorization` headers, secrets, uploaded file contents, or full request bodies.
 - Logging is configured once in `create_app` (level from `LOG_LEVEL`, default `INFO`).
+
+### 13. Frontend: reusable components
+Build the UI from small shared components. Screens compose them; they do not repeat markup or styles.
+- Base components live in `frontend/src/components/`, one per file with its styles and a test: e.g. `Field` (label + control + hint + error), `TextInput`, `Select`, `Combobox` (pick or type), `Button` (primary, secondary, danger), `SegmentedToggle` (°C/°F, Active/Archived), `Card`, `LevelBadge`, `Dialog` (bottom sheet on phones, centered on desktop), `DataTable`, `EmptyState`.
+- Specific components extend the base ones by composition, never by copying their markup: e.g. `TemperatureField` and `DateTimeField` wrap `Field` + `TextInput`; `BranchField`, `FridgeField` and `LoggerField` wrap `Combobox`.
+- Before writing a new component, check `frontend/src/components/` for one to extend or reuse.
+- Colors, fonts, radii and spacing come only from the design-token CSS variables; no raw hex values in components.
+- Accessibility is built into the base components: every control has a `<label>`, errors are linked with `aria-describedby`, touch targets are at least 44px.
