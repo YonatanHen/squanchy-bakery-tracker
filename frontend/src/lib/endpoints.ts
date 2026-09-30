@@ -44,7 +44,6 @@ export interface Fridge {
   metric: Metric;
   logger_id: string | null;
   threshold_settings_id: number;
-  avg_temp: number | null;
   last_measured: string | null;
 }
 

@@ -11,7 +11,7 @@ const JERUSALEM: Branch = {
   street: null,
   building_number: null,
   fridges: [
-    { id: 1, name: "Dairy", metric: "C", logger_id: "TL-0512", threshold_settings_id: 1, avg_temp: 3.9, last_measured: null },
+    { id: 1, name: "Dairy", metric: "C", logger_id: "TL-0512", threshold_settings_id: 1, last_measured: null },
   ],
 };
 const HAIFA: Branch = {
@@ -21,7 +21,7 @@ const HAIFA: Branch = {
   street: null,
   building_number: null,
   fridges: [
-    { id: 3, name: "Dairy", metric: "F", logger_id: "TL-0231", threshold_settings_id: 1, avg_temp: 38.3, last_measured: null },
+    { id: 3, name: "Dairy", metric: "F", logger_id: "TL-0231", threshold_settings_id: 1, last_measured: null },
   ],
 };
 const SETTINGS = [{ id: 1, name: "default", fridges: 2 }];

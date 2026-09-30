@@ -12,8 +12,8 @@ def reading(session, logger_id, time) -> Reader:
     return session.query(Reader).filter_by(logger_id=logger_id, time=time).one()
 
 
-def test_patch_temperature_recalculates_the_fridge_average(client, session, auth_headers):
-    """Correcting Jerusalem's 08:30 reading to 4.4°C updates the reading and the fridge average."""
+def test_patch_temperature_updates_the_reading(client, session, auth_headers):
+    """Correcting Jerusalem's 08:30 reading to 4.4°C saves the new temperature."""
     load_sample(session)
     target = reading(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
 
@@ -22,7 +22,7 @@ def test_patch_temperature_recalculates_the_fridge_average(client, session, auth
     assert response.status_code == 200
     assert response.get_json()["temp"] == 4.4
     session.expire_all()
-    assert session.get(Logger, "TL-0512").fridge.avg_temp == pytest.approx(4.03, abs=0.01)
+    assert session.get(Reader, target.id).temp == 4.4
 
 
 def test_patch_to_err_clears_the_temperature(client, session, auth_headers):
@@ -59,8 +59,8 @@ def test_moving_a_reading_onto_an_existing_time_is_a_conflict(client, session, a
     assert response.status_code == 409
 
 
-def test_delete_reading_archives_it_with_its_alerts_and_recalculates_the_average(client, session, auth_headers):
-    """Deleting Rishon's 06:45 reading archives it with its 2 alerts; the average drops to 5.43°C."""
+def test_delete_reading_archives_it_with_its_alerts(client, session, auth_headers):
+    """Deleting Rishon's 06:45 reading archives it with its 2 alerts."""
     load_sample(session)
     target = reading(session, "TL-0388", datetime(2026, 9, 14, 6, 45))
 
@@ -68,7 +68,6 @@ def test_delete_reading_archives_it_with_its_alerts_and_recalculates_the_average
     session.expire_all()
     assert session.query(Alert).count() == 3
     assert (session.query(ReaderArchive).count(), session.query(AlertArchive).count()) == (1, 2)
-    assert session.get(Logger, "TL-0388").fridge.avg_temp == pytest.approx(5.43, abs=0.01)
 
 
 def test_patch_time_in_the_browser_format(client, session, auth_headers):
@@ -84,7 +83,7 @@ def test_patch_time_in_the_browser_format(client, session, auth_headers):
 
 
 def test_patch_moves_a_reading_to_another_logger(client, session, auth_headers):
-    """Jerusalem's 08:30 reading (4.0°C) moved to Rishon: both averages change (7.1 becomes a spike) and its gap is re-detected."""
+    """Jerusalem's 08:30 reading (4.0°C) moved to Rishon: it takes Rishon's location and its gap is re-detected."""
     load_sample(session)
     target = reading(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
 
@@ -94,8 +93,6 @@ def test_patch_moves_a_reading_to_another_logger(client, session, auth_headers):
     body = response.get_json()
     assert (body["logger_id"], body["branch"], body["fridge"]) == ("TL-0388", "Rishon LeZion", "Cream cakes")
     session.expire_all()
-    assert session.get(Logger, "TL-0512").fridge.avg_temp == pytest.approx(3.85, abs=0.01)
-    assert session.get(Logger, "TL-0388").fridge.avg_temp == pytest.approx(5.08, abs=0.01)
     alerts = [(a.level, a.description) for a in session.query(Alert).filter_by(reader_id=target.id)]
     assert alerts == [(AlertLevel.NON_URGENT, "No reading for 1h 45m before this reading")]
 

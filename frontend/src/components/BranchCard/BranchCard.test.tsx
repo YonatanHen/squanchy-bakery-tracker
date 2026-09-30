@@ -10,7 +10,6 @@ const DAIRY: Fridge = {
   metric: "F",
   logger_id: "TL-0231",
   threshold_settings_id: 1,
-  avg_temp: 38.3,
   last_measured: "2026-09-14T06:00:00",
 };
 const HAIFA: Branch = { id: 2, name: "Haifa", city: null, street: null, building_number: null, fridges: [DAIRY] };

@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.models import Alert, Fridge, Logger, Reader
 from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth
-from app.services.units import from_celsius, to_celsius
+from app.services.units import to_celsius
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,8 @@ def _thresholds(fridge: Fridge) -> Thresholds:
     )
 
 
-def _store_stats(fridge: Fridge, points: list[Point], average_c: float | None) -> None:
-    """Save the average (in the fridge's own unit) and the time of its last reading."""
-    fridge.avg_temp = None if average_c is None else round(from_celsius(average_c, fridge.metric), 2)
+def _store_stats(fridge: Fridge, points: list[Point]) -> None:
+    """Save the time of the fridge's last reading."""
     fridge.last_measured = max((p.time for p in points), default=None)
 
 
@@ -49,18 +48,17 @@ def detect(session, fridge_ids: set[int], new_reader_ids: set[int]) -> int:
         fridge = session.get(Fridge, fridge_id)
         points = _points(session, fridge_id, new_reader_ids)
         t = _thresholds(fridge)
-        deviations, average_c = find_deviations(points, t)
+        deviations, _ = find_deviations(points, t)
         for finding in find_gaps(points, t) + find_growth(points, t) + deviations:
             session.add(Alert(
                 reader_id=finding.point_id, level=finding.level, description=finding.description, kind=finding.kind,
             ))
             added += 1
-        _store_stats(fridge, points, average_c)
+        _store_stats(fridge, points)
     logger.info("Detection on %d fridges added %d alerts", len(fridge_ids), added)
     return added
 
 
 def refresh_fridge_stats(session, fridge: Fridge) -> None:
-    """Recompute the fridge's average and last reading after an edit or delete; adds no alerts."""
-    points = _points(session, fridge.id, set())
-    _store_stats(fridge, points, find_deviations(points, _thresholds(fridge))[1])
+    """Recompute the fridge's last reading after a delete; adds no alerts."""
+    _store_stats(fridge, _points(session, fridge.id, set()))

@@ -37,15 +37,13 @@ def test_each_alert_has_the_kind_of_rule_that_raised_it(session):
     assert (kinds, growth) == ({AlertKind.GAP}, {AlertKind.GROWTH})
 
 
-def test_fridge_average_and_last_measured_are_stored_in_the_fridge_unit(session):
-    """Display 2's average leaves out the spike; Haifa's average is stored in °F."""
+def test_the_fridge_stores_the_time_of_its_last_reading(session):
+    """Display 2's last reading is the 17/09 one; the fridge keeps no average."""
     load_sample(session)
 
     display = session.get(Logger, "TL-0417").fridge
-    haifa = session.get(Logger, "TL-0231").fridge
-    assert display.avg_temp == pytest.approx(4.025, abs=0.01)
     assert display.last_measured == datetime(2026, 9, 17, 6, 0)
-    assert haifa.avg_temp == pytest.approx(38.65, abs=0.01)
+    assert not hasattr(display, "avg_temp")
 
 
 def test_a_fridges_threshold_settings_change_only_its_alerts(session):

@@ -62,7 +62,7 @@ describe("EditReadingDialog", () => {
 
     expect(screen.getByText("Are you sure?")).toBeInTheDocument();
     expect(screen.getByText(/4\.0 °C → 4\.4 °C\./)).toHaveTextContent(
-      "The reading is changed in place and the fridge average is recalculated. Edits are not archived.",
+      "The reading is changed in place and its alerts are checked again. Edits are not archived.",
     );
     expect(writes(fetchMock)).toEqual([]);
 

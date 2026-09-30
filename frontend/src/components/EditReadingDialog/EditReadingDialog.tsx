@@ -156,7 +156,7 @@ export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditR
         <div className={styles.confirm} role="status">
           <strong className={styles.confirmTitle}>Are you sure?</strong>
           <span className={styles.confirmText}>
-            {`${summary.join(" ")} The reading is changed in place and the fridge average is recalculated. Edits are not archived.`}
+            {`${summary.join(" ")} The reading is changed in place and its alerts are checked again. Edits are not archived.`}
           </span>
         </div>
       )}
