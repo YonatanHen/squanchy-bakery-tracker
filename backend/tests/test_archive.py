@@ -101,3 +101,19 @@ def test_restore_when_the_logger_no_longer_exists_is_a_409(client, session, auth
     assert "TL-0388" in response.get_json()["error"]
     session.expire_all()
     assert session.get(ReaderArchive, reading_id) is not None
+
+
+def test_restore_to_a_time_the_logger_already_has_is_a_409(client, session, auth_headers):
+    """Jerusalem's 08:30 reading was deleted and its 06:15 reading corrected to 08:30: the old one cannot come back."""
+    load_sample(session)
+    reading_id = _sample_reading_id(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
+    client.delete(f"/api/v1/readings/{reading_id}", headers=auth_headers)
+    other_id = _sample_reading_id(session, "TL-0512", datetime(2026, 9, 14, 6, 15))
+    client.patch(f"/api/v1/readings/{other_id}", json={"time": "2026-09-14T08:30"}, headers=auth_headers)
+
+    response = client.post(f"/api/v1/readings/archive/{reading_id}/restore", headers=auth_headers)
+
+    assert response.status_code == 409
+    assert "TL-0512" in response.get_json()["error"]
+    session.expire_all()
+    assert session.get(ReaderArchive, reading_id) is not None

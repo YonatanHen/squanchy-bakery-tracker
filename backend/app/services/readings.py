@@ -158,6 +158,8 @@ def restore_reading(session, reading_id: int) -> ReadingOut:
     reading_logger = session.get(Logger, archived.logger_id)
     if reading_logger is None:
         raise ConflictError(f"Logger {archived.logger_id} no longer exists, so this reading cannot be restored")
+    if session.scalar(select(Reader.id).where(Reader.logger_id == archived.logger_id, Reader.time == archived.time)):
+        raise ConflictError(f"Logger {archived.logger_id} already has a reading at {archived.time:%Y-%m-%d %H:%M}")
     fridge = reading_logger.fridge
     reader = Reader(
         id=archived.id, logger=reading_logger, time=archived.time, temp=archived.temp,
