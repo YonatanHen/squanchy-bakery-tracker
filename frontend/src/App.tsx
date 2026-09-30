@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom
 import { AppShell } from "./components/AppShell/AppShell";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { AlertsPage } from "./pages/AlertsPage/AlertsPage";
+import { BranchesPage } from "./pages/BranchesPage/BranchesPage";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
 import { ReadingsPage } from "./pages/ReadingsPage/ReadingsPage";
@@ -24,7 +25,7 @@ export function AppRoutes() {
           <Route path="/readings/new" element={<PlaceholderPage title="Add a reading" />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
-          <Route path="/branches" element={<PlaceholderPage title="Branches" />} />
+          <Route path="/branches" element={<BranchesPage />} />
           <Route path="/thresholds" element={<ThresholdsPage />} />
         </Route>
       </Route>
