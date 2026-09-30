@@ -58,6 +58,17 @@ afterEach(() => {
 });
 
 describe("SingleRecordPage", () => {
+  it("fills the logger id from the chosen fridge of the chosen branch", async () => {
+    mockApi([["GET /api/v1/branches", BRANCHES]]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await typeInto("Branch", "Haifa");
+    await typeInto("Fridge", "Cream cakes");
+
+    expect(screen.getByRole("combobox", { name: "Logger id" })).toHaveValue("TL-0388");
+  });
+
   it("sends the typed reading, the datetime-local time as is, and shows it was saved", async () => {
     const fetchMock = mockApi([
       ["GET /api/v1/branches", BRANCHES],

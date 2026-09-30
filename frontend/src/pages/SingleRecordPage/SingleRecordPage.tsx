@@ -47,6 +47,12 @@ export function SingleRecordPage() {
     setRecord((current) => ({ ...current, [field]: value }));
   }
 
+  /** Change the fridge; a registered fridge also fills its logger id. */
+  function setFridge(name: string) {
+    const fridge = branch?.fridges.find((f) => f.name.toLowerCase() === name.trim().toLowerCase());
+    setRecord((current) => ({ ...current, fridge: name, logger: fridge?.logger_id ?? current.logger }));
+  }
+
   /** Send the record and show the result. */
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -66,7 +72,7 @@ export function SingleRecordPage() {
       )}
       <form className={styles.form} onSubmit={submit} noValidate>
         <BranchField branches={branches} value={record.branch} onChange={(v) => set("branch", v)} />
-        <FridgeField branch={branch} value={record.fridge} onChange={(v) => set("fridge", v)} />
+        <FridgeField branch={branch} value={record.fridge} onChange={setFridge} />
         <LoggerField branch={branch} value={record.logger} onChange={(v) => set("logger", v)} />
         <DateTimeField label="Time" value={record.time} onChange={(v) => set("time", v)} />
         <TemperatureField label="Temperature (number, or ERR)" value={record.temp} onChange={(v) => set("temp", v)} />
