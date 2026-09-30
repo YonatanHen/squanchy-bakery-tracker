@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { AppShell } from "./components/AppShell";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { LoginPage } from "./pages/LoginPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
@@ -15,11 +16,13 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
-        <Route path="/readings" element={<PlaceholderPage title="Readings" />} />
-        <Route path="/alerts" element={<PlaceholderPage title="Alerts" />} />
-        <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
-        <Route path="/branches" element={<PlaceholderPage title="Branches" />} />
-        <Route path="/thresholds" element={<PlaceholderPage title="Thresholds" />} />
+        <Route element={<AppShell />}>
+          <Route path="/readings" element={<PlaceholderPage title="Readings" />} />
+          <Route path="/alerts" element={<PlaceholderPage title="Alerts" />} />
+          <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
+          <Route path="/branches" element={<PlaceholderPage title="Branches" />} />
+          <Route path="/thresholds" element={<PlaceholderPage title="Thresholds" />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/readings" replace />} />
     </Routes>
