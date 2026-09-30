@@ -77,7 +77,7 @@ export function EditReadingDialog({ reading, branches, onClose, onSaved }: EditR
     tempChanged && `${tempLabel(originalTemp, reading.metric)} → ${tempLabel(temp, metric)}.`,
   ].filter(Boolean);
 
-  const edit = (setter: (value: string) => void) => (value: string) => {
+  const edit = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
     setMode("edit");
   };
