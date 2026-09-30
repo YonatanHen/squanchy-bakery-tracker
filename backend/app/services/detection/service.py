@@ -59,3 +59,12 @@ def detect(session, fridge_ids: set[int], new_reader_ids: set[int]) -> int:
         fridge.last_measured = max((p.time for p in points), default=None)
     logger.info("Detection on %d fridges added %d alerts", len(fridge_ids), added)
     return added
+
+
+def redetect(session, fridge_ids: set[int]) -> int:
+    """Delete every alert of the fridges' readings and run all rules on them again, e.g. after new limits."""
+    reader_ids = set(session.scalars(select(Reader.id).join(Logger).where(Logger.fridge_id.in_(fridge_ids))))
+    if not reader_ids:
+        return 0
+    session.execute(delete(Alert).where(Alert.reader_id.in_(reader_ids)).execution_options(synchronize_session="fetch"))
+    return detect(session, fridge_ids, reader_ids)

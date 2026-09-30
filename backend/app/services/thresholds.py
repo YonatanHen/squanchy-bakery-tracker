@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Fridge, ThresholdSettings
 from app.models.threshold_settings import DEFAULT_SETTINGS_NAME
+from app.services.detection.service import redetect
 from app.services.errors import ConflictError, get_or_raise
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,8 @@ def update_settings(session, settings_id: int, values: dict) -> ThresholdSetting
     _check_name_is_free(session, values["name"], settings_id)
     for field, value in values.items():
         setattr(settings, field, value)
+    session.flush()
+    redetect(session, {fridge.id for fridge in settings.fridges})
     session.commit()
     logger.info("Updated threshold settings id=%s used by %d fridges", settings_id, fridge_count(session, settings_id))
     return settings

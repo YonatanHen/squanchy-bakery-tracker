@@ -1,7 +1,7 @@
 import pytest
 
-from app.models import ThresholdSettings
-from tests.helpers import add_fridge
+from app.models import Alert, AlertKind, Logger, ThresholdSettings
+from tests.helpers import add_fridge, load_sample
 
 DAIRY = {
     "name": "Dairy",
@@ -86,6 +86,41 @@ def test_non_urgent_above_urgent_is_reported_on_each_non_urgent_field(client, se
         "growth_non_urgent": "Must be lower than the urgent limit",
         "gap_non_urgent_minutes": "Must be lower than the urgent limit",
     }
+
+
+DEFAULT = {
+    "name": "default", "growth_non_urgent": 0.1, "growth_urgent": 1.0,
+    "min_temp": 0.0, "max_temp": 5.0, "gap_non_urgent_minutes": 15, "gap_urgent_minutes": 120,
+}
+
+
+def rishon_alert_kinds(session) -> list[AlertKind]:
+    """Kinds of the alerts on Rishon's readings, sorted."""
+    return sorted(a.kind for a in session.query(Alert) if a.reader.logger_id == "TL-0388")
+
+
+def test_editing_threshold_settings_recalculates_the_alerts_of_their_fridges(client, session, auth_headers):
+    """With max_temp 8°C, Rishon's 7.1°C is within the limits: its limit alert goes, its growth alert stays."""
+    load_sample(session)
+    settings_id = threshold_settings(client, auth_headers)["default"]["id"]
+
+    response = client.put(f"/api/v1/threshold-settings/{settings_id}", json={**DEFAULT, "max_temp": 8.0}, headers=auth_headers)
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert rishon_alert_kinds(session) == [AlertKind.GROWTH]
+
+
+def test_moving_a_fridge_to_other_threshold_settings_recalculates_its_alerts(client, session, auth_headers):
+    """Cream cakes moved to settings with max_temp 8°C loses its limit alert."""
+    load_sample(session)
+    loose = client.post("/api/v1/threshold-settings", json={**DEFAULT, "name": "Cakes", "max_temp": 8.0}, headers=auth_headers)
+    fridge_id = session.get(Logger, "TL-0388").fridge_id
+
+    client.patch(f"/api/v1/fridges/{fridge_id}", json={"threshold_settings_id": loose.get_json()["id"]}, headers=auth_headers)
+
+    session.expire_all()
+    assert rishon_alert_kinds(session) == [AlertKind.GROWTH]
 
 
 def test_duplicate_threshold_settings_name_returns_409_on_the_name_field(client, auth_headers):
