@@ -50,6 +50,14 @@ def ingest_rows(session, rows: list[RawRow], register: str | dict | None = None)
     return result
 
 
+def ingest_record(session, values: dict) -> SaveResult:
+    """Ingest one reading typed in the app, with an optional "register" key; it becomes row 1."""
+    values = dict(values)
+    register = values.pop("register", None)
+    logger.info("Single record received")
+    return ingest_rows(session, [RawRow(1, values)], register)
+
+
 def ingest_file(session, filename: str, content: bytes, register: str | None = None) -> SaveResult:
     """Parse an uploaded file and ingest its rows; raises UnsupportedFormat or MissingColumns."""
     logger.info("Upload received: %s (%d bytes)", filename, len(content))
