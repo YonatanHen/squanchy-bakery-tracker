@@ -19,6 +19,5 @@ class Logger(db.Model):
     fridge_id: Mapped[int] = mapped_column(ForeignKey("fridge.id", ondelete="CASCADE"), unique=True)
 
     fridge: Mapped["Fridge"] = relationship(back_populates="logger")
-    readings: Mapped[list["Reader"]] = relationship(
-        back_populates="logger", cascade="all, delete-orphan", passive_deletes=True
-    )
+    # passive_deletes="all": the ORM never touches readings on delete; the DB refuses while any remain.
+    readings: Mapped[list["Reader"]] = relationship(back_populates="logger", passive_deletes="all")

@@ -8,6 +8,7 @@ from app.db import db
 from app.models.enums import Metric, Status, metric_enum, status_enum
 
 if TYPE_CHECKING:
+    from app.models.alert import Alert
     from app.models.logger import Logger
 
 
@@ -24,10 +25,12 @@ class Reader(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    logger_id: Mapped[str] = mapped_column(ForeignKey("logger.id", ondelete="CASCADE", onupdate="CASCADE"))
+    # No delete cascade: readings are archived first (app.archive); a logger rename still follows.
+    logger_id: Mapped[str] = mapped_column(ForeignKey("logger.id", ondelete="RESTRICT", onupdate="CASCADE"))
     time: Mapped[datetime] = mapped_column(DateTime)
     temp: Mapped[float | None] = mapped_column()
     metric: Mapped[Metric] = mapped_column(metric_enum)
     status: Mapped[Status] = mapped_column(status_enum)
 
     logger: Mapped["Logger"] = relationship(back_populates="readings")
+    alerts: Mapped[list["Alert"]] = relationship(back_populates="reader", passive_deletes="all")

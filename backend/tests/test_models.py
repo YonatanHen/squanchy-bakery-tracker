@@ -80,3 +80,4 @@ def test_err_reading_has_no_temperature_and_ok_reading_needs_one(session):
     session.add(Reader(logger_id="TL-0231", time=datetime(2026, 9, 14, 6, 45), temp=None, metric=Metric.F, status=Status.OK))
     with pytest.raises(IntegrityError):
         session.commit()
+

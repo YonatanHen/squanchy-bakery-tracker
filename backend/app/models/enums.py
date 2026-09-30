@@ -21,3 +21,13 @@ class Status(str, enum.Enum):
 
 
 status_enum = Enum(Status, name="status")
+
+
+class AlertLevel(str, enum.Enum):
+    """Alert severity; NON_URGENT shows as a light alert in the UI."""
+
+    URGENT = "URGENT"
+    NON_URGENT = "NON_URGENT"
+
+
+alert_level_enum = Enum(AlertLevel, name="alert_level")

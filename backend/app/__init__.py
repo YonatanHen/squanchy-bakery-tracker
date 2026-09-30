@@ -19,7 +19,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         app.config.update(overrides)
     db.init_app(app)
 
-    from app import models  # noqa: F401  registers tables
+    from app import archive, models  # noqa: F401  registers tables and the archive-on-delete hook
     from app.api import api_v1
 
     app.register_blueprint(api_v1)
