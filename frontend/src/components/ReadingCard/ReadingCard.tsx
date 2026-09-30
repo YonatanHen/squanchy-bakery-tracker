@@ -1,6 +1,6 @@
 import { summarizeAlerts } from "../../lib/alertSummary";
 import type { AlertLevel, Reading } from "../../lib/endpoints";
-import { formatClock, formatDay } from "../../lib/format";
+import { formatClock, formatDay, formatShort } from "../../lib/format";
 import { formatTemp, type Metric } from "../../lib/units";
 import { Card } from "../Card/Card";
 import { EditIcon } from "../icons/icons";
@@ -14,7 +14,7 @@ interface ReadingCardProps {
   onEdit: (reading: Reading) => void;
 }
 
-/** One reading on the phone list: when, where, temperature, alert or ERR badge, and Edit. */
+/** One reading on the phone list: when, where, temperature, alert or ERR badge, and Edit (archived ones are read-only). */
 export function ReadingCard({ reading, unit, alerts, onEdit }: ReadingCardProps) {
   const summary = summarizeAlerts(alerts);
   return (
@@ -27,13 +27,16 @@ export function ReadingCard({ reading, unit, alerts, onEdit }: ReadingCardProps)
         </span>
         {reading.status === "ERR" && <LevelBadge level="ERR" />}
         {summary && <LevelBadge level={summary.level}>{summary.text}</LevelBadge>}
+        {reading.archived_at && <span className={styles.where}>{`Archived ${formatShort(reading.archived_at)}`}</span>}
       </div>
       <span className={summary?.tone === "urgent" ? `${styles.temp} ${styles.urgentTemp}` : styles.temp}>
         {formatTemp(reading.temp, reading.metric, unit, { compact: true })}
       </span>
-      <button type="button" aria-label="Edit reading" className={styles.edit} onClick={() => onEdit(reading)}>
-        <EditIcon />
-      </button>
+      {!reading.archived_at && (
+        <button type="button" aria-label="Edit reading" className={styles.edit} onClick={() => onEdit(reading)}>
+          <EditIcon />
+        </button>
+      )}
     </Card>
   );
 }

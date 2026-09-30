@@ -20,6 +20,7 @@ export interface Reading {
   fridge: string;
   branch: string;
   city: string | null;
+  archived_at?: string | null;
 }
 
 export interface Alert {

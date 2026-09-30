@@ -80,11 +80,15 @@ function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Readi
       key: "actions",
       header: "Actions",
       hideHeader: true,
-      cell: (r) => (
-        <Button variant="link" onClick={() => onEdit(r)}>
-          Edit
-        </Button>
-      ),
+      // Archived readings are read-only
+      cell: (r) =>
+        r.archived_at ? (
+          `Archived ${formatShort(r.archived_at)}`
+        ) : (
+          <Button variant="link" onClick={() => onEdit(r)}>
+            Edit
+          </Button>
+        ),
     },
   ];
 }
@@ -185,7 +189,9 @@ export function ReadingsPage() {
           {error}
         </p>
       )}
-      {page && items.length === 0 && <EmptyState message="No readings match these filters." />}
+      {page && items.length === 0 && (
+        <EmptyState message={archived ? "No archived readings match these filters." : "No readings match these filters."} />
+      )}
       {items.length > 0 && (
         <ResponsiveList
           label="Readings"
