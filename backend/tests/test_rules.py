@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from app.models import AlertLevel, Metric
-from app.services.detection.rules import Point, Thresholds, find_gaps, find_growth
+from app.services.detection.rules import Point, Thresholds, find_deviations, find_gaps, find_growth
 from app.services.units import from_celsius, to_celsius
 
 T = Thresholds(0.1, 1.0, 1.5, 3.0, 15, 120)  # the default profile
@@ -114,3 +114,60 @@ def test_err_readings_are_skipped_in_the_window():
 def test_fewer_than_four_readings_is_not_a_trend():
     """Jerusalem has only 3 unique readings: no growth window."""
     assert find_growth(points(4.6, 5.4, 6.3), T) == []
+
+
+def test_spike_back_within_deviation_non_urgent_is_a_non_urgent_alert_and_stays_out_of_the_average():
+    """Tel Aviv 9.4°C, then back to 4.3°C: a spike alert (NON_URGENT), and 9.4 is not added to the average."""
+    findings, average = find_deviations(points(4.0, 4.1, 9.4, 4.3, 3.7), T)
+
+    [spike] = findings
+    assert (spike.point_id, spike.level) == (2, AlertLevel.NON_URGENT)
+    assert spike.description == "Spike: 9.4°C against an average of 4.0°C"
+    assert average == pytest.approx(4.025)
+
+
+def test_last_reading_between_the_deviation_thresholds_is_non_urgent():
+    """Rishon's 7.1°C is 1.7°C above the average: at least deviation_non_urgent, below deviation_urgent."""
+    [finding], _ = find_deviations(points(4.6, 5.4, 6.3, 7.1), T)
+
+    assert (finding.point_id, finding.level) == (3, AlertLevel.NON_URGENT)
+    assert finding.description == "7.1°C is 1.7°C above the fridge average of 5.4°C"
+
+
+def test_drop_at_or_above_deviation_urgent_is_urgent():
+    """The fridge getting too cold (0.5°C against about 4.0°C) is at least deviation_urgent below: urgent."""
+    findings, _ = find_deviations(points(4.0, 4.1, 4.0, 0.5, 0.6), T)
+
+    assert (findings[0].point_id, findings[0].level) == (3, AlertLevel.URGENT)
+    assert "below the fridge average" in findings[0].description
+
+
+def test_change_within_deviation_non_urgent_is_not_alerted():
+    """4.0, 4.1, 4.3, 3.9 stay within deviation_non_urgent of the average: no alert."""
+    assert find_deviations(points(4.0, 4.1, 4.3, 3.9), T)[0] == []
+
+
+def test_the_fridges_profile_sets_the_deviation_levels():
+    """Rishon's 1.7°C rise is non-urgent with the default profile and urgent when deviation_urgent is 1.5."""
+    rishon = points(4.6, 5.4, 6.3, 7.1)
+    strict = Thresholds(0.1, 1.0, 0.5, 1.5, 15, 120)
+
+    default_last = find_deviations(rishon, T)[0][-1]
+    strict_last = find_deviations(rishon, strict)[0][-1]
+
+    assert (default_last.point_id, default_last.level) == (3, AlertLevel.NON_URGENT)
+    assert (strict_last.point_id, strict_last.level) == (3, AlertLevel.URGENT)
+
+
+def test_first_reading_has_no_average_to_compare():
+    """A fridge's first reading only starts the average."""
+    findings, average = find_deviations(points(9.0), T)
+
+    assert (findings, average) == ([], 9.0)
+
+
+def test_old_readings_build_the_average_without_new_alerts():
+    """Readings from earlier uploads feed the average but are not alerted again."""
+    old = points(4.0, 4.1, 9.4, 4.3, new=False)
+
+    assert find_deviations(old, T)[0] == []

@@ -63,6 +63,47 @@ def find_growth(points: list[Point], t: Thresholds) -> list[Finding]:
     return findings
 
 
+def find_deviations(points: list[Point], t: Thresholds) -> tuple[list[Finding], float | None]:
+    """Compare each reading to the running average, above or below; spikes are alerted but not averaged.
+
+    Args:
+        points: All readings of one fridge (old and new), in °C.
+        t: The fridge's threshold profile.
+
+    Returns:
+        Findings for new readings, and the average of the non-spike OK readings (None if there are none).
+    """
+    findings = []
+    ok = [p for p in _by_time(points) if p.temp_c is not None]
+    total, count = 0.0, 0
+    for index, point in enumerate(ok):
+        if count == 0:
+            total, count = point.temp_c, 1
+            continue
+        average = total / count
+        deviation = round(point.temp_c - average, 2)
+        if abs(deviation) < t.deviation_non_urgent:
+            total, count = total + point.temp_c, count + 1
+            continue
+        following = ok[index + 1] if index + 1 < len(ok) else None
+        if following is not None and abs(following.temp_c - average) < t.deviation_non_urgent:
+            # Spike: the next reading is back to normal, e.g. a door opened for a delivery.
+            if point.is_new:
+                findings.append(Finding(
+                    point.id, AlertLevel.NON_URGENT, f"Spike: {point.temp_c:.1f}°C against an average of {average:.1f}°C",
+                ))
+            continue
+        if point.is_new:
+            level = _level(abs(deviation), t.deviation_non_urgent, t.deviation_urgent)
+            direction = "above" if deviation > 0 else "below"
+            findings.append(Finding(
+                point.id, level,
+                f"{point.temp_c:.1f}°C is {abs(deviation):.1f}°C {direction} the fridge average of {average:.1f}°C",
+            ))
+        total, count = total + point.temp_c, count + 1
+    return findings, (total / count if count else None)
+
+
 def _by_time(points: list[Point]) -> list[Point]:
     """Readings in time order (rows can arrive out of order)."""
     return sorted(points, key=lambda p: (p.time, p.id))
