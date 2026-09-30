@@ -7,6 +7,8 @@ import {
   deleteReading,
   listAlerts,
   listReadings,
+  updateBranch,
+  updateFridge,
   updateReading,
 } from "./endpoints";
 
@@ -103,5 +105,27 @@ describe("branch and fridge deletes", () => {
     expect(calledUrl(0)).toBe("/api/v1/branches/2");
     expect(calledUrl(1)).toBe("/api/v1/fridges/3");
     expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(["DELETE", "DELETE"]);
+  });
+});
+
+describe("branch and fridge edits", () => {
+  it("sends only the changed branch fields with PATCH", async () => {
+    fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+
+    await updateBranch(2, { street: "Herzl" });
+
+    expect(calledUrl()).toBe("/api/v1/branches/2");
+    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ street: "Herzl" });
+  });
+
+  it("sends only the changed fridge fields with PATCH", async () => {
+    fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+
+    await updateFridge(3, { metric: "F", logger_id: "TL-0231" });
+
+    expect(calledUrl()).toBe("/api/v1/fridges/3");
+    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ metric: "F", logger_id: "TL-0231" });
   });
 });

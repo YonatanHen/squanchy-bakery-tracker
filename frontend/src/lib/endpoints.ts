@@ -37,11 +37,28 @@ export interface Alert {
   archived_at?: string | null;
 }
 
+export interface Fridge {
+  id: number;
+  name: string;
+  metric: Metric;
+  logger_id: string | null;
+  threshold_settings_id: number;
+  avg_temp: number | null;
+  last_measured: string | null;
+}
+
 export interface Branch {
   id: number;
   name: string;
-  fridges: { id: number; name: string }[];
+  city: string | null;
+  street: string | null;
+  building_number: string | null;
+  fridges: Fridge[];
 }
+
+export type BranchChanges = Partial<Pick<Branch, "name" | "city" | "street" | "building_number">>;
+
+export type FridgeChanges = Partial<{ name: string; metric: Metric; logger_id: string; threshold_settings_id: number }>;
 
 /** Reading filters as typed in the form; dates are "YYYY-MM-DD", temperatures are text. */
 export interface ReadingFilters {
@@ -117,6 +134,16 @@ export function updateReading(id: number, changes: { time?: string; temp?: strin
 /** Delete a reading; the backend archives it with its alerts. */
 export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
+}
+
+/** Edit a branch; send only the changed fields. */
+export function updateBranch(id: number, changes: BranchChanges): Promise<Branch> {
+  return apiRequest<Branch>(`/branches/${id}`, { method: "PATCH", body: changes });
+}
+
+/** Edit a fridge; send only the changed fields. A new logger id keeps the fridge's readings. */
+export function updateFridge(id: number, changes: FridgeChanges): Promise<Fridge> {
+  return apiRequest<Fridge>(`/fridges/${id}`, { method: "PATCH", body: changes });
 }
 
 /** Counts a delete would remove (fridges, loggers) or archive (readings, alerts). */
