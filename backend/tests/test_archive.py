@@ -87,7 +87,7 @@ def test_restore_brings_an_archived_reading_back_with_fresh_alerts(client, sessi
     assert (session.get(ReaderArchive, reading_id), session.query(AlertArchive).filter_by(reader_id=reading_id).count()) == (None, 0)
     alerts = session.query(Alert).filter_by(reader_id=reading_id).all()
     assert sorted(a.level.value for a in alerts) == sorted([AlertLevel.NON_URGENT.value, AlertLevel.URGENT.value])
-    assert "Temperature rose 2.5°C over the last 4 readings" in [a.description for a in alerts]
+    assert "Temperature rose 2.5°C from 14/09 06:00 to 06:45 (45 min)" in [a.description for a in alerts]
     assert session.get(Fridge, fridge_id).avg_temp == pytest.approx(5.85, abs=0.01)
 
 
