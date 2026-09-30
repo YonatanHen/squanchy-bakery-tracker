@@ -1,0 +1,10 @@
+.page .signOut {
+  width: 100%;
+}
+
+/* Desktop signs out from the sidebar */
+@media (min-width: 900px) {
+  .page .signOut {
+    display: none;
+  }
+}

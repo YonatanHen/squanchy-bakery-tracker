@@ -32,6 +32,12 @@
   font-weight: 600;
 }
 
+/* Pinned to the bottom of the sidebar, 14px text as in the desktop mockups */
+.sidebar .signOut {
+  margin-top: auto;
+  font-size: 14px;
+}
+
 @media (min-width: 900px) {
   .sidebar {
     position: sticky;
