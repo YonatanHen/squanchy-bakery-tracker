@@ -83,6 +83,23 @@ describe("UploadPage", () => {
     expect(screen.queryByRole("list", { name: "Rows to fix" })).not.toBeInTheDocument();
   });
 
+  it("lists saved rows whose fridge name differs from their logger's fridge", async () => {
+    mockApi([
+      [
+        "POST /api/v1/readings/upload",
+        result({
+          inserted: 3,
+          fridge_name_mismatches: [{ row: 7, logger: "TL-0231", name_in_file: "Dary", fridge: "Dairy" }],
+        }),
+      ],
+    ]);
+
+    await uploadWeek();
+
+    const rows = await screen.findByRole("list", { name: "Fridge names to check" });
+    expect(within(rows).getByRole("listitem")).toHaveTextContent("Row 7“Dary” — saved to Dairy (TL-0231)");
+  });
+
   it("shows the backend message when the file is not an .xlsx file", async () => {
     mockApi([["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx file" })]]);
 

@@ -96,29 +96,46 @@ export function UploadPage() {
             </ul>
           )}
         </div>
-        {errors.length > 0 && (
-          <Card className={styles.fixes}>
-            <p className={styles.fixesTitle}>Fix these rows in your file, then upload it again</p>
-            <ul aria-label="Rows to fix" className={styles.rows}>
-              {errors.map((error, index) => (
-                <li key={index} className={styles.row}>
-                  <span className={styles.rowNumber}>Row {error.row}</span>
-                  <span>
-                    {FIELD_LABELS[error.field] ?? error.field}
-                    {hasValue(error.value) && (
-                      <>
-                        {" "}
-                        <strong>“{String(error.value)}”</strong>
-                      </>
-                    )}{" "}
-                    — {lowerFirst(error.message)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.note}>Rows already saved are skipped on the next upload.</p>
-          </Card>
-        )}
+        <div className={styles.column}>
+          {errors.length > 0 && (
+            <Card className={styles.fixes}>
+              <p className={styles.fixesTitle}>Fix these rows in your file, then upload it again</p>
+              <ul aria-label="Rows to fix" className={styles.rows}>
+                {errors.map((error, index) => (
+                  <li key={index} className={styles.row}>
+                    <span className={styles.rowNumber}>Row {error.row}</span>
+                    <span>
+                      {FIELD_LABELS[error.field] ?? error.field}
+                      {hasValue(error.value) && (
+                        <>
+                          {" "}
+                          <strong>“{String(error.value)}”</strong>
+                        </>
+                      )}{" "}
+                      — {lowerFirst(error.message)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.note}>Rows already saved are skipped on the next upload.</p>
+            </Card>
+          )}
+          {result && result.fridge_name_mismatches.length > 0 && (
+            <Card tone="light" className={styles.fixes}>
+              <p className={styles.fixesTitle}>Saved, but the fridge name differs. Check for typos</p>
+              <ul aria-label="Fridge names to check" className={styles.rows}>
+                {result.fridge_name_mismatches.map((mismatch) => (
+                  <li key={mismatch.row} className={styles.row}>
+                    <span className={styles.rowNumber}>Row {mismatch.row}</span>
+                    <span>
+                      <strong>“{mismatch.name_in_file}”</strong> — saved to {mismatch.fridge} ({mismatch.logger})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
       </div>
     </section>
   );
