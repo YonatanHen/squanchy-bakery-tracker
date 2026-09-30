@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models import Fridge, Reader
 from tests.helpers import add_fridge
 
@@ -24,6 +26,16 @@ def test_invalid_single_record_returns_field_errors_and_saves_nothing(client, se
     assert response.status_code == 422
     assert {e["field"] for e in response.get_json()["errors"]} == {"time", "temp"}
     assert session.query(Reader).count() == 0
+
+
+def test_single_record_accepts_the_browser_time_format(client, session, auth_headers):
+    """A record from the form's datetime-local input (YYYY-MM-DDTHH:MM) is accepted."""
+    add_fridge(session, branch="Rishon LeZion", fridge="Cream cakes", logger="TL-0388")
+
+    response = client.post("/api/v1/readings", json={**RECORD, "time": "2026-09-14T07:00"}, headers=auth_headers)
+
+    assert response.status_code == 201
+    assert session.query(Reader).one().time == datetime(2026, 9, 14, 7, 0)
 
 
 def test_single_record_for_a_new_fridge_asks_then_registers_it(client, session, auth_headers):

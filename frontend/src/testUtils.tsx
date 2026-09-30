@@ -4,8 +4,19 @@ import { vi } from "vitest";
 import { AppRoutes } from "./App";
 import { setToken } from "./lib/api";
 import { AuthProvider } from "./lib/AuthContext";
+import type { Branch, Fridge } from "./lib/endpoints";
 
 type Handler = (url: URL, init?: RequestInit) => unknown;
+
+/** A °C fridge on the default threshold settings, with no readings yet. */
+export function makeFridge(id: number, name: string, loggerId: string | null): Fridge {
+  return { id, name, metric: "C", logger_id: loggerId, threshold_settings_id: 1, avg_temp: null, last_measured: null };
+}
+
+/** A branch with no address and the given fridges. */
+export function makeBranch(id: number, name: string, fridges: Fridge[] = []): Branch {
+  return { id, name, city: null, street: null, building_number: null, fridges };
+}
 
 /** Return items[index], failing the test when it does not exist. */
 export function at<T>(items: readonly T[], index: number): T {

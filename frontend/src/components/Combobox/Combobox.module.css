@@ -1,0 +1,64 @@
+.combobox {
+  position: relative;
+}
+
+.input {
+  padding-right: var(--touch-target);
+}
+
+.input[aria-expanded="true"] {
+  border-color: var(--primary);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.chevron {
+  position: absolute;
+  top: var(--space-14);
+  right: var(--space-12);
+  color: var(--label);
+  pointer-events: none;
+}
+
+.list {
+  position: absolute;
+  top: calc(100% + var(--space-4));
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-6);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-12);
+  border-radius: var(--space-8);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.option:hover,
+.option[aria-selected="true"] {
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font-weight: 600;
+}
+
+.new {
+  font-size: 14px;
+  color: var(--muted);
+}

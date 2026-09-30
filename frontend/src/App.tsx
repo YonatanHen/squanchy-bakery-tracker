@@ -4,8 +4,8 @@ import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { AlertsPage } from "./pages/AlertsPage/AlertsPage";
 import { BranchesPage } from "./pages/BranchesPage/BranchesPage";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
 import { ReadingsPage } from "./pages/ReadingsPage/ReadingsPage";
+import { SingleRecordPage } from "./pages/SingleRecordPage/SingleRecordPage";
 import { ThresholdsPage } from "./pages/ThresholdsPage/ThresholdsPage";
 import { UploadPage } from "./pages/UploadPage/UploadPage";
 
@@ -23,7 +23,7 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/readings" element={<ReadingsPage />} />
-          <Route path="/readings/new" element={<PlaceholderPage title="Add a reading" />} />
+          <Route path="/readings/new" element={<SingleRecordPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/branches" element={<BranchesPage />} />
