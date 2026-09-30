@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "../testUtils";
-import { deleteReading, listAlerts, listReadings, updateReading } from "./endpoints";
+import {
+  deleteBranch,
+  deleteFridge,
+  deleteImpact,
+  deleteReading,
+  listAlerts,
+  listReadings,
+  updateReading,
+} from "./endpoints";
 
 const fetchMock = vi.fn();
 
@@ -70,5 +78,30 @@ describe("reading edits", () => {
 
     expect(calledUrl()).toBe("/api/v1/readings/7");
     expect(at(fetchMock.mock.calls, 0)[1].method).toBe("DELETE");
+  });
+});
+
+describe("branch and fridge deletes", () => {
+  it("gets the delete impact of a branch or a fridge with GET", async () => {
+    const counts = { fridges: 1, loggers: 1, readings: 5, alerts: 2 };
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify(counts), { status: 200 }));
+
+    expect(await deleteImpact("branches", 2)).toEqual(counts);
+    await deleteImpact("fridges", 3);
+
+    expect(calledUrl(0)).toBe("/api/v1/branches/2/delete-impact");
+    expect(calledUrl(1)).toBe("/api/v1/fridges/3/delete-impact");
+    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+  });
+
+  it("deletes a branch and a fridge with DELETE", async () => {
+    fetchMock.mockImplementation(async () => new Response(null, { status: 204 }));
+
+    await deleteBranch(2);
+    await deleteFridge(3);
+
+    expect(calledUrl(0)).toBe("/api/v1/branches/2");
+    expect(calledUrl(1)).toBe("/api/v1/fridges/3");
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(["DELETE", "DELETE"]);
   });
 });

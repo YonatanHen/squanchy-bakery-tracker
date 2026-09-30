@@ -118,3 +118,26 @@ export function updateReading(id: number, changes: { time?: string; temp?: strin
 export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
 }
+
+/** Counts a delete would remove (fridges, loggers) or archive (readings, alerts). */
+export interface DeleteImpact {
+  fridges: number;
+  loggers: number;
+  readings: number;
+  alerts: number;
+}
+
+/** Get what deleting a branch or a fridge would remove and archive; deletes nothing. */
+export function deleteImpact(kind: "branches" | "fridges", id: number): Promise<DeleteImpact> {
+  return apiRequest<DeleteImpact>(`/${kind}/${id}/delete-impact`);
+}
+
+/** Delete a branch with its fridges and loggers; the backend archives their readings and alerts. */
+export function deleteBranch(id: number): Promise<void> {
+  return apiRequest<void>(`/branches/${id}`, { method: "DELETE" });
+}
+
+/** Delete a fridge with its logger; the backend archives its readings and alerts. */
+export function deleteFridge(id: number): Promise<void> {
+  return apiRequest<void>(`/fridges/${id}`, { method: "DELETE" });
+}
