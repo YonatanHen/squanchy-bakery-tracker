@@ -4,10 +4,19 @@ import { DataTable, type Column } from "../../components/DataTable/DataTable";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
+import { ReadingFilters } from "../../components/ReadingFilters/ReadingFilters";
 import { SegmentedToggle } from "../../components/SegmentedToggle/SegmentedToggle";
-import { listReadings, type Page, type Reading, type ReadingFilters } from "../../lib/endpoints";
+import { ApiError } from "../../lib/api";
+import {
+  listBranches,
+  listReadings,
+  type Branch,
+  type Page,
+  type Reading,
+  type ReadingFilters as Filters,
+} from "../../lib/endpoints";
 import { formatShort } from "../../lib/format";
-import { formatTemp, type Metric } from "../../lib/units";
+import { convertTypedTemp, formatTemp, type Metric } from "../../lib/units";
 import styles from "./ReadingsPage.module.css";
 
 const UNITS = [
@@ -40,16 +49,36 @@ function columns(unit: Metric, onEdit: (reading: Reading) => void): Column<Readi
 /** Readings screen: filters, °C/°F, cards on phones and a table on desktop, with paging. */
 export function ReadingsPage() {
   const [unit, setUnit] = useState<Metric>("C");
-  const [filters] = useState<ReadingFilters>({});
-  const [offset] = useState(0);
+  const [filters, setFilters] = useState<Filters>({});
+  const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<Page<Reading> | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    listBranches()
+      .then((result) => Array.isArray(result) && setBranches(result))
+      .catch(() => setBranches([]));
+  }, []);
 
   useEffect(() => {
     let active = true;
     listReadings(filters, unit, offset)
-      .then((result) => active && (setPage(result), setError("")))
-      .catch(() => active && setError("Could not load the readings. Try again."));
+      .then((result) => {
+        if (!active) return;
+        setPage(result);
+        setError("");
+        setFieldErrors({});
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err instanceof ApiError && err.fieldErrors.length > 0) {
+          setFieldErrors(Object.fromEntries(err.fieldErrors.map((e) => [e.field, e.message])));
+        } else {
+          setError("Could not load the readings. Try again.");
+        }
+      });
     return () => {
       active = false;
     };
@@ -58,12 +87,33 @@ export function ReadingsPage() {
   const items = page?.items ?? [];
   const onEdit = () => {};
 
+  const applyFilters = (next: Filters) => {
+    setFilters(next);
+    setOffset(0);
+  };
+
+  // Keep the temperature range's meaning when the unit changes
+  const changeUnit = (next: Metric) => {
+    setFilters((f) => ({
+      ...f,
+      tempMin: f.tempMin && convertTypedTemp(f.tempMin, unit, next),
+      tempMax: f.tempMax && convertTypedTemp(f.tempMax, unit, next),
+    }));
+    setUnit(next);
+  };
+
   return (
     <section className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Readings</h1>
-        <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={setUnit} />
+        <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
       </div>
+      <ReadingFilters branches={branches} unit={unit} value={filters} errors={fieldErrors} onApply={applyFilters} />
+      {page && (
+        <p className={styles.summary}>
+          {`${page.total} ${page.total === 1 ? "reading" : "readings"}${filters.branch ? ` · ${filters.branch}` : ""}`}
+        </p>
+      )}
       {error && (
         <p role="alert" className={styles.error}>
           {error}

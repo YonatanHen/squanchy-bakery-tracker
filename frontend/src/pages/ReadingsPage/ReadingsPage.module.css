@@ -17,6 +17,12 @@
   font-size: 26px;
 }
 
+.summary {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .error {
   margin: 0;
   font-weight: 500;
@@ -45,7 +51,8 @@
     font-size: 30px;
   }
 
-  .cards {
+  .cards,
+  .summary {
     display: none;
   }
 

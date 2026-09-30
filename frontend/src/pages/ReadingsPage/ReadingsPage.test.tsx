@@ -1,8 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Reading } from "../../lib/endpoints";
-import { mockApi, renderLoggedIn } from "../../testUtils";
+import { mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
 
 const DAIRY_OK: Reading = {
   id: 4,
@@ -94,5 +94,64 @@ describe("ReadingsPage list", () => {
     renderLoggedIn("/readings");
 
     expect(await screen.findByText("No readings match these filters.")).toBeInTheDocument();
+  });
+});
+
+describe("ReadingsPage filters", () => {
+  it("reloads the first page with the applied branch and minimum temperature", async () => {
+    const fetchMock = mockReadings();
+    renderLoggedIn("/readings");
+    await screen.findByRole("option", { name: "Tel Aviv" });
+
+    await userEvent.selectOptions(screen.getByLabelText("Branch"), "Haifa");
+    await userEvent.type(screen.getByLabelText("Min °C"), "5");
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings")).toHaveLength(2));
+    const last = paramsOf(fetchMock, "/api/v1/readings")[1];
+    expect(last.get("branch")).toBe("Haifa");
+    expect(last.get("temp_min")).toBe("5");
+    expect(last.get("unit")).toBe("C");
+    expect(last.get("offset")).toBe("0");
+    expect(await screen.findByText("2 readings · Haifa")).toBeInTheDocument();
+  });
+
+  it("keeps the minimum's meaning when the unit changes: above 5 °C becomes above 41 °F", async () => {
+    const fetchMock = mockReadings();
+    renderLoggedIn("/readings");
+    await userEvent.type(await screen.findByLabelText("Min °C"), "5");
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "°F" }));
+
+    expect(screen.getByLabelText("Min °F")).toHaveValue("41");
+    expect(screen.getByRole("button", { name: "Remove filter Above 41 °F" })).toBeInTheDocument();
+    await waitFor(() => {
+      const last = paramsOf(fetchMock, "/api/v1/readings").at(-1)!;
+      expect([last.get("temp_min"), last.get("unit")]).toEqual(["41", "F"]);
+    });
+  });
+
+  it("shows the backend's message under the field it rejected", async () => {
+    mockApi([
+      [
+        "GET /api/v1/readings",
+        (url: URL) =>
+          url.searchParams.has("temp_min")
+            ? new Response(JSON.stringify({ errors: [{ field: "temp_min", message: "Input should be a valid number" }] }), {
+                status: 422,
+              })
+            : page([DAIRY_OK]),
+      ],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([])],
+    ]);
+    renderLoggedIn("/readings");
+    await userEvent.type(await screen.findByLabelText("Min °C"), "abc");
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Min °C")).toHaveAccessibleDescription("Input should be a valid number"),
+    );
   });
 });
