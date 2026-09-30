@@ -121,13 +121,16 @@ describe("AlertsPage filters", () => {
 
   it("pages through the alerts", async () => {
     const fetchMock = mockApi([
-      ["GET /api/v1/alerts", (url: URL) => page([GAP], 61, Number(url.searchParams.get("offset")), 50)],
+      [
+        "GET /api/v1/alerts",
+        (url: URL) => page([GAP], 61, Number(url.searchParams.get("offset")), Number(url.searchParams.get("limit") ?? "50")),
+      ],
     ]);
     renderLoggedIn("/alerts");
 
     await userEvent.click(await screen.findByRole("button", { name: "Next →" }));
 
-    expect(await screen.findByText("51–51 of 61")).toBeInTheDocument();
-    expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("offset")).toBe("50");
+    expect(await screen.findByText("11–11 of 61")).toBeInTheDocument();
+    expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("offset")).toBe("10");
   });
 });

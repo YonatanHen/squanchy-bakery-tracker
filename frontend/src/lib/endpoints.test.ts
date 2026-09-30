@@ -41,7 +41,7 @@ describe("listReadings", () => {
   it("sends only the filters that are set, with the temperature range in the selected unit", async () => {
     await listReadings({ branch: "Haifa", fridge: "", tempMin: "41", tempMax: "" }, "F", 0);
 
-    expect(calledUrl()).toBe("/api/v1/readings?branch=Haifa&temp_min=41&unit=F&offset=0");
+    expect(calledUrl()).toBe("/api/v1/readings?branch=Haifa&temp_min=41&unit=F&offset=0&limit=10");
   });
 
   it("covers the whole From and To days", async () => {
@@ -58,13 +58,13 @@ describe("listAlerts", () => {
   it("asks for archived alerts with archived=true and the level", async () => {
     await listAlerts({ archived: true, level: "URGENT", offset: 0 });
 
-    expect(calledUrl()).toBe("/api/v1/alerts?level=URGENT&archived=true&offset=0");
+    expect(calledUrl()).toBe("/api/v1/alerts?level=URGENT&archived=true&offset=0&limit=10");
   });
 
   it("asks for active alerts without the archived flag", async () => {
     await listAlerts({ archived: false, offset: 0 });
 
-    expect(calledUrl()).toBe("/api/v1/alerts?offset=0");
+    expect(calledUrl()).toBe("/api/v1/alerts?offset=0&limit=10");
   });
 });
 
