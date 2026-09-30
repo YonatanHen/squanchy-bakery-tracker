@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Reading } from "../../lib/endpoints";
@@ -76,6 +76,22 @@ describe("EditReadingDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
 
     await waitFor(() => expect(writes(fetchMock)).toEqual([["PATCH", "/api/v1/readings/12", { time: "2026-09-14T08:45" }]]));
+  });
+
+  it("changes only the unit of a Haifa value entered as °C by mistake, keeping the typed value", async () => {
+    const haifa: Reading = { ...JERUSALEM, temp: 38.3, logger_id: "TL-0231", branch: "Haifa", city: "Haifa" };
+    const fetchMock = mockApi([["PATCH /api/v1/readings/12", { ...haifa, metric: "F" }]]);
+    renderDialog(haifa);
+
+    const unit = screen.getByRole("group", { name: "Unit" });
+    expect(within(unit).getByRole("button", { name: "°C" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(unit).getByRole("button", { name: "°F" }));
+    expect(screen.getByLabelText("Temperature (°F, or ERR)")).toHaveValue("38.3");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByText(/38\.3 °C → 38\.3 °F\./)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Yes, save" }));
+
+    await waitFor(() => expect(writes(fetchMock)).toEqual([["PATCH", "/api/v1/readings/12", { metric: "F" }]]));
   });
 
   it("accepts ERR for a logger that reported no temperature", async () => {

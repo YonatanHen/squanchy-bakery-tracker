@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { ApiError } from "../../lib/api";
-import { deleteReading, updateReading, type Reading } from "../../lib/endpoints";
+import { deleteReading, updateReading, type Reading, type ReadingChanges } from "../../lib/endpoints";
 import { formatShort, toDateTimeLocal } from "../../lib/format";
-import { formatTemp } from "../../lib/units";
+import { formatTemp, type Metric } from "../../lib/units";
 import { Button } from "../Button/Button";
 import { DateTimeField } from "../DateTimeField/DateTimeField";
 import { Dialog } from "../Dialog/Dialog";
+import { SegmentedToggle } from "../SegmentedToggle/SegmentedToggle";
 import { TemperatureField } from "../TemperatureField/TemperatureField";
 import styles from "./EditReadingDialog.module.css";
 
@@ -17,31 +18,39 @@ interface EditReadingDialogProps {
 
 type Mode = "edit" | "confirm" | "delete";
 
+const UNITS = [
+  { value: "C", label: "°C" },
+  { value: "F", label: "°F" },
+] as const;
+
 /** Show a typed temperature the way the list shows it: "4.4 °C", or ERR. */
-function tempLabel(text: string, reading: Reading): string {
+function tempLabel(text: string, metric: Metric): string {
   if (text.trim().toUpperCase() === "ERR") return "ERR";
   const value = Number(text);
-  return text.trim() === "" || Number.isNaN(value) ? text : formatTemp(value, reading.metric, reading.metric);
+  return text.trim() === "" || Number.isNaN(value) ? text : formatTemp(value, metric, metric);
 }
 
-/** Edit a reading's time or temperature after an "Are you sure?" step, or delete it (it is archived). */
+/** Edit a reading's time, temperature or unit after an "Are you sure?" step, or delete it (it is archived). */
 export function EditReadingDialog({ reading, onClose, onSaved }: EditReadingDialogProps) {
   const originalTime = toDateTimeLocal(reading.time);
   const originalTemp = reading.temp === null ? "ERR" : String(reading.temp);
   const [time, setTime] = useState<string>(originalTime);
   const [temp, setTemp] = useState<string>(originalTemp);
+  const [metric, setMetric] = useState<Metric>(reading.metric);
   const [mode, setMode] = useState<Mode>("edit");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string>("");
   const [busy, setBusy] = useState<boolean>(false);
 
-  const changes = {
+  const changes: ReadingChanges = {
     ...(time !== originalTime && { time }),
     ...(temp.trim() !== originalTemp && { temp: temp.trim() }),
+    ...(metric !== reading.metric && { metric }),
   };
+  const tempChanged = changes.temp !== undefined || changes.metric !== undefined;
   const summary = [
     changes.time && `${formatShort(originalTime)} → ${formatShort(changes.time)}.`,
-    changes.temp !== undefined && `${tempLabel(originalTemp, reading)} → ${tempLabel(changes.temp, reading)}.`,
+    tempChanged && `${tempLabel(originalTemp, reading.metric)} → ${tempLabel(temp, metric)}.`,
   ].filter(Boolean);
 
   const edit = (setter: (value: string) => void) => (value: string) => {
@@ -104,11 +113,17 @@ export function EditReadingDialog({ reading, onClose, onSaved }: EditReadingDial
     <Dialog open title="Edit reading" subtitle={subtitle} onClose={onClose}>
       <DateTimeField label="Time" value={time} onChange={edit(setTime)} error={errors.time} />
       <TemperatureField
-        label={`Temperature (°${reading.metric}, or ERR)`}
+        label={`Temperature (°${metric}, or ERR)`}
         value={temp}
         onChange={edit(setTemp)}
         error={errors.temp}
       />
+      <div className={styles.unit}>
+        <span className={styles.unitLabel} aria-hidden="true">
+          Unit
+        </span>
+        <SegmentedToggle label="Unit" options={UNITS} value={metric} onChange={edit(setMetric)} />
+      </div>
       {mode === "confirm" && (
         <div className={styles.confirm} role="status">
           <strong className={styles.confirmTitle}>Are you sure?</strong>

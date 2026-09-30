@@ -179,8 +179,11 @@ export function listBranches(): Promise<Branch[]> {
   return apiRequest<Branch[]>("/branches");
 }
 
-/** Correct a reading's time ("YYYY-MM-DDTHH:MM") or temperature (its own unit, or "ERR"). */
-export function updateReading(id: number, changes: { time?: string; temp?: string }): Promise<Reading> {
+/** Reading corrections: time is "YYYY-MM-DDTHH:MM", temp is in `metric` (or "ERR"), logger_id moves the reading. */
+export type ReadingChanges = Partial<{ time: string; temp: string; metric: Metric; logger_id: string }>;
+
+/** Correct a reading; send only the changed fields. */
+export function updateReading(id: number, changes: ReadingChanges): Promise<Reading> {
   return apiRequest<Reading>(`/readings/${id}`, { method: "PATCH", body: changes });
 }
 
