@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SaveResult } from "../../lib/endpoints";
@@ -49,6 +49,17 @@ describe("UploadPage", () => {
       "3rows to fix",
     ]);
     expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
+  });
+
+  it("uploads a file dropped on the drop zone", async () => {
+    const fetchMock = mockApi([["POST /api/v1/readings/upload", result({ inserted: 1 })]]);
+    renderLoggedIn("/upload");
+
+    fireEvent.drop(screen.getByText("Drop an .xlsx file here, or click to choose"), { dataTransfer: { files: [WEEK] } });
+
+    await screen.findByRole("list", { name: "Upload result" });
+    expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
+    expect(screen.getByText("Last file: week.xlsx")).toBeInTheDocument();
   });
 
   it("notes the saved ERR readings, the new alerts and the renamed fridges", async () => {

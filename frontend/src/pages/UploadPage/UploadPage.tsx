@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent, type DragEvent } from "react";
 import { Card } from "../../components/Card/Card";
 import { UploadIcon } from "../../components/icons/icons";
 import { ApiError } from "../../lib/api";
@@ -112,18 +112,29 @@ export function UploadPage() {
     if (chosen) void upload(chosen);
   }
 
+  /** Upload the file dropped on the drop zone. */
+  function onDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    const dropped = event.dataTransfer.files[0];
+    if (dropped) void upload(dropped);
+  }
+
   return (
     <section className={styles.page}>
       <h1 className={styles.title}>Upload readings</h1>
       <div className={styles.columns}>
         <div className={styles.column}>
-          <label className={styles.drop}>
+          <label className={styles.drop} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
             <span className={styles.icon}>
               <UploadIcon />
             </span>
-            <span className={styles.dropText}>
+            <span className={`${styles.dropText} ${styles.phone}`}>
               <strong className={styles.dropTitle}>{file ? file.name : "Choose an .xlsx file"}</strong>
               <span className={styles.dropHint}>{file ? "Excel file · tap to choose another" : "Excel file"}</span>
+            </span>
+            <span className={`${styles.dropText} ${styles.desktop}`}>
+              <strong className={styles.dropTitle}>Drop an .xlsx file here, or click to choose</strong>
+              {file && <span className={styles.dropHint}>Last file: {file.name}</span>}
             </span>
             <input type="file" accept=".xlsx" className={styles.input} onChange={onPick} />
           </label>

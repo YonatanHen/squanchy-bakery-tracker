@@ -48,6 +48,10 @@
   font-size: 15px;
 }
 
+.desktop {
+  display: none;
+}
+
 .dropHint {
   font-size: 13px;
   color: var(--muted);
@@ -216,6 +220,17 @@
 
   .dropTitle {
     font-size: 16px;
+  }
+
+  .phone {
+    display: none;
+  }
+
+  .desktop {
+    display: flex;
+    flex-grow: 0;
+    align-items: center;
+    gap: var(--space-10);
   }
 
   .counts {
