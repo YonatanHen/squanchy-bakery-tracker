@@ -79,3 +79,12 @@ class ReadingOut(BaseModel):
     branch: str
     city: str | None
     archived_at: datetime | None = None
+
+
+class ReadingPage(BaseModel):
+    """One page of readings with the number of all matching readings."""
+
+    items: list[ReadingOut]
+    total: int
+    offset: int
+    limit: int
