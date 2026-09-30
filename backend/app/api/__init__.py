@@ -29,4 +29,4 @@ def require_token():
     return None
 
 
-from app.api import auth, branches, errors, fridges, health  # noqa: E402,F401  registers routes
+from app.api import auth, branches, errors, fridges, health, readings  # noqa: E402,F401  registers routes

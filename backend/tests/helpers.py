@@ -1,6 +1,42 @@
+import io
+from pathlib import Path
+
+from openpyxl import Workbook
 from sqlalchemy import func, select
 
 from app.models import Branch, Fridge, Logger, Metric
+
+SAMPLE_FILE = Path(__file__).resolve().parents[2] / "data" / "sample_week.xlsx"
+
+# What the user confirms in the "add it?" dialog for the sample file's branches and loggers.
+SAMPLE_REGISTRATION = {
+    "branches": [{"name": name, "city": name} for name in ("Jerusalem", "Tel Aviv", "Haifa", "Rishon LeZion")],
+    "fridges": [
+        {"logger_id": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy"},
+        {"logger_id": "TL-0417", "branch": "Tel Aviv", "fridge": "Walk-in"},
+        {"logger_id": "TL-0231", "branch": "Haifa", "fridge": "Dairy", "metric": "F"},
+        {"logger_id": "TL-0388", "branch": "Rishon LeZion", "fridge": "Cream cakes"},
+    ],
+}
+
+
+def xlsx_bytes(header, rows) -> bytes:
+    """Build an .xlsx file in memory with a header row and data rows."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(list(header))
+    for row in rows:
+        sheet.append(list(row))
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def load_sample(session, register=SAMPLE_REGISTRATION):
+    """Ingest the real data/sample_week.xlsx the way an upload does, with the user's confirmed registration."""
+    from app.services.ingest.service import ingest_file
+
+    return ingest_file(session, SAMPLE_FILE.name, SAMPLE_FILE.read_bytes(), register)
 
 
 def add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512", metric=Metric.C) -> Fridge:

@@ -7,6 +7,7 @@ from app.api import api_v1
 from app.db import db
 from app.errors import field_errors
 from app.services.errors import NotFoundError
+from app.services.ingest.parsers.base import MissingColumns, UnsupportedFormat
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,18 @@ def conflict(exc: IntegrityError):
 def not_found(exc):
     """Return 404 as JSON."""
     return {"error": "Not found"}, 404
+
+
+@api_v1.errorhandler(UnsupportedFormat)
+def unsupported_format(exc: UnsupportedFormat):
+    """Return 415 when no parser accepts the uploaded file."""
+    return {"error": "Unsupported file format. Upload an .xlsx file"}, 415
+
+
+@api_v1.errorhandler(MissingColumns)
+def missing_columns(exc: MissingColumns):
+    """Return 422 listing the required columns the file lacks."""
+    return {"errors": [{"row": 1, "field": c, "message": "Missing column"} for c in exc.missing]}, 422
 
 
 @api_v1.errorhandler(NotFoundError)
