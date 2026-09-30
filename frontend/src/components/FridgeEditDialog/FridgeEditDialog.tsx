@@ -25,13 +25,13 @@ interface FridgeEditDialogProps {
 
 /** Edit a fridge's name, unit, logger and threshold settings; saves only the changed fields. */
 export function FridgeEditDialog({ fridge, branchName, thresholdSettings, onSave, onCancel }: FridgeEditDialogProps) {
-  const [name, setName] = useState(fridge.name);
+  const [name, setName] = useState<string>(fridge.name);
   const [metric, setMetric] = useState<Metric>(fridge.metric);
-  const [loggerId, setLoggerId] = useState(fridge.logger_id ?? "");
-  const [settingsId, setSettingsId] = useState(String(fridge.threshold_settings_id));
+  const [loggerId, setLoggerId] = useState<string>(fridge.logger_id ?? "");
+  const [settingsId, setSettingsId] = useState<string>(String(fridge.threshold_settings_id));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [saving, setSaving] = useState<boolean>(false);
 
   /** Save the changed fields. */
   const submit = async (event: FormEvent) => {

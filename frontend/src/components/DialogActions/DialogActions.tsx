@@ -4,7 +4,7 @@ import styles from "./DialogActions.module.css";
 interface DialogActionsProps {
   confirmLabel: string;
   variant?: "primary" | "danger";
-  busy?: boolean;
+  busy?: boolean | undefined;
   onCancel: () => void;
   onConfirm?: () => void;
 }

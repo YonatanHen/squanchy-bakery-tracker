@@ -32,10 +32,10 @@ interface PendingDelete {
 export function BranchesPage() {
   const [branches, setBranches] = useState<Branch[] | null>(null);
   const [thresholdSettings, setThresholdSettings] = useState<ThresholdSettings[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string>("");
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [editingFridge, setEditingFridge] = useState<{ fridge: Fridge; branchName: string } | null>(null);
   const settingsNames = useMemo(

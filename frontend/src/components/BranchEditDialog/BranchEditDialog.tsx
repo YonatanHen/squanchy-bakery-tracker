@@ -31,8 +31,8 @@ export function BranchEditDialog({ branch, onSave, onCancel }: BranchEditDialogP
     building_number: branch.building_number ?? "",
   }));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [saving, setSaving] = useState<boolean>(false);
 
   /** Save the changed fields; a cleared address field is sent as null. */
   const submit = async (event: FormEvent) => {

@@ -94,7 +94,7 @@ describe("branch and fridge deletes", () => {
 
     expect(calledUrl(0)).toBe("/api/v1/branches/2/delete-impact");
     expect(calledUrl(1)).toBe("/api/v1/fridges/3/delete-impact");
-    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("GET");
   });
 
   it("deletes a branch and a fridge with DELETE", async () => {
@@ -126,8 +126,8 @@ describe("branch and fridge edits", () => {
     await updateBranch(2, { street: "Herzl" });
 
     expect(calledUrl()).toBe("/api/v1/branches/2");
-    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ street: "Herzl" });
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PATCH");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ street: "Herzl" });
   });
 
   it("sends only the changed fridge fields with PATCH", async () => {
@@ -136,7 +136,7 @@ describe("branch and fridge edits", () => {
     await updateFridge(3, { metric: "F", logger_id: "TL-0231" });
 
     expect(calledUrl()).toBe("/api/v1/fridges/3");
-    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ metric: "F", logger_id: "TL-0231" });
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PATCH");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ metric: "F", logger_id: "TL-0231" });
   });
 });
