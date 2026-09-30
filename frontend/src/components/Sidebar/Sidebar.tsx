@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
-import { NAV_ITEMS } from "./navItems";
+import { NAV_ITEMS } from "../navItems/navItems";
 import styles from "./Sidebar.module.css";
-import { SignOutButton } from "./SignOutButton";
+import { SignOutButton } from "../SignOutButton/SignOutButton";
 
 /** Left sidebar with the app name and page links for desktop widths (900px and up). */
 export function Sidebar() {

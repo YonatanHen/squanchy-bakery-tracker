@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../lib/AuthContext";
-import { Button } from "./Button";
+import { useAuth } from "../../lib/AuthContext";
+import { Button } from "../Button/Button";
 
 /** Secondary button that clears the token and opens the login page. */
 export function SignOutButton({ className }: { className?: string }) {

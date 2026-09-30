@@ -2,9 +2,9 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import { AppRoutes } from "../App";
-import { getToken, setToken } from "../lib/api";
-import { AuthProvider } from "../lib/AuthContext";
+import { AppRoutes } from "../../App";
+import { getToken, setToken } from "../../lib/api";
+import { AuthProvider } from "../../lib/AuthContext";
 
 /** Render the logged-in app at `path`. */
 function renderAt(path: string) {
