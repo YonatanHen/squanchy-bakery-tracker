@@ -3,6 +3,7 @@ import logging
 from sqlalchemy import Select, case, delete, func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
+from app.models.archive import ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters
 from app.services.detection.service import detect, refresh_fridge_stats
 from app.services.errors import get_or_raise
@@ -59,6 +60,36 @@ def query_readings(session, f: ReadingFilters) -> tuple[list[tuple[Reader, Fridg
     rows = session.execute(stmt.order_by(Reader.time, Reader.id).offset(f.offset).limit(f.limit)).all()
     logger.info("Readings query matched %d rows", total)
     return [tuple(row) for row in rows], total
+
+
+def apply_archive_filters(stmt: Select, f: LocationFilters) -> Select:
+    """Apply the branch, fridge, logger and date filters to ReaderArchive; city and address are not archived."""
+    for name, column in (("branch", ReaderArchive.branch), ("fridge", ReaderArchive.fridge), ("logger_id", ReaderArchive.logger_id)):
+        value = getattr(f, name)
+        if value:
+            stmt = stmt.where(func.lower(column) == value.lower())
+    if f.date_from:
+        stmt = stmt.where(ReaderArchive.time >= f.date_from)
+    if f.date_to:
+        stmt = stmt.where(ReaderArchive.time <= f.date_to)
+    return stmt
+
+
+def query_archived_readings(session, f: ReadingFilters) -> tuple[list[ReaderArchive], int]:
+    """Filter deleted readings by location and dates.
+
+    Args:
+        session: The SQLAlchemy session.
+        f: Validated filters; only branch, fridge, logger and dates apply.
+
+    Returns:
+        The page of archived readings, newest first, and the total number of matches.
+    """
+    stmt = apply_archive_filters(select(ReaderArchive), f)
+    total = session.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = session.scalars(stmt.order_by(ReaderArchive.time.desc(), ReaderArchive.id).offset(f.offset).limit(f.limit)).all()
+    logger.info("Archived readings query matched %d rows", total)
+    return list(rows), total
 
 
 def update_reading(session, reading_id: int, changes: dict) -> Reader:

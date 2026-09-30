@@ -46,6 +46,23 @@ def test_pagination_reports_the_total(client, auth_headers, sample):
     assert (len(result["items"]), result["total"]) == (5, 15)
 
 
+def test_archived_readings_are_listed_with_archived_true(client, session, auth_headers, sample):
+    """A deleted Rishon 06:45 reading leaves the list and is listed as archived, with its branch, fridge and time archived."""
+    active = query(client, auth_headers, fridge="Cream cakes")
+    deleted = next(r for r in active["items"] if r["time"] == "2026-09-14T06:45:00")
+    assert client.delete(f"/api/v1/readings/{deleted['id']}", headers=auth_headers).status_code == 204
+
+    remaining = query(client, auth_headers, fridge="Cream cakes")
+    archived = query(client, auth_headers, archived="true")
+
+    assert deleted["id"] not in [r["id"] for r in remaining["items"]]
+    assert remaining["items"][0]["archived_at"] is None
+    assert archived["total"] == 1
+    item = archived["items"][0]
+    assert (item["id"], item["branch"], item["fridge"], item["temp"]) == (deleted["id"], "Rishon LeZion", "Cream cakes", 7.1)
+    assert item["archived_at"]
+
+
 def test_invalid_filter_values_return_422(client, auth_headers):
     """A zero limit and an unknown status are reported per field."""
     response = client.get("/api/v1/readings", query_string={"limit": 0, "status": "BROKEN"}, headers=auth_headers)

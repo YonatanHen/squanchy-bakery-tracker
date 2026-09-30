@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from app.models import Alert, Branch, Fridge, Logger, Reader
 from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.alert import AlertFilters
-from app.services.readings import apply_location_filters
+from app.services.readings import apply_archive_filters, apply_location_filters
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +47,7 @@ def query_archived_alerts(session, f: AlertFilters) -> tuple[list[tuple], int]:
         The page of (archived alert, archived reading) rows, newest reading first, and the total number of matches.
     """
     stmt = select(AlertArchive, ReaderArchive).join(ReaderArchive, AlertArchive.reader_id == ReaderArchive.id)
-    for name, column in (("branch", ReaderArchive.branch), ("fridge", ReaderArchive.fridge), ("logger_id", ReaderArchive.logger_id)):
-        value = getattr(f, name)
-        if value:
-            stmt = stmt.where(func.lower(column) == value.lower())
-    if f.date_from:
-        stmt = stmt.where(ReaderArchive.time >= f.date_from)
-    if f.date_to:
-        stmt = stmt.where(ReaderArchive.time <= f.date_to)
+    stmt = apply_archive_filters(stmt, f)
     if f.level:
         stmt = stmt.where(AlertArchive.level == f.level)
     total = session.scalar(select(func.count()).select_from(stmt.subquery()))

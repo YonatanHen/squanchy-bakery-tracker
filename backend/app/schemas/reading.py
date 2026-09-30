@@ -25,13 +25,14 @@ class LocationFilters(BaseModel):
 
 
 class ReadingFilters(LocationFilters):
-    """Readings query: location, dates, and a temperature range in the given unit."""
+    """Readings query: location, dates, and a temperature range in the given unit; archived=true lists deleted readings."""
 
     temp_min: float | None = None
     temp_max: float | None = None
     unit: Metric = Metric.C
     status: Status | None = None
     metric: Metric | None = None
+    archived: bool = False
 
 
 class ReadingPatch(BaseModel):
@@ -65,3 +66,4 @@ class ReadingOut(BaseModel):
     fridge: str
     branch: str
     city: str | None
+    archived_at: datetime | None = None
