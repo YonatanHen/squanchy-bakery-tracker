@@ -13,7 +13,7 @@ TEST_DB = os.environ.get(
 @pytest.fixture
 def app():
     """App bound to a fresh test database for each test."""
-    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": TEST_DB, "JWT_SECRET": "test-secret"})
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": TEST_DB, "JWT_SECRET": "test-secret-at-least-32-bytes-long!"})
     with app.app_context():
         db.drop_all()
         db.create_all()

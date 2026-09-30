@@ -16,7 +16,7 @@ class Alert(db.Model):
     __tablename__ = "alerts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # No cascade: a reading with alerts is archived first (app.archive), never deleted with them.
+    # No cascade: a reading with alerts is archived first (app.services.archive), never deleted with them.
     reader_id: Mapped[int] = mapped_column(ForeignKey("reader.id", ondelete="RESTRICT"))
     description: Mapped[str] = mapped_column(String(500))
     level: Mapped[AlertLevel] = mapped_column(alert_level_enum)
