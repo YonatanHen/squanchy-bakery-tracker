@@ -1,5 +1,10 @@
+import io
+import json
+
+import pytest
+
 from app.models import Branch, Metric, Reader
-from tests.helpers import load_sample
+from tests.helpers import SAMPLE_FILE, SAMPLE_REGISTRATION, load_sample, sample_as_csv
 
 
 def test_sample_file_with_confirmed_registration_loads_with_expected_counts(session):
@@ -20,3 +25,17 @@ def test_sample_file_without_registration_lists_all_four_branches_as_unknown(ses
     assert (result.inserted, result.rejected) == (0, 16)
     assert sorted(b.name for b in result.unknown.branches) == ["Haifa", "Jerusalem", "Rishon LeZion", "Tel Aviv"]
     assert len(result.unknown.loggers) == 4
+
+
+@pytest.mark.parametrize("filename, content", [
+    ("sample_week.xlsx", lambda: SAMPLE_FILE.read_bytes()),
+    ("sample_week.csv", sample_as_csv),
+])
+def test_sample_rows_uploaded_as_csv_give_the_same_counts_as_xlsx(client, auth_headers, filename, content):
+    """The sample rows saved as CSV give the same inserted, duplicate, ERR and alert counts as the .xlsx file."""
+    data = {"file": (io.BytesIO(content()), filename), "register": json.dumps(SAMPLE_REGISTRATION)}
+    response = client.post("/api/v1/readings/upload", data=data, headers=auth_headers, content_type="multipart/form-data")
+
+    body = response.get_json()
+    assert response.status_code == 201
+    assert (body["inserted"], body["duplicates"], body["err_rows"], body["rejected"], body["alerts"]) == (15, 1, 1, 0, 5)

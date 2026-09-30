@@ -1,7 +1,8 @@
+import csv
 import io
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from sqlalchemy import func, select
 
 from app.models import Branch, Fridge, Logger, Metric
@@ -30,6 +31,13 @@ def xlsx_bytes(header, rows) -> bytes:
     buffer = io.BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
+
+
+def sample_as_csv() -> bytes:
+    """Return the rows of data/sample_week.xlsx as a comma-separated CSV file."""
+    buffer = io.StringIO(newline="")
+    csv.writer(buffer).writerows(load_workbook(SAMPLE_FILE, read_only=True).active.iter_rows(values_only=True))
+    return buffer.getvalue().encode("utf-8")
 
 
 def load_sample(session, register=SAMPLE_REGISTRATION):
