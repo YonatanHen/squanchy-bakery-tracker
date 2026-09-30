@@ -24,7 +24,12 @@ function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-const WEEK =new File(["xlsx"], "week.xlsx");
+/** Answer the plain upload with `first` and the upload with a register block with `registered`. */
+function firstThenRegistered(first: unknown, registered: unknown) {
+  return (_url: URL, init?: RequestInit) => ((init?.body as FormData).has("register") ? registered : first);
+}
+
+const WEEK = new File(["xlsx"], "week.xlsx");
 
 /** Open the Upload page and choose week.xlsx. */
 async function uploadWeek() {
@@ -149,7 +154,7 @@ describe("UploadPage", () => {
   it("re-sends the same file with the confirmed entries and shows the new result", async () => {
     const eilat = result({ rejected: 2, unknown: { branches: [{ name: "Eilat" }], loggers: [] } });
     const fetchMock = mockApi([
-      ["POST /api/v1/readings/upload", (_url, init) => ((init?.body as FormData).has("register") ? result({ inserted: 2 }) : eilat)],
+      ["POST /api/v1/readings/upload", firstThenRegistered(eilat, result({ inserted: 2 }))],
     ]);
 
     await uploadWeek();
@@ -169,7 +174,7 @@ describe("UploadPage", () => {
     const eilat = result({ rejected: 1, unknown: { branches: [], loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }] } });
     const refused = { errors: [{ field: "body", message: "Fridge 'Dairy' in Haifa already has logger TL-0231" }] };
     mockApi([
-      ["POST /api/v1/readings/upload", (_url, init) => ((init?.body as FormData).has("register") ? json(422, refused) : eilat)],
+      ["POST /api/v1/readings/upload", firstThenRegistered(eilat, json(422, refused))],
     ]);
 
     await uploadWeek();
