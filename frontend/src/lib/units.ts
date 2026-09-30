@@ -10,9 +10,14 @@ export function fromCelsius(value: number, metric: Metric): number {
   return metric === "F" ? (value * 9) / 5 + 32 : value;
 }
 
-/** Format a reading in `displayUnit` with one decimal; null (ERR) shows as "—". */
-export function formatTemp(value: number | null, metric: Metric, displayUnit: Metric): string {
+/** Format a reading in `displayUnit` with one decimal; null (ERR) shows as "—"; compact drops the unit letter. */
+export function formatTemp(
+  value: number | null,
+  metric: Metric,
+  displayUnit: Metric,
+  { compact = false }: { compact?: boolean } = {},
+): string {
   if (value === null) return "—";
-  const shown = fromCelsius(toCelsius(value, metric), displayUnit);
-  return `${shown.toFixed(1)} °${displayUnit}`;
+  const shown = fromCelsius(toCelsius(value, metric), displayUnit).toFixed(1);
+  return compact ? `${shown}°` : `${shown} °${displayUnit}`;
 }

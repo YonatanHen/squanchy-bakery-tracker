@@ -37,4 +37,9 @@ describe("formatTemp", () => {
   it("shows an ERR reading (null temp) as a dash", () => {
     expect(formatTemp(null, "F", "C")).toBe("—");
   });
+
+  it("drops the unit letter in the compact card format", () => {
+    expect(formatTemp(38.3, "F", "C", { compact: true })).toBe("3.5°");
+    expect(formatTemp(null, "F", "C", { compact: true })).toBe("—");
+  });
 });
