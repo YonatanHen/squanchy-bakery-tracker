@@ -16,13 +16,13 @@ interface Row {
 }
 
 interface Group {
-  columns: [{ text: string; className: string | undefined }, { text: string; className: string | undefined }];
+  columns: [string, string] | undefined;
   rows: Row[];
 }
 
 const GROUPS: Group[] = [
   {
-    columns: [{ text: "Min", className: undefined }, { text: "Max", className: undefined }],
+    columns: ["Min", "Max"],
     rows: [
       {
         title: "Temperature limits",
@@ -35,7 +35,7 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    columns: [{ text: "Non-urgent", className: styles.nonUrgent }, { text: "Urgent", className: styles.urgent }],
+    columns: undefined,
     rows: [
       {
         title: "Rise over 4 readings",
@@ -86,12 +86,16 @@ export function ThresholdSettingsForm({ initial, fridges, errors = {}, busy, onS
         </Field>
         {GROUPS.map((group) => (
           <div key={group.rows[0]?.title} className={styles.grid}>
-            <span />
-            {group.columns.map((column) => (
-              <span key={column.text} className={column.className ?? styles.column}>
-                {column.text}
-              </span>
-            ))}
+            {group.columns && (
+              <>
+                <span />
+                {group.columns.map((column) => (
+                  <span key={column} className={styles.column}>
+                    {column}
+                  </span>
+                ))}
+              </>
+            )}
             {group.rows.map((row) => (
               <div key={row.title} className={styles.row}>
                 <span className={styles.rowTitle}>{row.title}</span>
