@@ -29,7 +29,8 @@ function plural(count: number, one: string, many: string): string {
 
 /** Describe a saved reading, e.g. "Reading saved. 1 alert created." */
 function savedMessage(result: SaveResult): string {
-  const parts = ["Reading saved."];
+  if (!result.inserted) return "This reading was already saved. Nothing changed.";
+  const parts = [result.err_rows ? "Reading saved as ERR." : "Reading saved."];
   if (result.alerts) parts.push(`${plural(result.alerts, "alert", "alerts")} created.`);
   return parts.join(" ");
 }
@@ -109,6 +110,12 @@ export function SingleRecordPage() {
     setError(other.length || !caught.fieldErrors.length ? other.join(" ") || caught.message : "");
   }
 
+  /** Clear the form and the last result for the next reading. */
+  function addAnother() {
+    setRecord(EMPTY);
+    setSaved(null);
+  }
+
   /** Send the typed record. */
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -123,7 +130,20 @@ export function SingleRecordPage() {
       <h1 className={styles.title}>Add one reading</h1>
       {saved && (
         <Card role="status" className={styles.saved}>
-          {savedMessage(saved)}
+          <p className={styles.savedTitle}>{savedMessage(saved)}</p>
+          {saved.renamed_fridges.map((rename) => (
+            <p key={rename} className={styles.savedNote}>
+              Renamed: {rename}
+            </p>
+          ))}
+          {saved.fridge_name_mismatches.map((m) => (
+            <p key={m.row} className={styles.savedNote}>
+              Saved to {m.fridge} ({m.logger}), not “{m.name_in_file}”. Check for a typo.
+            </p>
+          ))}
+          <Button variant="secondary" className={styles.another} onClick={addAnother}>
+            Add another
+          </Button>
         </Card>
       )}
       {error && (

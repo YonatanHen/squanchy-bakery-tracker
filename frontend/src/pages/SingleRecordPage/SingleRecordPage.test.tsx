@@ -173,6 +173,57 @@ describe("SingleRecordPage", () => {
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Fridge 'Dairy' in Haifa already has logger TL-0231");
   });
 
+  it("says when the reading was already saved, and clears the form on Add another", async () => {
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      ["POST /api/v1/readings", result({ duplicates: 1 })],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await fillDairy();
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("This reading was already saved. Nothing changed.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add another" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Branch" })).toHaveValue("");
+    expect(screen.getByLabelText("Temperature (number, or ERR)")).toHaveValue("");
+  });
+
+  it("notes an ERR reading and a fridge renamed by the typed fridge name", async () => {
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      ["POST /api/v1/readings", result({ inserted: 1, err_rows: 1, renamed_fridges: ["Haifa: Dairy -> Dairy 2"] })],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await fillDairy("ERR");
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent("Reading saved as ERR.");
+    expect(status).toHaveTextContent("Renamed: Haifa: Dairy -> Dairy 2");
+  });
+
+  it("warns when an older reading's fridge name differs from its logger's fridge", async () => {
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      [
+        "POST /api/v1/readings",
+        result({ inserted: 1, fridge_name_mismatches: [{ row: 1, logger: "TL-0231", name_in_file: "Dary", fridge: "Dairy" }] }),
+      ],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await fillDairy();
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Saved to Dairy (TL-0231), not “Dary”. Check for a typo.");
+  });
+
   it("sends the typed reading, the datetime-local time as is, and shows it was saved", async () => {
     const fetchMock = mockApi([
       ["GET /api/v1/branches", BRANCHES],
