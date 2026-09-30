@@ -136,16 +136,16 @@ export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
 }
 
-/** A threshold profile with how many fridges use it; only the fields the Branches screen needs. */
-export interface ThresholdProfile {
+/** Threshold settings with how many fridges use them; only the fields the Branches screen needs. */
+export interface ThresholdSettings {
   id: number;
   name: string;
   fridges: number;
 }
 
-/** Get the threshold profiles. */
-export function listThresholdProfiles(): Promise<ThresholdProfile[]> {
-  return apiRequest<ThresholdProfile[]>("/threshold-settings");
+/** Get all threshold settings. */
+export function listThresholdSettings(): Promise<ThresholdSettings[]> {
+  return apiRequest<ThresholdSettings[]>("/threshold-settings");
 }
 
 /** Edit a branch; send only the changed fields. */

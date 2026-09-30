@@ -7,7 +7,7 @@ import {
   deleteReading,
   listAlerts,
   listReadings,
-  listThresholdProfiles,
+  listThresholdSettings,
   updateBranch,
   updateFridge,
   updateReading,
@@ -109,12 +109,12 @@ describe("branch and fridge deletes", () => {
   });
 });
 
-describe("listThresholdProfiles", () => {
-  it("gets the threshold profiles for the fridge profile names", async () => {
-    const profiles = [{ id: 1, name: "default", fridges: 4 }];
-    fetchMock.mockImplementation(async () => new Response(JSON.stringify(profiles), { status: 200 }));
+describe("listThresholdSettings", () => {
+  it("gets the threshold settings for the fridge threshold settings names", async () => {
+    const settings = [{ id: 1, name: "default", fridges: 4 }];
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify(settings), { status: 200 }));
 
-    expect(await listThresholdProfiles()).toEqual(profiles);
+    expect(await listThresholdSettings()).toEqual(settings);
     expect(calledUrl()).toBe("/api/v1/threshold-settings");
   });
 });

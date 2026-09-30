@@ -8,7 +8,7 @@ import {
   deleteFridge,
   deleteImpact,
   listBranches,
-  listThresholdProfiles,
+  listThresholdSettings,
   updateBranch,
   type Branch,
   type BranchChanges,
@@ -26,7 +26,7 @@ interface PendingDelete {
 /** Branches screen: each branch with its fridges and loggers, with edit and delete. */
 export function BranchesPage() {
   const [branches, setBranches] = useState<Branch[] | null>(null);
-  const [profileNames, setProfileNames] = useState<Record<number, string>>({});
+  const [settingsNames, setSettingsNames] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -35,9 +35,9 @@ export function BranchesPage() {
 
   const load = useCallback(async () => {
     try {
-      const [loaded, profiles] = await Promise.all([listBranches(), listThresholdProfiles()]);
+      const [loaded, settings] = await Promise.all([listBranches(), listThresholdSettings()]);
       setBranches(loaded);
-      setProfileNames(Object.fromEntries(profiles.map((p) => [p.id, p.name])));
+      setSettingsNames(Object.fromEntries(settings.map((s) => [s.id, s.name])));
       setError("");
     } catch {
       setError("Could not load the branches. Try again.");
@@ -100,7 +100,7 @@ export function BranchesPage() {
         <BranchCard
           key={branch.id}
           branch={branch}
-          profileNames={profileNames}
+          settingsNames={settingsNames}
           onEdit={setEditingBranch}
           onDelete={(b) => askDelete("branch", b)}
           onEditFridge={noop}

@@ -14,7 +14,7 @@ const WALK_IN: Fridge = {
   avg_temp: 3.1,
   last_measured: null,
 };
-const PROFILES = [
+const SETTINGS = [
   { id: 1, name: "default", fridges: 4 },
   { id: 2, name: "Cream cakes", fridges: 0 },
 ];
@@ -22,19 +22,21 @@ const PROFILES = [
 /** Render the dialog for Tel Aviv's walk-in fridge with a spy onSave. */
 function renderDialog(onSave = vi.fn(async () => {}), fridge: Fridge = WALK_IN) {
   const onCancel = vi.fn();
-  render(<FridgeEditDialog fridge={fridge} branchName="Tel Aviv" profiles={PROFILES} onSave={onSave} onCancel={onCancel} />);
+  render(
+    <FridgeEditDialog fridge={fridge} branchName="Tel Aviv" thresholdSettings={SETTINGS} onSave={onSave} onCancel={onCancel} />,
+  );
   return { onSave, onCancel };
 }
 
 describe("FridgeEditDialog", () => {
-  it("starts from the fridge's current name, unit, logger and profile", () => {
+  it("starts from the fridge's current name, unit, logger and threshold settings", () => {
     renderDialog();
 
     expect(screen.getByRole("dialog", { name: "Edit fridge" })).toHaveAccessibleDescription("Tel Aviv · Walk-in");
     expect(screen.getByLabelText("Name")).toHaveValue("Walk-in");
     expect(screen.getByRole("button", { name: "°C" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Logger")).toHaveValue("TL-0417");
-    expect(screen.getByLabelText("Threshold profile")).toHaveValue("1");
+    expect(screen.getByLabelText("Threshold settings")).toHaveValue("1");
   });
 
   it("saves a rename with only the name", async () => {
@@ -47,13 +49,13 @@ describe("FridgeEditDialog", () => {
     expect(onSave).toHaveBeenCalledWith({ name: "Display 2" });
   });
 
-  it("saves a Fahrenheit logger, a moved logger and another profile", async () => {
+  it("saves a Fahrenheit logger, a moved logger and other threshold settings", async () => {
     const { onSave } = renderDialog();
 
     await userEvent.click(screen.getByRole("button", { name: "°F" }));
     await userEvent.clear(screen.getByLabelText("Logger"));
     await userEvent.type(screen.getByLabelText("Logger"), "TL-0231");
-    await userEvent.selectOptions(screen.getByLabelText("Threshold profile"), "Cream cakes");
+    await userEvent.selectOptions(screen.getByLabelText("Threshold settings"), "Cream cakes");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(onSave).toHaveBeenCalledWith({ metric: "F", logger_id: "TL-0231", threshold_settings_id: 2 });

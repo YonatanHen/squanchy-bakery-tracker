@@ -7,7 +7,7 @@ import styles from "./BranchCard.module.css";
 
 interface BranchCardProps {
   branch: Branch;
-  profileNames: Record<number, string>;
+  settingsNames: Record<number, string>;
   onEdit: (branch: Branch) => void;
   onDelete: (branch: Branch) => void;
   onEditFridge: (fridge: Fridge) => void;
@@ -21,7 +21,7 @@ function formatAddress({ street, building_number, city }: Branch): string {
 }
 
 /** One branch with its address, edit and delete actions, and its fridges. */
-export function BranchCard({ branch, profileNames, onEdit, onDelete, onEditFridge, onDeleteFridge }: BranchCardProps) {
+export function BranchCard({ branch, settingsNames, onEdit, onDelete, onEditFridge, onDeleteFridge }: BranchCardProps) {
   const address = formatAddress(branch);
   return (
     <Card className={styles.card}>
@@ -45,7 +45,7 @@ export function BranchCard({ branch, profileNames, onEdit, onDelete, onEditFridg
             <span className={styles.fridgeName}>{fridge.name}</span>
             <span className={styles.mono}>{fridge.logger_id ?? "—"}</span>
             <span className={styles.mono}>{`°${fridge.metric}`}</span>
-            <span className={styles.profile}>{profileNames[fridge.threshold_settings_id] ?? ""}</span>
+            <span className={styles.settings}>{settingsNames[fridge.threshold_settings_id] ?? ""}</span>
             <IconButton label={`Edit fridge ${fridge.name}`} icon={<EditIcon />} onClick={() => onEditFridge(fridge)} />
             <IconButton
               label={`Delete fridge ${fridge.name}`}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import type { Fridge, FridgeChanges, ThresholdProfile } from "../../lib/endpoints";
+import type { Fridge, FridgeChanges, ThresholdSettings } from "../../lib/endpoints";
 import { saveErrors } from "../../lib/saveErrors";
 import type { Metric } from "../../lib/units";
 import { Dialog } from "../Dialog/Dialog";
@@ -18,17 +18,17 @@ const UNITS = [
 interface FridgeEditDialogProps {
   fridge: Fridge;
   branchName: string;
-  profiles: ThresholdProfile[];
+  thresholdSettings: ThresholdSettings[];
   onSave: (changes: FridgeChanges) => Promise<unknown>;
   onCancel: () => void;
 }
 
-/** Edit a fridge's name, unit, logger and threshold profile; saves only the changed fields. */
-export function FridgeEditDialog({ fridge, branchName, profiles, onSave, onCancel }: FridgeEditDialogProps) {
+/** Edit a fridge's name, unit, logger and threshold settings; saves only the changed fields. */
+export function FridgeEditDialog({ fridge, branchName, thresholdSettings, onSave, onCancel }: FridgeEditDialogProps) {
   const [name, setName] = useState(fridge.name);
   const [metric, setMetric] = useState<Metric>(fridge.metric);
   const [loggerId, setLoggerId] = useState(fridge.logger_id ?? "");
-  const [profileId, setProfileId] = useState(String(fridge.threshold_settings_id));
+  const [settingsId, setSettingsId] = useState(String(fridge.threshold_settings_id));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,7 +40,7 @@ export function FridgeEditDialog({ fridge, branchName, profiles, onSave, onCance
     if (name !== fridge.name) changes.name = name;
     if (metric !== fridge.metric) changes.metric = metric;
     if (loggerId !== (fridge.logger_id ?? "")) changes.logger_id = loggerId;
-    if (Number(profileId) !== fridge.threshold_settings_id) changes.threshold_settings_id = Number(profileId);
+    if (Number(settingsId) !== fridge.threshold_settings_id) changes.threshold_settings_id = Number(settingsId);
     if (Object.keys(changes).length === 0) return onCancel();
 
     setSaving(true);
@@ -78,13 +78,13 @@ export function FridgeEditDialog({ fridge, branchName, profiles, onSave, onCance
             />
           )}
         </Field>
-        <Field label="Threshold profile" error={fieldErrors.threshold_settings_id}>
+        <Field label="Threshold settings" error={fieldErrors.threshold_settings_id}>
           {(control) => (
             <Select
               {...control}
-              options={profiles.map((p) => ({ value: String(p.id), label: p.name }))}
-              value={profileId}
-              onChange={setProfileId}
+              options={thresholdSettings.map((s) => ({ value: String(s.id), label: s.name }))}
+              value={settingsId}
+              onChange={setSettingsId}
             />
           )}
         </Field>

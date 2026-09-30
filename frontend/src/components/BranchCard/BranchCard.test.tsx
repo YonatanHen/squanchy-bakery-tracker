@@ -14,17 +14,17 @@ const DAIRY: Fridge = {
   last_measured: "2026-09-14T06:00:00",
 };
 const HAIFA: Branch = { id: 2, name: "Haifa", city: null, street: null, building_number: null, fridges: [DAIRY] };
-const PROFILES = { 1: "default" };
+const SETTINGS_NAMES = { 1: "default" };
 
 /** Render a BranchCard with spy callbacks. */
 function renderCard(branch: Branch = HAIFA) {
   const handlers = { onEdit: vi.fn(), onDelete: vi.fn(), onEditFridge: vi.fn(), onDeleteFridge: vi.fn() };
-  render(<BranchCard branch={branch} profileNames={PROFILES} {...handlers} />);
+  render(<BranchCard branch={branch} settingsNames={SETTINGS_NAMES} {...handlers} />);
   return handlers;
 }
 
 describe("BranchCard", () => {
-  it("lists each fridge with its logger, unit and threshold profile (Haifa logs in °F)", () => {
+  it("lists each fridge with its logger, unit and threshold settings (Haifa logs in °F)", () => {
     renderCard();
 
     const row = screen.getByRole("listitem");

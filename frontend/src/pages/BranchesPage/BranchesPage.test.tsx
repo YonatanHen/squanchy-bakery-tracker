@@ -24,13 +24,13 @@ const HAIFA: Branch = {
     { id: 3, name: "Dairy", metric: "F", logger_id: "TL-0231", threshold_settings_id: 1, avg_temp: 38.3, last_measured: null },
   ],
 };
-const PROFILES = [{ id: 1, name: "default", fridges: 2 }];
+const SETTINGS = [{ id: 1, name: "default", fridges: 2 }];
 
 /** Mock the calls the Branches page makes on load. */
 function mockBranches(branches: Branch[] = [JERUSALEM, HAIFA]) {
   return mockApi([
     ["GET /api/v1/branches", branches],
-    ["GET /api/v1/threshold-settings", PROFILES],
+    ["GET /api/v1/threshold-settings", SETTINGS],
   ]);
 }
 
@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 describe("BranchesPage list", () => {
-  it("lists each branch with its fridges, loggers and threshold profile", async () => {
+  it("lists each branch with its fridges, loggers and threshold settings", async () => {
     mockBranches();
     renderLoggedIn("/branches");
 
@@ -76,7 +76,7 @@ function mockDeletes(deleteResponse?: Response) {
     ["GET /api/v1/branches/2/delete-impact", IMPACT],
     ["GET /api/v1/fridges/3/delete-impact", IMPACT],
     ["GET /api/v1/branches", () => branches],
-    ["GET /api/v1/threshold-settings", PROFILES],
+    ["GET /api/v1/threshold-settings", SETTINGS],
     [
       "DELETE /api/v1/branches/2",
       () => deleteResponse ?? ((branches = [JERUSALEM]), new Response(null, { status: 204 })),
@@ -142,7 +142,7 @@ describe("BranchesPage edit branch", () => {
     let branches = [JERUSALEM, HAIFA];
     const fetchMock = mockApi([
       ["GET /api/v1/branches", () => branches],
-      ["GET /api/v1/threshold-settings", PROFILES],
+      ["GET /api/v1/threshold-settings", SETTINGS],
       [
         "PATCH /api/v1/branches/2",
         (_url: URL, init?: RequestInit) => {
@@ -169,7 +169,7 @@ describe("BranchesPage edit branch", () => {
   it("shows 422 field errors from the API under the field", async () => {
     mockApi([
       ["GET /api/v1/branches", [JERUSALEM, HAIFA]],
-      ["GET /api/v1/threshold-settings", PROFILES],
+      ["GET /api/v1/threshold-settings", SETTINGS],
       [
         "PATCH /api/v1/branches/2",
         () =>
@@ -194,7 +194,7 @@ describe("BranchesPage delete fridge", () => {
     const deletes = mockApi([
       ["GET /api/v1/fridges/3/delete-impact", { fridges: 1, loggers: 1, readings: 40, alerts: 3 }],
       ["GET /api/v1/branches", [JERUSALEM, HAIFA]],
-      ["GET /api/v1/threshold-settings", PROFILES],
+      ["GET /api/v1/threshold-settings", SETTINGS],
       ["DELETE /api/v1/fridges/3", () => new Response(null, { status: 204 })],
     ]);
     renderLoggedIn("/branches");
