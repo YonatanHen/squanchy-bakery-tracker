@@ -14,7 +14,7 @@ class CsvParser:
 
     def parse(self, stream: BinaryIO) -> list[RawRow]:
         """Read every data row of the CSV file; the delimiter (',' or ';') is detected from the header."""
-        text = stream.read().decode("utf-8")
+        text = stream.read().decode("utf-8-sig")  # drops Excel's BOM
         header_line = text.split("\n", 1)[0]
         delimiter = ";" if header_line.count(";") > header_line.count(",") else ","
         rows = csv.reader(io.StringIO(text, newline=""), delimiter=delimiter)

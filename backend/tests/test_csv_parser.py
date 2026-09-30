@@ -22,3 +22,10 @@ def test_semicolon_delimited_file_is_read():
     [row] = parse("Logger;Branch;Fridge;Time;Temp\nTL-0512;Jerusalem;Dairy;14/09/2026 06:00;3.8\n")
 
     assert row.values == {"logger": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy", "time": "14/09/2026 06:00", "temp": "3.8"}
+
+
+def test_utf8_bom_before_the_header_is_ignored():
+    """Excel's "CSV UTF-8" export starts with a BOM; the first column is still found."""
+    [row] = parse("Logger,Branch,Fridge,Time,Temp\nTL-0512,Jerusalem,Dairy,2026-09-14 06:00,3.8\n", encoding="utf-8-sig")
+
+    assert row.values["logger"] == "TL-0512"
