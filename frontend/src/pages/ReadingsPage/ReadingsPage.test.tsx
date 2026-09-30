@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Reading } from "../../lib/endpoints";
 import { mockApi, renderLoggedIn } from "../../testUtils";
@@ -74,6 +75,18 @@ describe("ReadingsPage list", () => {
     const list = await screen.findByRole("list", { name: "Readings" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     expect(within(list).getByText("3.5°")).toBeInTheDocument();
+  });
+
+  it("converts the shown temperatures when the user picks °F (Haifa logs in °F)", async () => {
+    mockReadings();
+    renderLoggedIn("/readings");
+    const table = await screen.findByRole("table", { name: "Readings" });
+
+    await userEvent.click(screen.getByRole("button", { name: "°F" }));
+
+    expect(screen.getByRole("button", { name: "°F" })).toHaveAttribute("aria-pressed", "true");
+    expect(await within(table).findByText("38.3 °F")).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Readings" })).getByText("38.3°")).toBeInTheDocument();
   });
 
   it("shows an empty state when nothing matches", async () => {

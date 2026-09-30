@@ -4,10 +4,16 @@ import { DataTable, type Column } from "../../components/DataTable/DataTable";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
+import { SegmentedToggle } from "../../components/SegmentedToggle/SegmentedToggle";
 import { listReadings, type Page, type Reading, type ReadingFilters } from "../../lib/endpoints";
 import { formatShort } from "../../lib/format";
 import { formatTemp, type Metric } from "../../lib/units";
 import styles from "./ReadingsPage.module.css";
+
+const UNITS = [
+  { value: "C", label: "°C" },
+  { value: "F", label: "°F" },
+] as const;
 
 /** Build the desktop table columns for the selected unit. */
 function columns(unit: Metric, onEdit: (reading: Reading) => void): Column<Reading>[] {
@@ -33,7 +39,7 @@ function columns(unit: Metric, onEdit: (reading: Reading) => void): Column<Readi
 
 /** Readings screen: filters, °C/°F, cards on phones and a table on desktop, with paging. */
 export function ReadingsPage() {
-  const [unit] = useState<Metric>("C");
+  const [unit, setUnit] = useState<Metric>("C");
   const [filters] = useState<ReadingFilters>({});
   const [offset] = useState(0);
   const [page, setPage] = useState<Page<Reading> | null>(null);
@@ -56,6 +62,7 @@ export function ReadingsPage() {
     <section className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Readings</h1>
+        <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={setUnit} />
       </div>
       {error && (
         <p role="alert" className={styles.error}>
