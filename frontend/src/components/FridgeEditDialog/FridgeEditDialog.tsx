@@ -67,6 +67,11 @@ export function FridgeEditDialog({ fridge, branchName, thresholdSettings, onSave
           </span>
           <SegmentedToggle label="Unit" options={UNITS} value={metric} onChange={setMetric} />
         </div>
+        {metric !== fridge.metric && (
+          <p className={styles.note}>
+            The saved readings of this fridge will be marked °{metric}. Their values stay the same.
+          </p>
+        )}
         <Field label="Logger" hint="TL- and 4 digits, e.g. TL-0231." error={fieldErrors.logger_id}>
           {(control) => (
             <TextInput

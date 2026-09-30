@@ -90,6 +90,21 @@ def test_fridge_edit_rejects_null(client, session, auth_headers, field):
     assert fridge.logger_id == "TL-0417"
 
 
+def test_changing_a_fridge_unit_relabels_its_readings(client, session, auth_headers):
+    """Haifa was registered as °C by mistake: switching the fridge to °F marks its readings °F with the same values,
+    and the average is recalculated in °F."""
+    fridge = add_fridge(session, branch="Haifa", fridge="Dairy", logger="TL-0231")  # °C by default
+    for hour, temp in ((6, 38.3), (7, 39.0)):
+        session.add(Reader(logger_id="TL-0231", time=datetime(2026, 9, 14, hour), temp=temp, metric=Metric.C, status=Status.OK))
+    session.commit()
+
+    response = client.patch(f"/api/v1/fridges/{fridge.id}", json={"metric": "F"}, headers=auth_headers)
+
+    assert response.status_code == 200
+    assert sorted((r.temp, r.metric) for r in session.query(Reader)) == [(38.3, Metric.F), (39.0, Metric.F)]
+    assert response.get_json()["avg_temp"] == pytest.approx(38.65)
+
+
 def _reading_with_alert(session, logger_id, hour):
     """Store one 9.4°C reading with a spike alert for the logger."""
     reading = Reader(logger_id=logger_id, time=datetime(2026, 9, 14, hour), temp=9.4, metric=Metric.C, status=Status.OK)

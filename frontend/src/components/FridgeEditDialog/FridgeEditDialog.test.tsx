@@ -47,6 +47,15 @@ describe("FridgeEditDialog", () => {
     expect(screen.getByLabelText("Threshold settings")).toHaveValue("1");
   });
 
+  it("says the saved readings get the new unit with the same values when the unit changes", async () => {
+    renderDialog();
+    expect(screen.queryByText(/will be marked/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "°F" }));
+
+    expect(screen.getByText("The saved readings of this fridge will be marked °F. Their values stay the same.")).toBeInTheDocument();
+  });
+
   it("saves a rename with only the name", async () => {
     const { onSave } = renderDialog();
 
