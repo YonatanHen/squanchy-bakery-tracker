@@ -5,6 +5,7 @@ import { DataTable, type Column } from "../../components/DataTable/DataTable";
 import { EditReadingDialog } from "../../components/EditReadingDialog/EditReadingDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
+import { PageHeader } from "../../components/PageHeader/PageHeader";
 import { Pager } from "../../components/Pager/Pager";
 import { ReadingCard } from "../../components/ReadingCard/ReadingCard";
 import { ReadingFilters } from "../../components/ReadingFilters/ReadingFilters";
@@ -149,15 +150,12 @@ export function ReadingsPage() {
 
   return (
     <section className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Readings</h1>
-        <div className={styles.actions}>
-          <Link to="/readings/new" className={`${styles.addLink} ${styles.desktopOnly}`}>
-            + Add a reading
-          </Link>
-          <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
-        </div>
-      </div>
+      <PageHeader title="Readings">
+        <Link to="/readings/new" className={`${styles.addLink} ${styles.desktopOnly}`}>
+          + Add a reading
+        </Link>
+        <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
+      </PageHeader>
       <ReadingFilters branches={branches} unit={unit} value={filters} errors={fieldErrors} onApply={applyFilters} />
       {page && (
         <p className={styles.summary}>

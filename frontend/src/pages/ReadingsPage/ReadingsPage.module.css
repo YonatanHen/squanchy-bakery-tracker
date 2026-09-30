@@ -4,25 +4,6 @@
   gap: var(--space-14);
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-10);
-}
-
-.title {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 26px;
-}
-
-.actions {
-  display: flex;
-  gap: var(--space-10);
-  align-items: center;
-}
-
 .addLink {
   font-size: 14px;
   font-weight: 600;
@@ -71,10 +52,6 @@
 @media (min-width: 900px) {
   .page {
     gap: var(--space-18);
-  }
-
-  .title {
-    font-size: 30px;
   }
 
   .cards,
