@@ -1,7 +1,9 @@
 import logging
 
+from flask import request
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import NotFound
 
 from app.api import api_v1
 from app.db import db
@@ -32,6 +34,13 @@ def conflict(exc: IntegrityError):
 def not_found(exc):
     """Return 404 as JSON."""
     return {"error": "Not found"}, 404
+
+
+def unknown_url(exc: NotFound):
+    """Return 404 as JSON for unknown /api/ URLs; they match no route, so the blueprint handler does not run."""
+    if request.path.startswith("/api/"):
+        return {"error": "Not found"}, 404
+    return exc
 
 
 @api_v1.errorhandler(UnsupportedFormat)

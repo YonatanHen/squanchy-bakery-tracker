@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.services.ingest.normalizer import collapse_spaces, parse_temp, parse_time
+from app.services.ingest.normalizer import collapse_spaces, parse_api_time, parse_temp, parse_time
 
 SIX_AM = datetime(2026, 9, 14, 6, 0)
 
@@ -16,6 +16,11 @@ def test_both_date_formats_from_the_sample_give_the_same_time():
 def test_excel_datetime_cell_is_accepted():
     """A cell Excel already stores as a datetime is used as is."""
     assert parse_time(SIX_AM) == SIX_AM
+
+
+def test_browser_datetime_input_format_is_accepted():
+    """The UI's datetime-local input sends YYYY-MM-DDTHH:MM."""
+    assert parse_api_time("2026-09-14T06:20") == datetime(2026, 9, 14, 6, 20)
 
 
 @pytest.mark.parametrize("bad", ["32/09/2026 06:00", "14-09-26", "", None])
