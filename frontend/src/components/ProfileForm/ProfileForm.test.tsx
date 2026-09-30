@@ -1,0 +1,79 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import type { ProfileValues } from "../../lib/endpoints";
+import { ProfileForm } from "./ProfileForm";
+
+const DEFAULT: ProfileValues = {
+  name: "default",
+  growth_non_urgent: "0.1",
+  growth_urgent: "1",
+  deviation_non_urgent: "1.5",
+  deviation_urgent: "3",
+  gap_non_urgent_minutes: "15",
+  gap_urgent_minutes: "120",
+};
+
+describe("ProfileForm", () => {
+  it("shows the name, the fridge count and the six limits", () => {
+    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
+
+    expect(screen.getByRole("textbox", { name: "Profile name" })).toHaveValue("default");
+    expect(screen.getByText("Used by 4 fridges")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveValue("0.1");
+    expect(screen.getByRole("textbox", { name: "Rise urgent, degrees C" })).toHaveValue("1");
+    expect(screen.getByRole("textbox", { name: "Deviation non-urgent, degrees C" })).toHaveValue("1.5");
+    expect(screen.getByRole("textbox", { name: "Deviation urgent, degrees C" })).toHaveValue("3");
+    expect(screen.getByRole("textbox", { name: "Gap non-urgent, minutes" })).toHaveValue("15");
+    expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveValue("120");
+  });
+
+  it("warns that saving changes alerts for every fridge using the profile", () => {
+    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
+
+    expect(screen.getByText(/Saving changes future alerts for all 4 fridges that use this profile/)).toBeInTheDocument();
+  });
+
+  it("uses the singular for one fridge", () => {
+    render(<ProfileForm initial={DEFAULT} fridges={1} onSave={() => {}} />);
+
+    expect(screen.getByText("Used by 1 fridge")).toBeInTheDocument();
+    expect(screen.getByText(/Saving changes future alerts for the 1 fridge that uses this profile/)).toBeInTheDocument();
+  });
+
+  it("does not warn for a profile no fridge uses", () => {
+    render(<ProfileForm initial={DEFAULT} fridges={0} onSave={() => {}} />);
+
+    expect(screen.queryByText(/Are you sure/)).not.toBeInTheDocument();
+  });
+
+  it("saves the values as typed", async () => {
+    const onSave = vi.fn();
+    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={onSave} />);
+
+    const gap = screen.getByRole("textbox", { name: "Gap non-urgent, minutes" });
+    await userEvent.clear(gap);
+    await userEvent.type(gap, "30");
+    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(onSave).toHaveBeenCalledWith({ ...DEFAULT, gap_non_urgent_minutes: "30" });
+  });
+
+  it("shows each error under its field", () => {
+    render(
+      <ProfileForm
+        initial={DEFAULT}
+        fridges={4}
+        onSave={() => {}}
+        errors={{ name: "String should have at least 1 character", growth_non_urgent: "Must be lower than urgent" }}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Profile name" })).toHaveAccessibleDescription(
+      "Used by 4 fridges String should have at least 1 character",
+    );
+    expect(screen.getByRole("textbox", { name: "Rise non-urgent, degrees C" })).toHaveAccessibleDescription(
+      "Must be lower than urgent",
+    );
+  });
+});
