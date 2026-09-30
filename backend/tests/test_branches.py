@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from app.models import Metric, Reader, Status
+from app.models import Alert, AlertLevel, Branch, Fridge, Metric, Reader, Status
+from app.models.archive import AlertArchive, ReaderArchive
 from app.services.tokens import create_token
 from tests.helpers import add_fridge
 
@@ -73,3 +74,50 @@ def test_fridge_edit_rejects_bad_logger_id_and_empty_name(client, session, auth_
 
     assert response.status_code == 422
     assert {e["field"] for e in response.get_json()["errors"]} == {"name", "logger_id"}
+
+
+def _reading_with_alert(session, logger_id, hour):
+    """Store one 9.4°C reading with a spike alert for the logger."""
+    reading = Reader(logger_id=logger_id, time=datetime(2026, 9, 14, hour), temp=9.4, metric=Metric.C, status=Status.OK)
+    reading.alerts.append(Alert(description="Spike", level=AlertLevel.NON_URGENT))
+    session.add(reading)
+    session.commit()
+
+
+def test_branch_delete_impact_counts_everything_and_deletes_nothing(client, session, auth_headers):
+    """The confirmation dialog gets the counts; nothing is removed or archived yet."""
+    first = add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
+    add_fridge(session, branch="Tel Aviv", fridge="Display 1", logger="TL-0418")
+    _reading_with_alert(session, "TL-0417", 6)
+    _reading_with_alert(session, "TL-0418", 7)
+
+    response = client.get(f"/api/v1/branches/{first.branch_id}/delete-impact", headers=auth_headers)
+
+    assert response.get_json() == {"fridges": 2, "loggers": 2, "readings": 2, "alerts": 2}
+    assert (session.query(Reader).count(), session.query(ReaderArchive).count()) == (2, 0)
+
+
+def test_delete_branch_removes_it_and_archives_its_readings_and_alerts(client, session, auth_headers):
+    """After Summer confirms, the branch is gone and its history is in the archive."""
+    fridge = add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
+    _reading_with_alert(session, "TL-0417", 6)
+
+    assert client.delete(f"/api/v1/branches/{fridge.branch_id}", headers=auth_headers).status_code == 204
+    session.expire_all()
+    assert (session.query(Branch).count(), session.query(Reader).count(), session.query(Alert).count()) == (0, 0, 0)
+    assert (session.query(ReaderArchive).count(), session.query(AlertArchive).count()) == (1, 1)
+
+
+def test_delete_fridge_keeps_the_other_fridges(client, session, auth_headers):
+    """Deleting Walk-in leaves Display 1 in the branch."""
+    walk_in = add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
+    add_fridge(session, branch="Tel Aviv", fridge="Display 1", logger="TL-0418")
+    _reading_with_alert(session, "TL-0417", 6)
+
+    impact = client.get(f"/api/v1/fridges/{walk_in.id}/delete-impact", headers=auth_headers).get_json()
+    assert impact == {"fridges": 1, "loggers": 1, "readings": 1, "alerts": 1}
+
+    assert client.delete(f"/api/v1/fridges/{walk_in.id}", headers=auth_headers).status_code == 204
+    session.expire_all()
+    assert [f.name for f in session.query(Fridge)] == ["Display 1"]
+    assert session.query(ReaderArchive).one().fridge == "Walk-in"

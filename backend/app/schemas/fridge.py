@@ -25,3 +25,12 @@ class FridgePatch(BaseModel):
     name: Name | None = None
     metric: Metric | None = None
     logger_id: LoggerId | None = None
+
+
+class DeleteImpact(BaseModel):
+    """What a delete would remove; the readings and alerts are moved to the archive, not lost."""
+
+    fridges: int
+    loggers: int
+    readings: int
+    alerts: int
