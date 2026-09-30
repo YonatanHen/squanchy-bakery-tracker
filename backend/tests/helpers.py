@@ -1,6 +1,21 @@
+import io
+
+from openpyxl import Workbook
 from sqlalchemy import func, select
 
 from app.models import Branch, Fridge, Logger, Metric
+
+
+def xlsx_bytes(header, rows) -> bytes:
+    """Build an .xlsx file in memory with a header row and data rows."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(list(header))
+    for row in rows:
+        sheet.append(list(row))
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
 
 
 def add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512", metric=Metric.C) -> Fridge:
