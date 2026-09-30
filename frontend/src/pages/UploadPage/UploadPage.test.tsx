@@ -19,7 +19,12 @@ function result(fields: Partial<SaveResult> = {}): SaveResult {
   };
 }
 
-const WEEK = new File(["xlsx"], "week.xlsx");
+/** A JSON response with a non-200 status. */
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+const WEEK =new File(["xlsx"], "week.xlsx");
 
 /** Open the Upload page and choose week.xlsx. */
 async function uploadWeek() {
@@ -76,5 +81,25 @@ describe("UploadPage", () => {
 
     await screen.findByRole("list", { name: "Upload result" });
     expect(screen.queryByRole("list", { name: "Rows to fix" })).not.toBeInTheDocument();
+  });
+
+  it("shows the backend message when the file is not an .xlsx file", async () => {
+    mockApi([["POST /api/v1/readings/upload", () => json(415, { error: "Unsupported file format. Upload an .xlsx file" })]]);
+
+    await uploadWeek();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Unsupported file format. Upload an .xlsx file");
+    expect(screen.queryByRole("list", { name: "Upload result" })).not.toBeInTheDocument();
+  });
+
+  it("lists the missing columns as rows to fix when the header lacks them", async () => {
+    mockApi([
+      ["POST /api/v1/readings/upload", () => json(422, { errors: [{ row: 1, field: "temp", message: "Missing column" }] })],
+    ]);
+
+    await uploadWeek();
+
+    const rows = await screen.findByRole("list", { name: "Rows to fix" });
+    expect(within(rows).getByRole("listitem")).toHaveTextContent("Row 1Temperature — missing column");
   });
 });

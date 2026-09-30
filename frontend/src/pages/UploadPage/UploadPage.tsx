@@ -1,7 +1,8 @@
 import { useState, type ChangeEvent } from "react";
 import { Card } from "../../components/Card/Card";
 import { UploadIcon } from "../../components/icons/icons";
-import { uploadReadings, type SaveResult } from "../../lib/endpoints";
+import { ApiError } from "../../lib/api";
+import { uploadReadings, type RowError, type SaveResult } from "../../lib/endpoints";
 import styles from "./UploadPage.module.css";
 
 const FIELD_LABELS: Record<string, string> = {
@@ -26,12 +27,24 @@ function lowerFirst(text: string): string {
 export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<SaveResult | null>(null);
+  const [fileErrors, setFileErrors] = useState<RowError[]>([]);
+  const [error, setError] = useState("");
 
-  /** Upload the file and show its result. */
+  /** Upload the file and show its result, or why the whole file was rejected. */
   async function upload(chosen: File) {
     setFile(chosen);
-    setResult(await uploadReadings(chosen));
+    setResult(null);
+    setFileErrors([]);
+    setError("");
+    try {
+      setResult(await uploadReadings(chosen));
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.fieldErrors.length) setFileErrors(caught.fieldErrors);
+      else setError(caught instanceof ApiError ? caught.message : "Could not upload the file. Try again.");
+    }
   }
+
+  const errors = result?.errors ?? fileErrors;
 
   /** Upload the file picked in the input. */
   function onPick(event: ChangeEvent<HTMLInputElement>) {
@@ -55,6 +68,11 @@ export function UploadPage() {
             </span>
             <input type="file" accept=".xlsx" className={styles.input} onChange={onPick} />
           </label>
+          {error && (
+            <p role="alert" className={styles.error}>
+              {error}
+            </p>
+          )}
           {result && (
             <ul aria-label="Upload result" className={styles.counts}>
               <li>
@@ -78,11 +96,11 @@ export function UploadPage() {
             </ul>
           )}
         </div>
-        {result && result.errors.length > 0 && (
+        {errors.length > 0 && (
           <Card className={styles.fixes}>
             <p className={styles.fixesTitle}>Fix these rows in your file, then upload it again</p>
             <ul aria-label="Rows to fix" className={styles.rows}>
-              {result.errors.map((error, index) => (
+              {errors.map((error, index) => (
                 <li key={index} className={styles.row}>
                   <span className={styles.rowNumber}>Row {error.row}</span>
                   <span>

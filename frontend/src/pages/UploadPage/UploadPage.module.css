@@ -61,6 +61,12 @@
   opacity: 0;
 }
 
+.error {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
 .counts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
