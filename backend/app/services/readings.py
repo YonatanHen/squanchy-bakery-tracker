@@ -6,7 +6,7 @@ from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.reading import LocationFilters, ReadingFilters, ReadingOut, ReadingPage, ReadingPatch
 from app.services.detection.service import detect, refresh_fridge_stats
-from app.services.errors import get_or_raise
+from app.services.errors import ConflictError, get_or_raise
 from app.services.units import to_celsius
 
 logger = logging.getLogger(__name__)
@@ -156,6 +156,8 @@ def restore_reading(session, reading_id: int) -> ReadingOut:
     """Move an archived reading back to its logger in the fridge's current unit, drop its archived alerts and re-detect."""
     archived = get_or_raise(session, ReaderArchive, reading_id)
     reading_logger = session.get(Logger, archived.logger_id)
+    if reading_logger is None:
+        raise ConflictError(f"Logger {archived.logger_id} no longer exists, so this reading cannot be restored")
     fridge = reading_logger.fridge
     reader = Reader(
         id=archived.id, logger=reading_logger, time=archived.time, temp=archived.temp,

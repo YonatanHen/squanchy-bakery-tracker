@@ -87,3 +87,17 @@ def test_restore_brings_an_archived_reading_back_with_fresh_alerts(client, sessi
     assert sorted(a.level.value for a in alerts) == sorted([AlertLevel.NON_URGENT.value, AlertLevel.URGENT.value])
     assert "Temperature rose 2.5°C over the last 4 readings" in [a.description for a in alerts]
     assert session.get(Fridge, fridge_id).avg_temp == pytest.approx(5.85, abs=0.01)
+
+
+def test_restore_when_the_logger_no_longer_exists_is_a_409(client, session, auth_headers):
+    """Rishon's fridge was deleted with its logger TL-0388: its archived reading cannot go back and stays archived."""
+    load_sample(session)
+    reading_id = _sample_reading_id(session, "TL-0388", datetime(2026, 9, 14, 6, 45))
+    client.delete(f"/api/v1/fridges/{session.get(Logger, 'TL-0388').fridge_id}", headers=auth_headers)
+
+    response = client.post(f"/api/v1/readings/archive/{reading_id}/restore", headers=auth_headers)
+
+    assert response.status_code == 409
+    assert "TL-0388" in response.get_json()["error"]
+    session.expire_all()
+    assert session.get(ReaderArchive, reading_id) is not None
