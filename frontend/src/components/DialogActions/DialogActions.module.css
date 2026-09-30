@@ -1,0 +1,14 @@
+.actions {
+  display: flex;
+  gap: var(--space-10);
+}
+
+.actions .action {
+  flex-grow: 1;
+  height: 50px;
+  font-size: 16px;
+}
+
+.actions .action[data-variant="secondary"] {
+  color: var(--ink);
+}

@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { ApiError } from "../../lib/api";
 import type { Branch, BranchChanges } from "../../lib/endpoints";
-import { Button } from "../Button/Button";
+import { saveErrors } from "../../lib/saveErrors";
 import { Dialog } from "../Dialog/Dialog";
+import { DialogActions } from "../DialogActions/DialogActions";
 import { Field } from "../Field/Field";
 import { TextInput } from "../TextInput/TextInput";
 import styles from "./BranchEditDialog.module.css";
@@ -37,7 +37,7 @@ export function BranchEditDialog({ branch, onSave, onCancel }: BranchEditDialogP
   /** Save the changed fields; a cleared address field is sent as null. */
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const changes: BranchChanges = {};
+    const changes: Record<string, string | null> = {};
     for (const { key } of FIELDS) {
       if (values[key] === (branch[key] ?? "")) continue;
       changes[key] = key === "name" || values[key] !== "" ? values[key] : null;
@@ -46,11 +46,11 @@ export function BranchEditDialog({ branch, onSave, onCancel }: BranchEditDialogP
 
     setSaving(true);
     try {
-      await onSave(changes);
+      await onSave(changes as BranchChanges);
     } catch (err) {
-      const apiError = err instanceof ApiError ? err : null;
-      setFieldErrors(Object.fromEntries((apiError?.fieldErrors ?? []).map((e) => [e.field, e.message])));
-      setError(apiError && apiError.fieldErrors.length > 0 ? "" : (apiError?.message ?? "Could not save. Try again."));
+      const errors = saveErrors(err);
+      setFieldErrors(errors.fields);
+      setError(errors.message);
     } finally {
       setSaving(false);
     }
@@ -75,14 +75,7 @@ export function BranchEditDialog({ branch, onSave, onCancel }: BranchEditDialogP
             {error}
           </p>
         )}
-        <div className={styles.actions}>
-          <Button variant="secondary" size="lg" className={styles.action} onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" size="lg" className={styles.action} disabled={saving}>
-            Save
-          </Button>
-        </div>
+        <DialogActions confirmLabel="Save" busy={saving} onCancel={onCancel} />
       </form>
     </Dialog>
   );

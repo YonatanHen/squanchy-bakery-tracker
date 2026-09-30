@@ -1,6 +1,6 @@
 import type { DeleteImpact } from "../../lib/endpoints";
-import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
+import { DialogActions } from "../DialogActions/DialogActions";
 import styles from "./DeleteImpactDialog.module.css";
 
 interface DeleteImpactDialogProps {
@@ -45,14 +45,7 @@ export function DeleteImpactDialog({ kind, name, impact, onCancel, onConfirm, bu
           {error}
         </p>
       )}
-      <div className={styles.actions}>
-        <Button variant="secondary" size="lg" className={styles.action} onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="danger" size="lg" className={styles.action} disabled={busy} onClick={onConfirm}>
-          {`Delete ${kind}`}
-        </Button>
-      </div>
+      <DialogActions confirmLabel={`Delete ${kind}`} variant="danger" busy={busy} onCancel={onCancel} onConfirm={onConfirm} />
     </Dialog>
   );
 }

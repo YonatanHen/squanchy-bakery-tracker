@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { ApiError } from "../../lib/api";
 import type { Fridge, FridgeChanges, ThresholdProfile } from "../../lib/endpoints";
+import { saveErrors } from "../../lib/saveErrors";
 import type { Metric } from "../../lib/units";
-import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
+import { DialogActions } from "../DialogActions/DialogActions";
 import { Field } from "../Field/Field";
 import { SegmentedToggle } from "../SegmentedToggle/SegmentedToggle";
 import { Select } from "../Select/Select";
@@ -47,9 +47,9 @@ export function FridgeEditDialog({ fridge, branchName, profiles, onSave, onCance
     try {
       await onSave(changes);
     } catch (err) {
-      const apiError = err instanceof ApiError ? err : null;
-      setFieldErrors(Object.fromEntries((apiError?.fieldErrors ?? []).map((e) => [e.field, e.message])));
-      setError(apiError && apiError.fieldErrors.length > 0 ? "" : (apiError?.message ?? "Could not save. Try again."));
+      const errors = saveErrors(err);
+      setFieldErrors(errors.fields);
+      setError(errors.message);
     } finally {
       setSaving(false);
     }
@@ -93,14 +93,7 @@ export function FridgeEditDialog({ fridge, branchName, profiles, onSave, onCance
             {error}
           </p>
         )}
-        <div className={styles.actions}>
-          <Button variant="secondary" size="lg" className={styles.action} onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" size="lg" className={styles.action} disabled={saving}>
-            Save
-          </Button>
-        </div>
+        <DialogActions confirmLabel="Save" busy={saving} onCancel={onCancel} />
       </form>
     </Dialog>
   );
