@@ -25,7 +25,7 @@ class Reader(db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # No delete cascade: readings are archived first (app.archive); a logger rename still follows.
+    # No delete cascade: readings are archived first (app.services.archive); a logger rename still follows.
     logger_id: Mapped[str] = mapped_column(ForeignKey("logger.id", ondelete="RESTRICT", onupdate="CASCADE"))
     time: Mapped[datetime] = mapped_column(DateTime)
     temp: Mapped[float | None] = mapped_column()

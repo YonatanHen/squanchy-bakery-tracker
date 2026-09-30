@@ -8,5 +8,8 @@ from app.models.fridge import Fridge
 from app.models.logger import Logger
 from app.models.reader import Reader
 from app.models.threshold_settings import ThresholdSettings
+from app.models.user import User
 
-__all__ = ["Alert", "AlertLevel", "Branch", "Fridge", "Logger", "Metric", "Reader", "Status", "ThresholdSettings"]
+__all__ = [
+    "Alert", "AlertLevel", "Branch", "Fridge", "Logger", "Metric", "Reader", "Status", "ThresholdSettings", "User",
+]
