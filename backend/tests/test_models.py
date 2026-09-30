@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Branch, Fridge, Logger, Metric, Reader, Status
+from app.models import Branch, Fridge, Logger, Metric, Reader, Status, ThresholdSettings
 from tests.helpers import add_fridge
 
 
@@ -37,17 +37,29 @@ def test_same_fridge_name_is_allowed_in_different_branches(session):
     assert session.query(Fridge).count() == 2
 
 
-def test_new_fridge_is_celsius_with_default_thresholds(session):
-    """A new fridge defaults to Celsius and gets its own row of default thresholds."""
+def test_new_fridge_is_celsius_and_uses_the_default_thresholds(session):
+    """A new fridge defaults to Celsius and is attached to the "default" profile with the suggested values."""
     fridge = Fridge(branch=Branch(name="Rishon LeZion", city="Rishon LeZion"), name="Cream cakes")
     session.add(fridge)
     session.commit()
 
     assert fridge.metric is Metric.C
-    t = fridge.thresholds
+    t = fridge.threshold_settings
+    assert t.name == "default"
     assert (t.growth_non_urgent, t.growth_urgent) == (0.1, 1.0)
     assert (t.deviation_non_urgent, t.deviation_urgent) == (1.5, 3.0)
     assert (t.gap_non_urgent_minutes, t.gap_urgent_minutes) == (15, 120)
+
+
+def test_fridges_share_one_threshold_profile(session):
+    """Two new fridges use the same "default" profile; only one settings row exists."""
+    branch = Branch(name="Tel Aviv", city="Tel Aviv")
+    first, second = Fridge(branch=branch, name="Walk-in"), Fridge(branch=branch, name="Display 1")
+    session.add_all([first, second])
+    session.commit()
+
+    assert first.threshold_settings_id == second.threshold_settings_id
+    assert session.query(ThresholdSettings).count() == 1
 
 
 def test_fridge_has_at_most_one_logger(session):

@@ -24,11 +24,11 @@ class Fridge(db.Model):
     metric: Mapped[Metric] = mapped_column(metric_enum, default=Metric.C)
     avg_temp: Mapped[float | None] = mapped_column()
     last_measured: Mapped[datetime | None] = mapped_column(DateTime)
+    # Shared profile; new fridges get "default" (services/thresholds.py).
+    threshold_settings_id: Mapped[int] = mapped_column(ForeignKey("threshold_settings.id", ondelete="RESTRICT"))
 
     branch: Mapped[Branch] = relationship(back_populates="fridges")
-    thresholds: Mapped[ThresholdSettings] = relationship(
-        back_populates="fridge", cascade="all, delete-orphan", passive_deletes=True
-    )
+    threshold_settings: Mapped[ThresholdSettings] = relationship(back_populates="fridges")
     logger: Mapped["Logger | None"] = relationship(
         back_populates="fridge", cascade="all, delete-orphan", passive_deletes=True
     )
@@ -37,11 +37,6 @@ class Fridge(db.Model):
     def logger_id(self) -> str | None:
         """Id of the fridge's logger, or None when it has none."""
         return self.logger.id if self.logger else None
-
-    def __init__(self, **kwargs):
-        """Create the fridge with a default thresholds row unless one is given."""
-        kwargs.setdefault("thresholds", ThresholdSettings())
-        super().__init__(**kwargs)
 
 
 Index("uq_fridge_branch_name_lower", Fridge.branch_id, func.lower(Fridge.name), unique=True)
