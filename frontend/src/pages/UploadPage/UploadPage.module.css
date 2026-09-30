@@ -1,0 +1,251 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 26px;
+}
+
+.columns,
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-14);
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-14);
+  border: 1.5px dashed var(--muted);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.drop:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: flex;
+  color: var(--primary);
+}
+
+.dropText {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropTitle {
+  font-size: 15px;
+}
+
+.desktop {
+  display: none;
+}
+
+.dropHint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Visually hidden but focusable; the label is the target */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.error {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-10);
+  border-radius: var(--radius-md);
+}
+
+.number {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.countLabel {
+  font-size: 12px;
+}
+
+.count[data-tone="default"] .countLabel {
+  color: var(--muted);
+}
+
+.extra {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.unknown {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  min-height: var(--touch-target);
+  padding: var(--space-12) var(--space-14);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+  font: 14px var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.unknown:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.unknownText {
+  flex-grow: 1;
+}
+
+.review {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.fixes {
+  padding: var(--space-4) var(--space-14) var(--space-10);
+}
+
+.fixesTitle {
+  margin: var(--space-10) 0 var(--space-8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-10);
+  align-items: baseline;
+  padding: var(--space-10) 0;
+  border-top: 1px solid var(--divider);
+  font-size: 14px;
+}
+
+.rowNumber {
+  flex-shrink: 0;
+  min-width: 48px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.note {
+  margin: var(--space-10) 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .fixes {
+    padding: var(--space-6) var(--space-18) var(--space-14);
+  }
+
+  .fixesTitle {
+    margin-top: var(--space-12);
+    font-size: 15px;
+  }
+
+  .row {
+    gap: var(--space-14);
+    padding: var(--space-12) 0;
+  }
+
+  .rowNumber {
+    min-width: 56px;
+  }
+
+  .page {
+    gap: var(--space-18);
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-20);
+    align-items: start;
+  }
+
+  .drop {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-10);
+    height: 200px;
+    border-radius: var(--space-16);
+    text-align: center;
+  }
+
+  .dropTitle {
+    font-size: 16px;
+  }
+
+  .phone {
+    display: none;
+  }
+
+  .desktop {
+    display: flex;
+    flex-grow: 0;
+    align-items: center;
+    gap: var(--space-10);
+  }
+
+  .counts {
+    gap: var(--space-10);
+  }
+
+  .count {
+    padding: var(--space-12);
+  }
+
+  .number {
+    font-size: 26px;
+  }
+
+  .countLabel {
+    font-size: 13px;
+  }
+}

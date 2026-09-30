@@ -81,6 +81,36 @@ export interface AlertQuery {
   limit?: number | undefined;
 }
 
+export interface RowError {
+  row?: number | null;
+  field: string;
+  value?: unknown;
+  message: string;
+}
+
+export interface UnknownEntries {
+  branches: { name: string; suggestion?: string | null }[];
+  loggers: { logger: string; branch: string; fridge: string }[];
+}
+
+/** Entries the user confirmed adding, sent back as the "register" block. */
+export interface Registration {
+  branches: { name: string; city: string; street?: string; building_number?: string }[];
+  fridges: { logger_id: string; branch: string; fridge: string; metric: Metric }[];
+}
+
+export interface SaveResult {
+  inserted: number;
+  duplicates: number;
+  err_rows: number;
+  rejected: number;
+  renamed_fridges: string[];
+  alerts: number;
+  errors: RowError[];
+  fridge_name_mismatches: { row: number; logger: string; name_in_file: string; fridge: string }[];
+  unknown?: UnknownEntries;
+}
+
 /** Build a query string from the params that have a value. */
 function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams();
@@ -129,6 +159,14 @@ export function listBranches(): Promise<Branch[]> {
 /** Correct a reading's time ("YYYY-MM-DDTHH:MM") or temperature (its own unit, or "ERR"). */
 export function updateReading(id: number, changes: { time?: string; temp?: string }): Promise<Reading> {
   return apiRequest<Reading>(`/readings/${id}`, { method: "PATCH", body: changes });
+}
+
+/** Upload an .xlsx file; `register` adds the confirmed unknown branches and loggers first. */
+export function uploadReadings(file: File, register?: Registration): Promise<SaveResult> {
+  const form = new FormData();
+  form.append("file", file);
+  if (register) form.append("register", JSON.stringify(register));
+  return apiRequest<SaveResult>("/readings/upload", { method: "POST", body: form });
 }
 
 /** Delete a reading; the backend archives it with its alerts. */

@@ -7,6 +7,7 @@ import { LoginPage } from "./pages/LoginPage/LoginPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage/PlaceholderPage";
 import { ReadingsPage } from "./pages/ReadingsPage/ReadingsPage";
 import { ThresholdsPage } from "./pages/ThresholdsPage/ThresholdsPage";
+import { UploadPage } from "./pages/UploadPage/UploadPage";
 
 /** Render the child routes only when logged in; otherwise go to /login. */
 function RequireAuth() {
@@ -24,7 +25,7 @@ export function AppRoutes() {
           <Route path="/readings" element={<ReadingsPage />} />
           <Route path="/readings/new" element={<PlaceholderPage title="Add a reading" />} />
           <Route path="/alerts" element={<AlertsPage />} />
-          <Route path="/upload" element={<PlaceholderPage title="Upload readings" />} />
+          <Route path="/upload" element={<UploadPage />} />
           <Route path="/branches" element={<BranchesPage />} />
           <Route path="/thresholds" element={<ThresholdsPage />} />
         </Route>
