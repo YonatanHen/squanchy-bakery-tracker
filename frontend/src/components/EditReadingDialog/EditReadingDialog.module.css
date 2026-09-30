@@ -1,0 +1,43 @@
+.mono {
+  font-family: var(--font-mono);
+}
+
+.text {
+  margin: 0;
+  font-size: 15px;
+  color: var(--label);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-14);
+  border-radius: var(--radius-md);
+  background: var(--confirm-bg);
+  color: var(--warn-text);
+}
+
+.confirmTitle {
+  font-size: 15px;
+}
+
+.confirmText {
+  font-size: 14px;
+}
+
+.failure {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-10);
+}
+
+.buttons > * {
+  flex-grow: 1;
+  flex-basis: 0;
+}
