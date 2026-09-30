@@ -30,6 +30,12 @@
   color: var(--muted);
 }
 
+.archivedCell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
 .error {
   margin: 0;
   font-weight: 500;

@@ -231,6 +231,25 @@ describe("ReadingsPage archive", () => {
     expect(within(list).getByText("Archived 15/09 10:05")).toBeInTheDocument();
     expect(within(list).queryByRole("button", { name: "Edit reading" })).not.toBeInTheDocument();
   });
+
+  it("restores an archived reading from its row and reloads the list", async () => {
+    const deleted: Reading = { ...DAIRY_OK, city: null, archived_at: "2026-09-15T10:05:00" };
+    const fetchMock = mockApi([
+      ["GET /api/v1/readings", page([deleted])],
+      ["GET /api/v1/branches", BRANCHES],
+      ["GET /api/v1/alerts", page([])],
+      ["POST /api/v1/readings/archive/4/restore", DAIRY_OK],
+    ]);
+    renderLoggedIn("/readings");
+    const table = await screen.findByRole("table", { name: "Readings" });
+    expect(within(screen.getByRole("list", { name: "Readings" })).getByRole("button", { name: "Restore" })).toBeInTheDocument();
+
+    await userEvent.click(within(table).getByRole("button", { name: "Restore" }));
+
+    await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings")).toHaveLength(2));
+    const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST").map(([input]) => input);
+    expect(posts).toEqual(["/api/v1/readings/archive/4/restore"]);
+  });
 });
 
 describe("ReadingsPage filters", () => {

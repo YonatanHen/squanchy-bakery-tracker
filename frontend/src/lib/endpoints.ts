@@ -214,6 +214,11 @@ export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
 }
 
+/** Move an archived reading back to its logger; the backend re-runs the alert rules on it. */
+export function restoreReading(id: number): Promise<Reading> {
+  return apiRequest<Reading>(`/readings/archive/${id}/restore`, { method: "POST" });
+}
+
 /** Edit a branch; send only the changed fields. */
 export function updateBranch(id: number, changes: BranchChanges): Promise<Branch> {
   return apiRequest<Branch>(`/branches/${id}`, { method: "PATCH", body: changes });

@@ -17,6 +17,7 @@ import {
   listAlerts,
   listBranches,
   listReadings,
+  restoreReading,
   type AlertLevel,
   type Branch,
   type Page,
@@ -68,7 +69,12 @@ function statusCell(reading: Reading, levels: AlertLevel[]) {
 }
 
 /** Build the desktop table columns for the selected unit. */
-function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Reading) => void): Column<Reading>[] {
+function columns(
+  unit: Metric,
+  alertLevels: AlertLevels,
+  onEdit: (reading: Reading) => void,
+  onRestore: (reading: Reading) => void,
+): Column<Reading>[] {
   return [
     { key: "time", header: "Time", cell: (r) => formatShort(r.time), mono: true },
     { key: "temp", header: "Temperature", cell: (r) => formatTemp(r.temp, r.metric, unit), mono: true },
@@ -80,10 +86,15 @@ function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Readi
       key: "actions",
       header: "Actions",
       hideHeader: true,
-      // Archived readings are read-only
+      // Archived readings are read-only; they can only be restored
       cell: (r) =>
         r.archived_at ? (
-          `Archived ${formatShort(r.archived_at)}`
+          <span className={styles.archivedCell}>
+            <span>{`Archived ${formatShort(r.archived_at)}`}</span>
+            <Button variant="link" onClick={() => onRestore(r)}>
+              Restore
+            </Button>
+          </span>
         ) : (
           <Button variant="link" onClick={() => onEdit(r)}>
             Edit
@@ -145,6 +156,11 @@ export function ReadingsPage() {
     setEditing(null);
     setReloads((n) => n + 1);
   };
+  const onRestore = (reading: Reading) => {
+    restoreReading(reading.id)
+      .then(() => setReloads((n) => n + 1))
+      .catch((err) => setError(err instanceof ApiError ? err.message : "Could not restore the reading. Try again."));
+  };
 
   const applyFilters = (next: Filters) => {
     setFilters(next);
@@ -197,8 +213,10 @@ export function ReadingsPage() {
           label="Readings"
           rows={items}
           rowKey={(r) => r.id}
-          renderCard={(r) => <ReadingCard reading={r} unit={unit} alerts={alertLevels[r.id] ?? []} onEdit={onEdit} />}
-          columns={columns(unit, alertLevels, onEdit)}
+          renderCard={(r) => (
+            <ReadingCard reading={r} unit={unit} alerts={alertLevels[r.id] ?? []} onEdit={onEdit} onRestore={onRestore} />
+          )}
+          columns={columns(unit, alertLevels, onEdit, onRestore)}
           rowTone={(r) => summarizeAlerts(alertLevels[r.id] ?? [])?.tone ?? "default"}
         />
       )}
