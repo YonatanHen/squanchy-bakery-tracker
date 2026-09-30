@@ -56,6 +56,51 @@ describe("UnknownEntries", () => {
     expect(onConfirm).toHaveBeenCalledWith({ branches: [{ name: "Eilat", city: "Eilat" }], fridges: [] });
   });
 
+  it("adds a new logger with its fridge and unit, edited before adding", async () => {
+    const { onConfirm } = renderEntries({
+      branches: [],
+      loggers: [{ logger: "TL-0600", branch: "Haifa", fridge: "Dairy" }],
+    });
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("Logger TL-0600 does not exist. Add it, or edit before adding.");
+    expect(screen.getByLabelText("Logger id")).toHaveValue("TL-0600");
+    expect(screen.getByRole("button", { name: "°C" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.clear(screen.getByLabelText("Fridge"));
+    await userEvent.type(screen.getByLabelText("Fridge"), "Dairy 2");
+    await userEvent.click(screen.getByRole("button", { name: "°F" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      branches: [],
+      fridges: [{ logger_id: "TL-0600", branch: "Haifa", fridge: "Dairy 2", metric: "F" }],
+    });
+  });
+
+  it("adds a logger of a new branch together with that branch", async () => {
+    const { onConfirm } = renderEntries({
+      branches: [{ name: "Eilat" }],
+      loggers: [{ logger: "TL-0700", branch: "Eilat", fridge: "Display" }],
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      branches: [{ name: "Eilat", city: "Eilat" }],
+      fridges: [{ logger_id: "TL-0700", branch: "Eilat", fridge: "Display", metric: "C" }],
+    });
+  });
+
+  it("does not add a logger whose branch is misspelled; the branch must be fixed first", () => {
+    renderEntries({
+      branches: [{ name: "Rishon LeZoin", suggestion: "Rishon LeZion" }],
+      loggers: [{ logger: "TL-0600", branch: "Rishon LeZoin", fridge: "Dairy" }],
+    });
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("Logger TL-0600 does not exist. Fix its branch “Rishon LeZoin” first.");
+    expect(screen.queryByLabelText("Logger id")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add and upload again" })).not.toBeInTheDocument();
+  });
+
   it("closes without adding anything on Not now", async () => {
     const { onConfirm, onClose } = renderEntries({ branches: [{ name: "Eilat" }], loggers: [] });
 

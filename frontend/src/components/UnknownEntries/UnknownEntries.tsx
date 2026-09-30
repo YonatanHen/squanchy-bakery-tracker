@@ -3,7 +3,9 @@ import type { Registration, UnknownEntries as Entries } from "../../lib/endpoint
 import { Button } from "../Button/Button";
 import { Card } from "../Card/Card";
 import { Dialog } from "../Dialog/Dialog";
+import type { Metric } from "../../lib/units";
 import { Field } from "../Field/Field";
+import { SegmentedToggle } from "../SegmentedToggle/SegmentedToggle";
 import { TextInput } from "../TextInput/TextInput";
 import styles from "./UnknownEntries.module.css";
 
@@ -16,6 +18,17 @@ interface UnknownEntriesProps {
   onConfirm: (registration: Registration) => void;
   onClose: () => void;
   onPickSuggestion?: (name: string) => void;
+}
+
+const UNITS = [
+  { value: "C", label: "°C" },
+  { value: "F", label: "°F" },
+] as const;
+
+interface LoggerForm {
+  logger_id: string;
+  fridge: string;
+  metric: Metric;
 }
 
 interface BranchForm {
@@ -44,13 +57,24 @@ function EntriesForm({
 }: Omit<UnknownEntriesProps, "open" | "title">) {
   const suggested = entries.branches.filter((branch) => branch.suggestion);
   const newBranches = entries.branches.filter((branch) => !branch.suggestion);
+  const misspelled = new Set(suggested.map((branch) => branch.name.toLowerCase()));
+  const blocked = entries.loggers.filter((logger) => misspelled.has(logger.branch.toLowerCase()));
+  const newLoggers = entries.loggers.filter((logger) => !misspelled.has(logger.branch.toLowerCase()));
   const [branches, setBranches] = useState<Record<string, BranchForm>>(() =>
     Object.fromEntries(newBranches.map((b) => [b.name, { city: b.name, street: "", building_number: "" }])),
+  );
+  const [loggers, setLoggers] = useState<Record<string, LoggerForm>>(() =>
+    Object.fromEntries(newLoggers.map((l) => [l.logger, { logger_id: l.logger, fridge: l.fridge, metric: "C" }])),
   );
 
   /** Change one field of a new branch. */
   function setBranch(name: string, field: keyof BranchForm, value: string) {
     setBranches((current) => ({ ...current, [name]: { ...current[name], [field]: value } }));
+  }
+
+  /** Change one field of a new logger. */
+  function setLogger(id: string, changes: Partial<LoggerForm>) {
+    setLoggers((current) => ({ ...current, [id]: { ...current[id], ...changes } }));
   }
 
   /** Send the register block built from the forms; empty optional fields are left out. */
@@ -61,7 +85,7 @@ function EntriesForm({
         const { city, street, building_number } = branches[name];
         return { name, city, ...(street && { street }), ...(building_number && { building_number }) };
       }),
-      fridges: [],
+      fridges: newLoggers.map(({ logger, branch }) => ({ ...loggers[logger], branch })),
     });
   }
 
@@ -121,13 +145,62 @@ function EntriesForm({
           </div>
         </Card>
       ))}
+      {newLoggers.map(({ logger }) => (
+        <Card key={logger} className={styles.entry}>
+          <span className={styles.text}>
+            Logger <strong className={styles.mono}>{logger}</strong> does not exist. Add it, or edit before adding.
+          </span>
+          <div className={styles.pair}>
+            <Field label="Logger id">
+              {(control) => (
+                <TextInput
+                  {...control}
+                  className={styles.mono}
+                  value={loggers[logger].logger_id}
+                  onChange={(e) => setLogger(logger, { logger_id: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label="Fridge">
+              {(control) => (
+                <TextInput
+                  {...control}
+                  value={loggers[logger].fridge}
+                  onChange={(e) => setLogger(logger, { fridge: e.target.value })}
+                />
+              )}
+            </Field>
+          </div>
+          <div className={styles.unit}>
+            <span className={styles.unitLabel}>Unit</span>
+            <SegmentedToggle
+              label="Unit"
+              options={UNITS}
+              value={loggers[logger].metric}
+              onChange={(metric) => setLogger(logger, { metric })}
+            />
+          </div>
+          <span className={styles.hint}>
+            Thresholds: <strong>default</strong> profile (change later in Thresholds)
+          </span>
+        </Card>
+      ))}
+      {blocked.map(({ logger, branch }) => (
+        <Card key={logger} className={styles.entry}>
+          <span className={styles.text}>
+            Logger <strong className={styles.mono}>{logger}</strong> does not exist. Fix its branch “{branch}” first.
+          </span>
+        </Card>
+      ))}
       <div className={styles.actions}>
         <Button variant="secondary" size="lg" className={styles.cancel} onClick={onClose}>
           Not now
         </Button>
-        <Button type="submit" size="lg" className={styles.confirm}>
-          {confirmLabel}
-        </Button>
+        {(newBranches.length > 0 || newLoggers.length > 0) && (
+          <Button type="submit" size="lg" className={styles.confirm}>
+            {confirmLabel}
+          </Button>
+        )}
       </div>
     </form>
   );
