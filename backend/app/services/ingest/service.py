@@ -9,6 +9,7 @@ from app.services.ingest.parsers.factory import get_parser
 from app.services.ingest.registry import load_registry
 from app.services.ingest.repository import ReadingRepository
 from app.services.ingest.schemas import ReadingIn, SaveResult
+from app.services.ingest.unknown import find_unknown
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +25,15 @@ def ingest_rows(session, rows: list[RawRow]) -> SaveResult:
         Counts of inserted, duplicate, ERR and rejected rows, plus the errors of the rejected rows.
     """
     registry = load_registry(session)
-    result, readings = SaveResult(), []
+    result, readings, failed = SaveResult(), [], []
     for raw in rows:
         try:
             readings.append(ReadingIn.model_validate(raw.values, context={"registry": registry}))
         except ValidationError as exc:
             result.rejected += 1
             result.errors.extend(field_errors(exc, row=raw.row))
+            failed.append((raw.values, {e["type"] for e in exc.errors()}))
+    result.unknown = find_unknown(failed, registry)
     ReadingRepository(session, registry).save_many(readings, result)
     session.commit()
     logger.info(

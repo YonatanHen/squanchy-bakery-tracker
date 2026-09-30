@@ -9,6 +9,7 @@ from app.errors import FieldError
 from app.models import Status
 from app.services.ingest.normalizer import LOGGER_PATTERN, collapse_spaces, parse_temp, parse_time
 from app.services.ingest.registry import Registry
+from app.services.ingest.unknown import UnknownEntries
 
 
 def _registry(info: ValidationInfo) -> Registry:
@@ -107,3 +108,4 @@ class SaveResult(BaseModel):
     renamed_fridges: list[str] = []
     alerts: int = 0
     errors: list[FieldError] = []
+    unknown: UnknownEntries | None = None  # left out of the response when nothing is unknown

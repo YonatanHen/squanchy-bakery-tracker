@@ -97,6 +97,38 @@ def test_header_only_sheet_saves_nothing(client, session, auth_headers):
     assert response.get_json()["inserted"] == 0
 
 
+def test_unknown_branch_and_loggers_are_grouped_for_confirmation(client, session, auth_headers):
+    """Rows of unknown branches and loggers are skipped and listed once each, for "did you mean / add it?"."""
+    add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
+
+    response = upload(client, auth_headers, [
+        ["TL-0600", "Eilat", "Dairy", "2026-09-14 06:00", 3.8],
+        ["TL-0600", "Eilat", "Dairy", "2026-09-14 06:15", 3.9],
+        ["TL-0601", "jerusalem", "Freezer", "2026-09-14 06:00", -18.0],
+        ["TL-0512", "Jerusalem", "Dairy", "2026-09-14 06:00", 3.8],
+    ])
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert (body["inserted"], body["rejected"]) == (1, 3)
+    assert body["unknown"] == {
+        "branches": [{"name": "Eilat", "suggestion": None}],
+        "loggers": [
+            {"logger": "TL-0600", "branch": "Eilat", "fridge": "Dairy"},
+            {"logger": "TL-0601", "branch": "Jerusalem", "fridge": "Freezer"},
+        ],
+    }
+
+
+def test_branch_typo_gets_a_did_you_mean_suggestion(client, session, auth_headers):
+    """A misspelled branch is suggested as the registered one, never created silently."""
+    add_fridge(session, branch="Rishon LeZion", fridge="Cream cakes", logger="TL-0388")
+
+    response = upload(client, auth_headers, [["TL-0388", "Rishon LeZoin", "Cream cakes", "2026-09-14 06:00", 4.6]])
+
+    assert response.get_json()["unknown"]["branches"] == [{"name": "Rishon LeZoin", "suggestion": "Rishon LeZion"}]
+
+
 def test_missing_columns_and_unsupported_files_are_rejected(client, auth_headers):
     """Missing columns give 422; a CSV gives 415."""
     assert upload(client, auth_headers, [], header=["Time", "Temp"]).status_code == 422
