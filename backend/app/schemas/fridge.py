@@ -17,7 +17,6 @@ class FridgeOut(BaseModel):
     metric: Metric
     logger_id: str | None
     threshold_settings_id: int
-    avg_temp: float | None
     last_measured: datetime | None
 
 

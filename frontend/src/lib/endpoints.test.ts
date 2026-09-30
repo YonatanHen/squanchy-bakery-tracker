@@ -193,8 +193,8 @@ describe("threshold settings edits", () => {
     name: "Dairy",
     growth_non_urgent: "0.1",
     growth_urgent: "1.0",
-    deviation_non_urgent: "1.5",
-    deviation_urgent: "3.0",
+    min_temp: "0",
+    max_temp: "5",
     gap_non_urgent_minutes: "15",
     gap_urgent_minutes: "120",
   };

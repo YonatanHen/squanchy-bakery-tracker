@@ -10,8 +10,8 @@ const DEFAULT: ThresholdSettings = {
   fridges: 4,
   growth_non_urgent: 0.1,
   growth_urgent: 1,
-  deviation_non_urgent: 1.5,
-  deviation_urgent: 3,
+  min_temp: 0,
+  max_temp: 5,
   gap_non_urgent_minutes: 15,
   gap_urgent_minutes: 120,
 };
@@ -89,8 +89,8 @@ describe("ThresholdsPage save", () => {
       name: "default",
       growth_non_urgent: "0.1",
       growth_urgent: "1",
-      deviation_non_urgent: "1.5",
-      deviation_urgent: "3",
+      min_temp: "0",
+      max_temp: "5",
       gap_non_urgent_minutes: "30",
       gap_urgent_minutes: "120",
     });
@@ -201,7 +201,7 @@ describe("ThresholdsPage new threshold settings", () => {
     await userEvent.click(await screen.findByRole("button", { name: "+ New threshold settings" }));
     const name = screen.getByRole("textbox", { name: "Name" });
     expect(name).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "Deviation urgent, degrees C" })).toHaveValue("3");
+    expect(screen.getByRole("textbox", { name: "Max temperature, degrees C" })).toHaveValue("5");
     expect(screen.getByRole("button", { name: "default Used by 4 fridges" })).toBeInTheDocument();
 
     await userEvent.type(name, "Dairy");
@@ -212,8 +212,8 @@ describe("ThresholdsPage new threshold settings", () => {
       name: "Dairy",
       growth_non_urgent: "0.1",
       growth_urgent: "1",
-      deviation_non_urgent: "1.5",
-      deviation_urgent: "3",
+      min_temp: "0",
+      max_temp: "5",
       gap_non_urgent_minutes: "15",
       gap_urgent_minutes: "120",
     });

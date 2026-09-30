@@ -10,7 +10,7 @@ type Handler = (url: URL, init?: RequestInit) => unknown;
 
 /** A °C fridge on the default threshold settings, with no readings yet. */
 export function makeFridge(id: number, name: string, loggerId: string | null): Fridge {
-  return { id, name, metric: "C", logger_id: loggerId, threshold_settings_id: 1, avg_temp: null, last_measured: null };
+  return { id, name, metric: "C", logger_id: loggerId, threshold_settings_id: 1, last_measured: null };
 }
 
 /** A branch with no address and the given fridges. */

@@ -31,3 +31,14 @@ class AlertLevel(str, enum.Enum):
 
 
 alert_level_enum = Enum(AlertLevel, name="alert_level")
+
+
+class AlertKind(str, enum.Enum):
+    """The detection rule that raised an alert."""
+
+    GAP = "GAP"
+    GROWTH = "GROWTH"
+    LIMIT = "LIMIT"
+
+
+alert_kind_enum = Enum(AlertKind, name="alert_kind")

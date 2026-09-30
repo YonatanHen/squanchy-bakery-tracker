@@ -20,8 +20,8 @@ class ThresholdSettings(db.Model):
     name: Mapped[str] = mapped_column(String(100))  # human-readable, e.g. "default", "Dairy"
     growth_non_urgent: Mapped[float] = mapped_column(default=0.1)
     growth_urgent: Mapped[float] = mapped_column(default=1.0)
-    deviation_non_urgent: Mapped[float] = mapped_column(default=1.5)
-    deviation_urgent: Mapped[float] = mapped_column(default=3.0)
+    min_temp: Mapped[float] = mapped_column(default=0.0)
+    max_temp: Mapped[float] = mapped_column(default=5.0)  # the inspector's 5°C
     gap_non_urgent_minutes: Mapped[int] = mapped_column(default=15)
     gap_urgent_minutes: Mapped[int] = mapped_column(default=120)
 

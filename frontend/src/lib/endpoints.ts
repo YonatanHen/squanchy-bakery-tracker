@@ -44,7 +44,6 @@ export interface Fridge {
   metric: Metric;
   logger_id: string | null;
   threshold_settings_id: number;
-  avg_temp: number | null;
   last_measured: string | null;
 }
 
@@ -64,14 +63,14 @@ export type FridgeChanges = Partial<{ name: string; metric: Metric; logger_id: s
 export const THRESHOLD_KEYS = [
   "growth_non_urgent",
   "growth_urgent",
-  "deviation_non_urgent",
-  "deviation_urgent",
+  "min_temp",
+  "max_temp",
   "gap_non_urgent_minutes",
   "gap_urgent_minutes",
 ] as const;
 export type ThresholdKey = (typeof THRESHOLD_KEYS)[number];
 
-/** Named threshold settings shared by fridges; °C for growth/deviation, minutes for gaps. */
+/** Named threshold settings shared by fridges; °C for growth and the min/max limits, minutes for gaps. */
 export type ThresholdSettings = { id: number; name: string; fridges: number } & Record<ThresholdKey, number>;
 
 /** Threshold settings as typed in the form; the backend parses and validates them. */

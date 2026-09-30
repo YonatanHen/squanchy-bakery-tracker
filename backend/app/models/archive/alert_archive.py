@@ -4,7 +4,7 @@ from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import db
-from app.models.enums import AlertLevel, alert_level_enum
+from app.models.enums import AlertKind, AlertLevel, alert_kind_enum, alert_level_enum
 
 
 class AlertArchive(db.Model):
@@ -16,4 +16,5 @@ class AlertArchive(db.Model):
     reader_id: Mapped[int] = mapped_column(index=True)
     description: Mapped[str] = mapped_column(String(500))
     level: Mapped[AlertLevel] = mapped_column(alert_level_enum)
+    kind: Mapped[AlertKind] = mapped_column(alert_kind_enum)
     archived_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

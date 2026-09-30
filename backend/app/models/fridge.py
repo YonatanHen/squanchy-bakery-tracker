@@ -22,7 +22,6 @@ class Fridge(db.Model):
     branch_id: Mapped[int] = mapped_column(ForeignKey("branch.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(100))
     metric: Mapped[Metric] = mapped_column(metric_enum, default=Metric.C)
-    avg_temp: Mapped[float | None] = mapped_column()
     last_measured: Mapped[datetime | None] = mapped_column(DateTime)
     # Shared threshold settings; new fridges get "default" (services/thresholds.py).
     threshold_settings_id: Mapped[int] = mapped_column(ForeignKey("threshold_settings.id", ondelete="RESTRICT"))

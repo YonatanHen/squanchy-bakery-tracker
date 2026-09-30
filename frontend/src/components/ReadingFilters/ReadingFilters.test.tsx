@@ -6,7 +6,7 @@ import { ReadingFilters } from "./ReadingFilters";
 
 /** A branch with one fridge; only the names matter to the filters. */
 function branch(id: number, name: string, fridge: string): Branch {
-  const f: Fridge = { id, name: fridge, metric: "C", logger_id: null, threshold_settings_id: 1, avg_temp: null, last_measured: null };
+  const f: Fridge = { id, name: fridge, metric: "C", logger_id: null, threshold_settings_id: 1, last_measured: null };
   return { id, name, city: null, street: null, building_number: null, fridges: [f] };
 }
 

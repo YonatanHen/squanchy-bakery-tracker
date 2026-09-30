@@ -27,10 +27,15 @@
   color: var(--label);
 }
 
+.column,
 .nonUrgent,
 .urgent {
   font-size: 12px;
   font-weight: 600;
+}
+
+.column {
+  color: var(--label);
 }
 
 .nonUrgent {

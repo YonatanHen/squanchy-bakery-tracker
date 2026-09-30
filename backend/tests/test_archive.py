@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.models import Alert, AlertLevel, Branch, Fridge, Logger, Metric, Reader, Status
+from app.models import Alert, AlertKind, AlertLevel, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import AlertArchive, ReaderArchive
 from tests.helpers import SAMPLE_REGISTRATION, add_fridge, load_sample
 
@@ -11,7 +11,9 @@ def _cream_cakes_reading_with_urgent_alert(session) -> Reader:
     """Rishon's Cream cakes 7.1°C reading with its URGENT growth alert."""
     add_fridge(session, branch="Rishon LeZion", fridge="Cream cakes", logger="TL-0388")
     reading = Reader(logger_id="TL-0388", time=datetime(2026, 9, 14, 6, 45), temp=7.1, metric=Metric.C, status=Status.OK)
-    reading.alerts.append(Alert(description="Temperature rose 2.5°C over the last 4 readings", level=AlertLevel.URGENT))
+    reading.alerts.append(Alert(
+        description="Temperature rose 2.5°C over the last 4 readings", level=AlertLevel.URGENT, kind=AlertKind.GROWTH,
+    ))
     session.add(reading)
     session.commit()
     return reading
@@ -32,7 +34,7 @@ def test_deleting_a_branch_moves_its_readings_and_alerts_to_the_archive(session)
     )
     assert archived.archived_at is not None
     alert = session.query(AlertArchive).one()
-    assert (alert.reader_id, alert.level) == (archived.id, AlertLevel.URGENT)
+    assert (alert.reader_id, alert.level, alert.kind) == (archived.id, AlertLevel.URGENT, AlertKind.GROWTH)
 
 
 def test_deleting_one_reading_archives_it_and_keeps_the_fridge(session):
@@ -84,9 +86,9 @@ def test_restore_brings_an_archived_reading_back_with_fresh_alerts(client, sessi
     assert session.get(Reader, reading_id).metric == Metric.C
     assert (session.get(ReaderArchive, reading_id), session.query(AlertArchive).filter_by(reader_id=reading_id).count()) == (None, 0)
     alerts = session.query(Alert).filter_by(reader_id=reading_id).all()
-    assert sorted(a.level.value for a in alerts) == sorted([AlertLevel.NON_URGENT.value, AlertLevel.URGENT.value])
-    assert "Temperature rose 2.5°C over the last 4 readings" in [a.description for a in alerts]
-    assert session.get(Fridge, fridge_id).avg_temp == pytest.approx(5.85, abs=0.01)
+    assert [(a.level, a.description) for a in alerts] == [
+        (AlertLevel.URGENT, "Temperature rose 2.5°C from 14/09 06:00 to 06:45 (45 min)"),
+    ]
 
 
 def test_restore_when_the_logger_no_longer_exists_is_a_409(client, session, auth_headers):

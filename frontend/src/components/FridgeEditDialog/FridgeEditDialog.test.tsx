@@ -11,14 +11,13 @@ const WALK_IN: Fridge = {
   metric: "C",
   logger_id: "TL-0417",
   threshold_settings_id: 1,
-  avg_temp: 3.1,
   last_measured: null,
 };
 const LIMITS = {
   growth_non_urgent: 0.1,
   growth_urgent: 1,
-  deviation_non_urgent: 1.5,
-  deviation_urgent: 3,
+  min_temp: 0,
+  max_temp: 5,
   gap_non_urgent_minutes: 15,
   gap_urgent_minutes: 120,
 };

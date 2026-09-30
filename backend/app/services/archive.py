@@ -39,8 +39,9 @@ def archive_readings(session, where, delete_readings: bool = True) -> int:
     ).where(where)
     columns = ["id", "logger_id", "branch", "fridge", "time", "temp", "metric", "status"]
     readings = session.execute(insert(ReaderArchive).from_select(columns, rows)).rowcount
-    alert_rows = select(Alert.id, Alert.reader_id, Alert.description, Alert.level).where(Alert.reader_id.in_(ids))
-    alerts = session.execute(insert(AlertArchive).from_select(["id", "reader_id", "description", "level"], alert_rows)).rowcount
+    alert_rows = select(Alert.id, Alert.reader_id, Alert.description, Alert.level, Alert.kind).where(Alert.reader_id.in_(ids))
+    alert_columns = ["id", "reader_id", "description", "level", "kind"]
+    alerts = session.execute(insert(AlertArchive).from_select(alert_columns, alert_rows)).rowcount
     session.execute(delete(Alert).where(Alert.reader_id.in_(ids)).execution_options(**_NO_SYNC))
     if delete_readings:
         session.execute(delete(Reader).where(Reader.id.in_(ids)).execution_options(**_NO_SYNC))

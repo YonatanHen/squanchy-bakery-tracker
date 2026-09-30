@@ -11,17 +11,50 @@ import styles from "./ThresholdSettingsForm.module.css";
 
 interface Row {
   title: string;
-  name: string;
   unit: string;
-  unitName: string;
-  low: ThresholdKey;
-  high: ThresholdKey;
+  fields: [{ label: string; key: ThresholdKey }, { label: string; key: ThresholdKey }];
 }
 
-const ROWS: Row[] = [
-  { title: "Rise over 4 readings", name: "Rise", unit: "°C", unitName: "degrees C", low: "growth_non_urgent", high: "growth_urgent" },
-  { title: "Away from average", name: "Deviation", unit: "°C", unitName: "degrees C", low: "deviation_non_urgent", high: "deviation_urgent" },
-  { title: "No reading for", name: "Gap", unit: "min", unitName: "minutes", low: "gap_non_urgent_minutes", high: "gap_urgent_minutes" },
+interface Group {
+  columns: [{ text: string; className: string | undefined }, { text: string; className: string | undefined }];
+  rows: Row[];
+}
+
+const GROUPS: Group[] = [
+  {
+    columns: [{ text: "Min", className: undefined }, { text: "Max", className: undefined }],
+    rows: [
+      {
+        title: "Temperature limits",
+        unit: "°C",
+        fields: [
+          { label: "Min temperature, degrees C", key: "min_temp" },
+          { label: "Max temperature, degrees C", key: "max_temp" },
+        ],
+      },
+    ],
+  },
+  {
+    columns: [{ text: "Non-urgent", className: styles.nonUrgent }, { text: "Urgent", className: styles.urgent }],
+    rows: [
+      {
+        title: "Rise over 4 readings",
+        unit: "°C",
+        fields: [
+          { label: "Rise non-urgent, degrees C", key: "growth_non_urgent" },
+          { label: "Rise urgent, degrees C", key: "growth_urgent" },
+        ],
+      },
+      {
+        title: "No reading for",
+        unit: "min",
+        fields: [
+          { label: "Gap non-urgent, minutes", key: "gap_non_urgent_minutes" },
+          { label: "Gap urgent, minutes", key: "gap_urgent_minutes" },
+        ],
+      },
+    ],
+  },
 ];
 
 interface ThresholdSettingsFormProps {
@@ -32,7 +65,7 @@ interface ThresholdSettingsFormProps {
   onSave: (values: ThresholdSettingsValues) => void;
 }
 
-/** The expanded threshold settings card: name, the six limits, the shared-settings warning and Save. */
+/** The expanded threshold settings card: name, the min/max limits, the alert thresholds, the shared-settings warning and Save. */
 export function ThresholdSettingsForm({ initial, fridges, errors = {}, busy, onSave }: ThresholdSettingsFormProps) {
   const [values, setValues] = useState<ThresholdSettingsValues>(initial);
 
@@ -51,33 +84,34 @@ export function ThresholdSettingsForm({ initial, fridges, errors = {}, busy, onS
         <Field label="Name" hint={fridges === undefined ? undefined : formatUsedBy(fridges)} error={errors.name}>
           {(control) => <TextInput {...control} value={values.name} onChange={(event) => set("name")(event.target.value)} />}
         </Field>
-        <div className={styles.grid}>
-          <span />
-          <span className={styles.nonUrgent}>Non-urgent</span>
-          <span className={styles.urgent}>Urgent</span>
-          {ROWS.map((row) => (
-            <div key={row.name} className={styles.row}>
-              <span className={styles.rowTitle}>{row.title}</span>
-              <ThresholdField
-                label={`${row.name} non-urgent, ${row.unitName}`}
-                unit={row.unit}
-                value={values[row.low]}
-                onChange={set(row.low)}
-                error={errors[row.low]}
-              />
-              <ThresholdField
-                label={`${row.name} urgent, ${row.unitName}`}
-                unit={row.unit}
-                value={values[row.high]}
-                onChange={set(row.high)}
-                error={errors[row.high]}
-              />
-            </div>
-          ))}
-        </div>
+        {GROUPS.map((group) => (
+          <div key={group.rows[0]?.title} className={styles.grid}>
+            <span />
+            {group.columns.map((column) => (
+              <span key={column.text} className={column.className ?? styles.column}>
+                {column.text}
+              </span>
+            ))}
+            {group.rows.map((row) => (
+              <div key={row.title} className={styles.row}>
+                <span className={styles.rowTitle}>{row.title}</span>
+                {row.fields.map((field) => (
+                  <ThresholdField
+                    key={field.key}
+                    label={field.label}
+                    unit={row.unit}
+                    value={values[field.key]}
+                    onChange={set(field.key)}
+                    error={errors[field.key]}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        ))}
         {!!fridges && (
           <p className={styles.confirm}>
-            <strong>Are you sure?</strong> Saving changes future alerts for{" "}
+            <strong>Are you sure?</strong> Saving recalculates the alerts of{" "}
             {fridges === 1 ? "the 1 fridge that uses" : `all ${fridges} fridges that use`} these settings.
           </p>
         )}
