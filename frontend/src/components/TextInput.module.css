@@ -1,0 +1,20 @@
+.input {
+  height: 48px;
+  min-height: var(--touch-target);
+  width: 100%;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-14);
+  font: 16px var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--urgent);
+}
