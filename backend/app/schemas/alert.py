@@ -28,3 +28,12 @@ class AlertOut(BaseModel):
     branch: str
     city: str | None
     archived_at: datetime | None = None
+
+
+class AlertPage(BaseModel):
+    """One page of alerts with the number of all matching alerts."""
+
+    items: list[AlertOut]
+    total: int
+    offset: int
+    limit: int
