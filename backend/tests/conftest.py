@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from sqlalchemy import text
 
 from app import create_app
 from app.db import db
@@ -15,7 +16,9 @@ def app():
     """App bound to a fresh test database for each test."""
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": TEST_DB, "JWT_SECRET": "test-secret-at-least-32-bytes-long!"})
     with app.app_context():
-        db.drop_all()
+        # Drop the whole schema, not only known tables: there are no migrations, and old tables would block drop_all.
+        with db.engine.begin() as connection:
+            connection.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public"))
         db.create_all()
         yield app
         db.session.remove()
