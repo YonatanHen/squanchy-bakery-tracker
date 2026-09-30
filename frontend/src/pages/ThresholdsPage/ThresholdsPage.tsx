@@ -39,10 +39,10 @@ function toValues(settings: ThresholdSettings): ThresholdSettingsValues {
 export function ThresholdsPage() {
   const [settingsList, setSettingsList] = useState<ThresholdSettings[]>([]);
   const [openId, setOpenId] = useState<number | "new" | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<ThresholdSettingsErrors>({});
-  const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState<boolean>(false);
+  const [saved, setSaved] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<ThresholdSettings | null>(null);
   const closeDelete = useCallback(() => setDeleting(null), []);
 

@@ -34,7 +34,7 @@ interface ThresholdSettingsFormProps {
 
 /** The expanded threshold settings card: name, the six limits, the shared-settings warning and Save. */
 export function ThresholdSettingsForm({ initial, fridges, errors = {}, busy, onSave }: ThresholdSettingsFormProps) {
-  const [values, setValues] = useState(initial);
+  const [values, setValues] = useState<ThresholdSettingsValues>(initial);
 
   /** Update one field. */
   const set = (key: keyof ThresholdSettingsValues) => (value: string) => setValues((prev) => ({ ...prev, [key]: value }));
