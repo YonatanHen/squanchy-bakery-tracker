@@ -7,7 +7,7 @@ interface ThresholdFieldProps {
   unit: string;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | undefined;
 }
 
 /** A compact threshold input: the unit is the visible label, `label` is its accessible name. */

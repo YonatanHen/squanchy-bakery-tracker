@@ -184,8 +184,8 @@ describe("threshold settings edits", () => {
     await createThresholdSettings(VALUES);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings");
-    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(VALUES);
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("POST");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual(VALUES);
   });
 
   it("replaces them with PUT", async () => {
@@ -194,8 +194,8 @@ describe("threshold settings edits", () => {
     await updateThresholdSettings(3, VALUES);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
-    expect(fetchMock.mock.calls[0][1].method).toBe("PUT");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(VALUES);
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PUT");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual(VALUES);
   });
 
   it("deletes them with DELETE", async () => {
@@ -204,6 +204,6 @@ describe("threshold settings edits", () => {
     await deleteThresholdSettings(3);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
-    expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("DELETE");
   });
 });

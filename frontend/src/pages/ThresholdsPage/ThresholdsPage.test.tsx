@@ -29,7 +29,9 @@ function errorResponse(status: number, body: unknown) {
 /** Return the parsed body of the first call with `method` to `path`. */
 function sentBody(fetchMock: ReturnType<typeof mockApi>, method: string, path: string) {
   const call = fetchMock.mock.calls.find(([input, init]) => init?.method === method && input === `/api/v1${path}`);
-  return call && JSON.parse(call[1]!.body as string);
+  if (!call) return undefined;
+  const [, init] = call;
+  return JSON.parse(String(init?.body));
 }
 
 describe("ThresholdsPage list", () => {

@@ -26,9 +26,9 @@ const ROWS: Row[] = [
 
 interface ThresholdSettingsFormProps {
   initial: ThresholdSettingsValues;
-  fridges?: number;
-  errors?: ThresholdSettingsErrors;
-  busy?: boolean;
+  fridges?: number | undefined;
+  errors?: ThresholdSettingsErrors | undefined;
+  busy?: boolean | undefined;
   onSave: (values: ThresholdSettingsValues) => void;
 }
 
