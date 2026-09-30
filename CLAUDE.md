@@ -67,3 +67,11 @@ All personal preferences for allowed commands and permissions go in `.claude/set
 Every function you create gets a docstring.
 - First line: what the function does, in one line.
 - Then `Args:` / `Returns:` sections only when needed.
+
+### 12. Server logs
+Log process states and errors on the server with Python `logging` (`logger = logging.getLogger(__name__)` in each module).
+- `INFO`: start and result of each main process (upload received, rows validated, readings saved, alerts created, rows archived, edits audited, login succeeded), with counts and ids.
+- `WARNING`: rejected input (validation errors, unknown branches or loggers, failed login): counts and field names, not the rejected values.
+- `ERROR` / `logger.exception`: unexpected failures, with the stack trace.
+- Never log sensitive data: passwords, password hashes, JWTs, `Authorization` headers, secrets, uploaded file contents, or full request bodies.
+- Logging is configured once in `create_app` (level from `LOG_LEVEL`, default `INFO`).

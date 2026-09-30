@@ -66,8 +66,9 @@ Based on the ERD, with the changes agreed during design.
 | `branch` | id, name, city, street, building_number | unique `LOWER(name)`; street and building_number nullable for every branch |
 | `fridge` | id, branch_id, name, metric (C/F, default C), avg_temp, last_measured | unique (branch_id, `LOWER(name)`); cascade from branch |
 | `logger` | id (`TL-NNNN`), fridge_id | fridge_id unique (1-to-1); cascade from fridge |
-| `reader` | id, logger_id, time, temp, metric, status (OK/ERR) | unique (logger_id, time); `temp` NULL only when status is ERR; cascade from logger |
-| `alerts` | id, reader_id, description, level (URGENT/NON_URGENT) | cascade from reader |
+| `reader` | id, logger_id, time, temp, metric, status (OK/ERR) | unique (logger_id, time); `temp` NULL only when status is ERR; no delete cascade (archived) |
+| `alerts` | id, reader_id, description, level (URGENT/NON_URGENT) | no delete cascade (archived) |
+| `reader_archive`, `alert_archive` | archived readings (with branch and fridge names) and their alerts, `archived_at` | filled automatically before any delete |
 | `threshold_settings` | id, fridge_id, 6 threshold values | fridge_id unique; created with defaults for each new fridge; cascade from fridge |
 | `users` | id, username, password_hash | unique username |
 
@@ -144,7 +145,11 @@ Expected results on `data/sample_week.xlsx` (the 16 sample rows from the assignm
 
 Every route except health and login needs a valid JWT. Missing or invalid token → 401.
 
-**Delete flow.** The UI first calls `delete-impact`, which deletes nothing and returns counts, e.g. `{fridges: 2, loggers: 2, readings: 1340, alerts: 12}`. The confirmation dialog shows the counts. After Summer confirms, `DELETE` removes everything under the item (cascade).
+**Delete flow.** The UI first calls `delete-impact`, which deletes nothing and returns counts, e.g. `{fridges: 2, loggers: 2, readings: 1340, alerts: 12}`. The confirmation dialog shows the counts. After Summer confirms, `DELETE` removes the item; its readings and alerts are moved to the archive tables in the same transaction, so an accidental delete or an inspector question can still be answered. `GET /api/v1/alerts?archived=true` lists archived alerts.
+
+**Edit flow.** Edits update rows in place and are not archived; the UI asks "Are you sure?" before saving.
+
+**Server logs.** Process states (INFO), rejected input (WARNING, no values) and errors (ERROR) are logged; passwords, tokens and file contents never are.
 
 ## 9. Frontend
 
