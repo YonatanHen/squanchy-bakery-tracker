@@ -5,7 +5,7 @@ interface FridgeFieldProps {
   branch: Branch | undefined;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | undefined;
 }
 
 /** Pick a fridge of the chosen branch or type a new one; a new branch has no fridges yet. */

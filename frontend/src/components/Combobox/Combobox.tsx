@@ -8,10 +8,10 @@ interface ComboboxProps {
   value: string;
   options: string[];
   onChange: (value: string) => void;
-  newOptionLabel?: (text: string) => string;
-  hint?: string;
-  error?: string;
-  mono?: boolean;
+  newOptionLabel?: ((text: string) => string) | undefined;
+  hint?: string | undefined;
+  error?: string | undefined;
+  mono?: boolean | undefined;
 }
 
 interface Option {

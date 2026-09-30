@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Branch, SaveResult } from "../../lib/endpoints";
-import { mockApi, renderLoggedIn } from "../../testUtils";
+import { at, mockApi, renderLoggedIn } from "../../testUtils";
 
 const BRANCHES: Branch[] = [
   {
@@ -55,7 +55,7 @@ async function fillDairy(temp = "38.3") {
 /** The JSON body of the n-th POST /readings call. */
 function postedBody(fetchMock: ReturnType<typeof mockApi>, n = 0): unknown {
   const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST");
-  return JSON.parse(posts[n][1]?.body as string);
+  return JSON.parse(at(posts, n)[1]?.body as string);
 }
 
 afterEach(() => {

@@ -5,7 +5,7 @@ interface LoggerFieldProps {
   branch: Branch | undefined;
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | undefined;
 }
 
 /** Pick the logger of one of the branch's fridges or type another id. */

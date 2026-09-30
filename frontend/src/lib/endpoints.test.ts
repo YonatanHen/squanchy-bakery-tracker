@@ -153,8 +153,8 @@ describe("addReading", () => {
     await addReading(record);
 
     expect(calledUrl()).toBe("/api/v1/readings");
-    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(record);
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("POST");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual(record);
   });
 
   it("adds the register block when the user confirmed new entries", async () => {
@@ -162,7 +162,7 @@ describe("addReading", () => {
 
     await addReading(record, register);
 
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ ...record, register });
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ ...record, register });
   });
 });
 

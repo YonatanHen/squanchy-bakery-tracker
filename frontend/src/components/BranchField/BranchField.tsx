@@ -5,7 +5,7 @@ interface BranchFieldProps {
   branches: Branch[];
   value: string;
   onChange: (value: string) => void;
-  error?: string;
+  error?: string | undefined;
 }
 
 /** Pick a registered branch or type a new one. */
