@@ -4,7 +4,7 @@ from sqlalchemy import Select, case, delete, func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Metric, Reader, Status
 from app.models.archive import ReaderArchive
-from app.schemas.reading import LocationFilters, ReadingFilters
+from app.schemas.reading import LocationFilters, ReadingFilters, ReadingOut, ReadingPage, ReadingPatch
 from app.services.detection.service import detect, refresh_fridge_stats
 from app.services.errors import get_or_raise
 from app.services.units import to_celsius
@@ -95,6 +95,41 @@ def query_archived_readings(session, f: ReadingFilters) -> tuple[list[ReaderArch
 def known_logger_ids(session) -> set[str]:
     """Ids of all registered loggers, the validation context of a reading edit."""
     return set(session.scalars(select(Logger.id)))
+
+
+def _reading_out(reader: Reader, fridge: Fridge, branch: Branch) -> ReadingOut:
+    """A reading with the names of its fridge and branch."""
+    return ReadingOut(
+        id=reader.id, time=reader.time, temp=reader.temp, metric=reader.metric, status=reader.status,
+        logger_id=reader.logger_id, fridge=fridge.name, branch=branch.name, city=branch.city,
+    )
+
+
+def _archived_out(reader: ReaderArchive) -> ReadingOut:
+    """An archived reading; branch and fridge come from its snapshot."""
+    return ReadingOut(
+        id=reader.id, time=reader.time, temp=reader.temp, metric=reader.metric, status=reader.status,
+        logger_id=reader.logger_id, fridge=reader.fridge, branch=reader.branch, city=None, archived_at=reader.archived_at,
+    )
+
+
+def list_readings(session, f: ReadingFilters) -> ReadingPage:
+    """One page of active readings, or of deleted ones when f.archived is set."""
+    if f.archived:
+        archived, total = query_archived_readings(session, f)
+        items = [_archived_out(row) for row in archived]
+    else:
+        rows, total = query_readings(session, f)
+        items = [_reading_out(*row) for row in rows]
+    return ReadingPage(items=items, total=total, offset=f.offset, limit=f.limit)
+
+
+def edit_reading(session, reading_id: int, body: dict) -> ReadingOut:
+    """Validate the fields sent (the logger must be registered) and correct the reading; ValidationError -> 422."""
+    patch = ReadingPatch.model_validate(body, context={"loggers": known_logger_ids(session)})
+    reader = update_reading(session, reading_id, patch.model_dump(exclude_unset=True))
+    fridge = reader.logger.fridge
+    return _reading_out(reader, fridge, fridge.branch)
 
 
 def update_reading(session, reading_id: int, changes: dict) -> Reader:
