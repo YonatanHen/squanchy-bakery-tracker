@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from "react";
-import type { ProfileValues, ThresholdKey } from "../../lib/endpoints";
+import type { ThresholdKey, ThresholdSettingsValues } from "../../lib/endpoints";
 import { formatUsedBy } from "../../lib/format";
-import type { ProfileErrors } from "../../lib/profileErrors";
+import type { ThresholdSettingsErrors } from "../../lib/thresholdSettingsErrors";
 import { Button } from "../Button/Button";
 import { Card } from "../Card/Card";
 import { Field } from "../Field/Field";
 import { TextInput } from "../TextInput/TextInput";
 import { ThresholdField } from "../ThresholdField/ThresholdField";
-import styles from "./ProfileForm.module.css";
+import styles from "./ThresholdSettingsForm.module.css";
 
 interface Row {
   title: string;
@@ -24,20 +24,20 @@ const ROWS: Row[] = [
   { title: "No reading for", name: "Gap", unit: "min", unitName: "minutes", low: "gap_non_urgent_minutes", high: "gap_urgent_minutes" },
 ];
 
-interface ProfileFormProps {
-  initial: ProfileValues;
+interface ThresholdSettingsFormProps {
+  initial: ThresholdSettingsValues;
   fridges?: number;
-  errors?: ProfileErrors;
+  errors?: ThresholdSettingsErrors;
   busy?: boolean;
-  onSave: (values: ProfileValues) => void;
+  onSave: (values: ThresholdSettingsValues) => void;
 }
 
-/** The expanded profile card: name, the six limits, the shared-profile warning and Save. */
-export function ProfileForm({ initial, fridges, errors = {}, busy, onSave }: ProfileFormProps) {
+/** The expanded threshold settings card: name, the six limits, the shared-settings warning and Save. */
+export function ThresholdSettingsForm({ initial, fridges, errors = {}, busy, onSave }: ThresholdSettingsFormProps) {
   const [values, setValues] = useState(initial);
 
   /** Update one field. */
-  const set = (key: keyof ProfileValues) => (value: string) => setValues((prev) => ({ ...prev, [key]: value }));
+  const set = (key: keyof ThresholdSettingsValues) => (value: string) => setValues((prev) => ({ ...prev, [key]: value }));
 
   /** Send the typed values. */
   function handleSubmit(event: FormEvent) {

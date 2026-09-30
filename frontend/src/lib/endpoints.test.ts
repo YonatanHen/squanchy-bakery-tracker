@@ -1,20 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "../testUtils";
 import {
-  createProfile,
+  createThresholdSettings,
   deleteBranch,
   deleteFridge,
   deleteImpact,
-  deleteProfile,
   deleteReading,
+  deleteThresholdSettings,
   listAlerts,
-  listProfiles,
   listReadings,
   listThresholdSettings,
   updateBranch,
   updateFridge,
-  updateProfile,
   updateReading,
+  updateThresholdSettings,
   uploadReadings,
 } from "./endpoints";
 
@@ -168,7 +167,7 @@ describe("uploadReadings", () => {
   });
 });
 
-describe("threshold profiles", () => {
+describe("threshold settings edits", () => {
   const VALUES = {
     name: "Dairy",
     growth_non_urgent: "0.1",
@@ -179,38 +178,30 @@ describe("threshold profiles", () => {
     gap_urgent_minutes: "120",
   };
 
-  it("lists the profiles from /threshold-settings", async () => {
-    fetchMock.mockResolvedValue(new Response("[]", { status: 200 }));
-
-    await listProfiles();
-
-    expect(calledUrl()).toBe("/api/v1/threshold-settings");
-  });
-
-  it("creates a profile with POST and the values as typed", async () => {
+  it("creates them with POST and the values as typed", async () => {
     fetchMock.mockResolvedValue(new Response("{}", { status: 201 }));
 
-    await createProfile(VALUES);
+    await createThresholdSettings(VALUES);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings");
     expect(fetchMock.mock.calls[0][1].method).toBe("POST");
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(VALUES);
   });
 
-  it("replaces a profile with PUT", async () => {
+  it("replaces them with PUT", async () => {
     fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
 
-    await updateProfile(3, VALUES);
+    await updateThresholdSettings(3, VALUES);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
     expect(fetchMock.mock.calls[0][1].method).toBe("PUT");
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(VALUES);
   });
 
-  it("deletes a profile with DELETE", async () => {
+  it("deletes them with DELETE", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
-    await deleteProfile(3);
+    await deleteThresholdSettings(3);
 
     expect(calledUrl()).toBe("/api/v1/threshold-settings/3");
     expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");

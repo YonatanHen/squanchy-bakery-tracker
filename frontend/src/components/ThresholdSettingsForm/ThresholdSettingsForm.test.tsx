@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { ProfileValues } from "../../lib/endpoints";
-import { ProfileForm } from "./ProfileForm";
+import type { ThresholdSettingsValues } from "../../lib/endpoints";
+import { ThresholdSettingsForm } from "./ThresholdSettingsForm";
 
-const DEFAULT: ProfileValues = {
+const DEFAULT: ThresholdSettingsValues = {
   name: "default",
   growth_non_urgent: "0.1",
   growth_urgent: "1",
@@ -14,9 +14,9 @@ const DEFAULT: ProfileValues = {
   gap_urgent_minutes: "120",
 };
 
-describe("ProfileForm", () => {
+describe("ThresholdSettingsForm", () => {
   it("shows the name, the fridge count and the six limits", () => {
-    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
+    render(<ThresholdSettingsForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
 
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("default");
     expect(screen.getByText("Used by 4 fridges")).toBeInTheDocument();
@@ -28,28 +28,28 @@ describe("ProfileForm", () => {
     expect(screen.getByRole("textbox", { name: "Gap urgent, minutes" })).toHaveValue("120");
   });
 
-  it("warns that saving changes alerts for every fridge using the profile", () => {
-    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
+  it("warns that saving changes alerts for every fridge using these settings", () => {
+    render(<ThresholdSettingsForm initial={DEFAULT} fridges={4} onSave={() => {}} />);
 
     expect(screen.getByText(/Saving changes future alerts for all 4 fridges that use these settings/)).toBeInTheDocument();
   });
 
   it("uses the singular for one fridge", () => {
-    render(<ProfileForm initial={DEFAULT} fridges={1} onSave={() => {}} />);
+    render(<ThresholdSettingsForm initial={DEFAULT} fridges={1} onSave={() => {}} />);
 
     expect(screen.getByText("Used by 1 fridge")).toBeInTheDocument();
     expect(screen.getByText(/Saving changes future alerts for the 1 fridge that uses these settings/)).toBeInTheDocument();
   });
 
-  it("does not warn for a profile no fridge uses", () => {
-    render(<ProfileForm initial={DEFAULT} fridges={0} onSave={() => {}} />);
+  it("does not warn for settings no fridge uses", () => {
+    render(<ThresholdSettingsForm initial={DEFAULT} fridges={0} onSave={() => {}} />);
 
     expect(screen.queryByText(/Are you sure/)).not.toBeInTheDocument();
   });
 
   it("saves the values as typed", async () => {
     const onSave = vi.fn();
-    render(<ProfileForm initial={DEFAULT} fridges={4} onSave={onSave} />);
+    render(<ThresholdSettingsForm initial={DEFAULT} fridges={4} onSave={onSave} />);
 
     const gap = screen.getByRole("textbox", { name: "Gap non-urgent, minutes" });
     await userEvent.clear(gap);
@@ -61,7 +61,7 @@ describe("ProfileForm", () => {
 
   it("shows each error under its field", () => {
     render(
-      <ProfileForm
+      <ThresholdSettingsForm
         initial={DEFAULT}
         fridges={4}
         onSave={() => {}}

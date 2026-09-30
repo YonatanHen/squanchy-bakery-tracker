@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { profileErrors } from "./profileErrors";
+import { thresholdSettingsErrors } from "./thresholdSettingsErrors";
 
-describe("profileErrors", () => {
+describe("thresholdSettingsErrors", () => {
   it("keeps each field error's backend message under its field", () => {
-    const errors = profileErrors([
+    const errors = thresholdSettingsErrors([
       { field: "name", message: "String should have at least 1 character" },
       { field: "gap_urgent_minutes", message: "Input should be greater than 0" },
     ]);
@@ -15,7 +15,9 @@ describe("profileErrors", () => {
   });
 
   it("puts a non-urgent-not-below-urgent error under the non-urgent field", () => {
-    const errors = profileErrors([{ field: "body", message: "deviation_non_urgent must be lower than deviation_urgent" }]);
+    const errors = thresholdSettingsErrors([
+      { field: "body", message: "deviation_non_urgent must be lower than deviation_urgent" },
+    ]);
 
     expect(errors).toEqual({ deviation_non_urgent: "Must be lower than urgent" });
   });

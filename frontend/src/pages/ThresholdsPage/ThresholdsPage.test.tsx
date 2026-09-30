@@ -1,10 +1,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ThresholdProfile } from "../../lib/endpoints";
+import type { ThresholdSettings } from "../../lib/endpoints";
 import { mockApi, renderLoggedIn } from "../../testUtils";
 
-const DEFAULT: ThresholdProfile = {
+const DEFAULT: ThresholdSettings = {
   id: 1,
   name: "default",
   fridges: 4,
@@ -15,7 +15,7 @@ const DEFAULT: ThresholdProfile = {
   gap_non_urgent_minutes: 15,
   gap_urgent_minutes: 120,
 };
-const COLD_ROOM: ThresholdProfile = { ...DEFAULT, id: 2, name: "Cold room", fridges: 0, gap_urgent_minutes: 60 };
+const COLD_ROOM: ThresholdSettings = { ...DEFAULT, id: 2, name: "Cold room", fridges: 0, gap_urgent_minutes: 60 };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -33,7 +33,7 @@ function sentBody(fetchMock: ReturnType<typeof mockApi>, method: string, path: s
 }
 
 describe("ThresholdsPage list", () => {
-  it("opens the first profile with its values and lists the others", async () => {
+  it("opens the first threshold settings with their values and lists the others", async () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
     renderLoggedIn("/thresholds");
 
@@ -43,7 +43,7 @@ describe("ThresholdsPage list", () => {
     expect(screen.getByRole("button", { name: "Cold room Used by 0 fridges" })).toBeInTheDocument();
   });
 
-  it("opens another profile when the user picks it", async () => {
+  it("opens other threshold settings when the user picks them", async () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
     renderLoggedIn("/thresholds");
 
@@ -54,14 +54,14 @@ describe("ThresholdsPage list", () => {
     expect(screen.getByRole("button", { name: "default Used by 4 fridges" })).toBeInTheDocument();
   });
 
-  it("says where to move a fridge to another profile", async () => {
+  it("says where to move a fridge to other threshold settings", async () => {
     mockApi([["GET /api/v1/threshold-settings", [DEFAULT]]]);
     renderLoggedIn("/thresholds");
 
     expect(await screen.findByText("Move a fridge to other threshold settings from Branches → edit fridge.")).toBeInTheDocument();
   });
 
-  it("shows an error when the profiles cannot be loaded", async () => {
+  it("shows an error when the threshold settings cannot be loaded", async () => {
     mockApi([]);
     renderLoggedIn("/thresholds");
 
@@ -70,7 +70,7 @@ describe("ThresholdsPage list", () => {
 });
 
 describe("ThresholdsPage save", () => {
-  it("replaces the open profile with the typed values and shows the saved values", async () => {
+  it("replaces the open threshold settings with the typed values", async () => {
     const fetchMock = mockApi([
       ["GET /api/v1/threshold-settings", [DEFAULT]],
       ["PUT /api/v1/threshold-settings/1", { ...DEFAULT, gap_non_urgent_minutes: 30 }],
@@ -137,7 +137,7 @@ describe("ThresholdsPage save", () => {
 });
 
 describe("ThresholdsPage delete", () => {
-  it("deletes an unused profile after the user confirms", async () => {
+  it("deletes unused threshold settings after the user confirms", async () => {
     const fetchMock = mockApi([
       ["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]],
       ["DELETE /api/v1/threshold-settings/2", () => new Response(null, { status: 204 })],
@@ -153,7 +153,7 @@ describe("ThresholdsPage delete", () => {
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
   });
 
-  it("keeps the profile when the user cancels", async () => {
+  it("keeps the threshold settings when the user cancels", async () => {
     const fetchMock = mockApi([["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]]]);
     renderLoggedIn("/thresholds");
 
@@ -165,7 +165,7 @@ describe("ThresholdsPage delete", () => {
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
   });
 
-  it("shows the backend's message when a fridge started using the profile", async () => {
+  it("shows the backend's message when a fridge started using the settings", async () => {
     mockApi([
       ["GET /api/v1/threshold-settings", [DEFAULT, COLD_ROOM]],
       [
@@ -183,8 +183,8 @@ describe("ThresholdsPage delete", () => {
   });
 });
 
-describe("ThresholdsPage new profile", () => {
-  it("starts from the suggested limits and creates the profile with POST", async () => {
+describe("ThresholdsPage new threshold settings", () => {
+  it("starts from the suggested limits and creates the settings with POST", async () => {
     const fetchMock = mockApi([
       ["GET /api/v1/threshold-settings", [DEFAULT]],
       ["POST /api/v1/threshold-settings", { ...DEFAULT, id: 5, name: "Dairy", fridges: 0 }],

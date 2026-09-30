@@ -2,17 +2,17 @@ import { formatUsedBy } from "../../lib/format";
 import { Button } from "../Button/Button";
 import { Card } from "../Card/Card";
 import { TrashIcon } from "../icons/icons";
-import styles from "./ProfileRow.module.css";
+import styles from "./ThresholdSettingsRow.module.css";
 
-interface ProfileRowProps {
+interface ThresholdSettingsRowProps {
   name: string;
   fridges: number;
   onOpen: () => void;
   onDelete: () => void;
 }
 
-/** A collapsed profile: name and fridge count; delete only when no fridge uses it. */
-export function ProfileRow({ name, fridges, onOpen, onDelete }: ProfileRowProps) {
+/** Collapsed threshold settings: name and fridge count; delete only when no fridge uses them. */
+export function ThresholdSettingsRow({ name, fridges, onOpen, onDelete }: ThresholdSettingsRowProps) {
   return (
     <Card className={styles.row}>
       <button type="button" className={styles.open} onClick={onOpen}>

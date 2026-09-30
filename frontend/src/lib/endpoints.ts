@@ -70,11 +70,11 @@ export const THRESHOLD_KEYS = [
 ] as const;
 export type ThresholdKey = (typeof THRESHOLD_KEYS)[number];
 
-/** A threshold profile shared by fridges; °C for growth/deviation, minutes for gaps. */
-export type ThresholdProfile = { id: number; name: string; fridges: number } & Record<ThresholdKey, number>;
+/** Named threshold settings shared by fridges; °C for growth/deviation, minutes for gaps. */
+export type ThresholdSettings = { id: number; name: string; fridges: number } & Record<ThresholdKey, number>;
 
-/** Profile values as typed in the form; the backend parses and validates them. */
-export type ProfileValues = { name: string } & Record<ThresholdKey, string>;
+/** Threshold settings as typed in the form; the backend parses and validates them. */
+export type ThresholdSettingsValues = { name: string } & Record<ThresholdKey, string>;
 
 /** Reading filters as typed in the form; dates are "YYYY-MM-DD", temperatures are text. */
 export interface ReadingFilters {
@@ -190,18 +190,6 @@ export function deleteReading(id: number): Promise<void> {
   return apiRequest<void>(`/readings/${id}`, { method: "DELETE" });
 }
 
-/** Threshold settings with how many fridges use them; only the fields the Branches screen needs. */
-export interface ThresholdSettings {
-  id: number;
-  name: string;
-  fridges: number;
-}
-
-/** Get all threshold settings. */
-export function listThresholdSettings(): Promise<ThresholdSettings[]> {
-  return apiRequest<ThresholdSettings[]>("/threshold-settings");
-}
-
 /** Edit a branch; send only the changed fields. */
 export function updateBranch(id: number, changes: BranchChanges): Promise<Branch> {
   return apiRequest<Branch>(`/branches/${id}`, { method: "PATCH", body: changes });
@@ -235,22 +223,22 @@ export function deleteFridge(id: number): Promise<void> {
   return apiRequest<void>(`/fridges/${id}`, { method: "DELETE" });
 }
 
-/** Get the threshold profiles, ordered by name, with their fridge counts. */
-export function listProfiles(): Promise<ThresholdProfile[]> {
-  return apiRequest<ThresholdProfile[]>("/threshold-settings");
+/** Get all threshold settings, ordered by name, with their fridge counts. */
+export function listThresholdSettings(): Promise<ThresholdSettings[]> {
+  return apiRequest<ThresholdSettings[]>("/threshold-settings");
 }
 
-/** Create a threshold profile. */
-export function createProfile(values: ProfileValues): Promise<ThresholdProfile> {
-  return apiRequest<ThresholdProfile>("/threshold-settings", { method: "POST", body: values });
+/** Create named threshold settings. */
+export function createThresholdSettings(values: ThresholdSettingsValues): Promise<ThresholdSettings> {
+  return apiRequest<ThresholdSettings>("/threshold-settings", { method: "POST", body: values });
 }
 
-/** Replace a profile's name and values; it changes alerts for every fridge using it. */
-export function updateProfile(id: number, values: ProfileValues): Promise<ThresholdProfile> {
-  return apiRequest<ThresholdProfile>(`/threshold-settings/${id}`, { method: "PUT", body: values });
+/** Replace the name and values; it changes alerts for every fridge using these settings. */
+export function updateThresholdSettings(id: number, values: ThresholdSettingsValues): Promise<ThresholdSettings> {
+  return apiRequest<ThresholdSettings>(`/threshold-settings/${id}`, { method: "PUT", body: values });
 }
 
-/** Delete a profile; the backend refuses (409) while fridges use it. */
-export function deleteProfile(id: number): Promise<void> {
+/** Delete threshold settings; the backend refuses (409) while fridges use them. */
+export function deleteThresholdSettings(id: number): Promise<void> {
   return apiRequest<void>(`/threshold-settings/${id}`, { method: "DELETE" });
 }
