@@ -71,6 +71,18 @@ def test_delete_reading_archives_it_with_its_alerts_and_recalculates_the_average
     assert session.get(Logger, "TL-0388").fridge.avg_temp == pytest.approx(5.43, abs=0.01)
 
 
+def test_patch_time_in_the_browser_format(client, session, auth_headers):
+    """Correcting Jerusalem's 08:30 reading to 08:20 from the edit screen saves the new time."""
+    load_sample(session)
+    target = reading(session, "TL-0512", datetime(2026, 9, 14, 8, 30))
+
+    response = client.patch(f"/api/v1/readings/{target.id}", json={"time": "2026-09-14T08:20"}, headers=auth_headers)
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert session.get(Reader, target.id).time == datetime(2026, 9, 14, 8, 20)
+
+
 def test_unknown_reading_returns_404(client, auth_headers):
     """Deleting a reading that does not exist returns 404."""
     assert client.delete("/api/v1/readings/999", headers=auth_headers).status_code == 404

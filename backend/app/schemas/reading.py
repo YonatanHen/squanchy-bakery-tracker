@@ -4,7 +4,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 from app.models import Metric, Status
-from app.services.ingest.normalizer import collapse_spaces, parse_temp, parse_time
+from app.services.ingest.normalizer import collapse_spaces, parse_api_time, parse_temp
 
 Text = Annotated[str, BeforeValidator(collapse_spaces)]
 
@@ -43,8 +43,8 @@ class ReadingPatch(BaseModel):
     @field_validator("time", mode="before")
     @classmethod
     def normalized_time(cls, value: Any) -> datetime:
-        """Accept the same date formats as the upload."""
-        return parse_time(value)
+        """Accept the upload's date formats and the browser's YYYY-MM-DDTHH:MM."""
+        return parse_api_time(value)
 
     @field_validator("temp", mode="before")
     @classmethod
