@@ -7,7 +7,8 @@ import { DateTimeField } from "../../components/DateTimeField/DateTimeField";
 import { FridgeField } from "../../components/FridgeField/FridgeField";
 import { LoggerField } from "../../components/LoggerField/LoggerField";
 import { TemperatureField } from "../../components/TemperatureField/TemperatureField";
-import { addReading, listBranches, type Branch, type NewReading, type SaveResult } from "../../lib/endpoints";
+import { ApiError } from "../../lib/api";
+import { addReading,listBranches, type Branch, type NewReading, type SaveResult } from "../../lib/endpoints";
 import styles from "./SingleRecordPage.module.css";
 
 const EMPTY: NewReading = { logger: "", branch: "", fridge: "", time: "", temp: "" };
@@ -29,6 +30,8 @@ export function SingleRecordPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [record, setRecord] = useState<NewReading>(EMPTY);
   const [saved, setSaved] = useState<SaveResult | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -53,10 +56,25 @@ export function SingleRecordPage() {
     setRecord((current) => ({ ...current, fridge: name, logger: fridge?.logger_id ?? current.logger }));
   }
 
-  /** Send the record and show the result. */
+  /** Send the record; show the result, or the errors under their fields. */
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setSaved(await addReading(record));
+    setSaved(null);
+    setFieldErrors({});
+    setError("");
+    try {
+      setSaved(await addReading(record));
+    } catch (caught) {
+      if (!(caught instanceof ApiError)) return setError("Could not save the reading. Try again.");
+      const byField: Record<string, string> = {};
+      const other: string[] = [];
+      for (const e of caught.fieldErrors) {
+        if (e.field in EMPTY) byField[e.field] ??= e.message;
+        else other.push(e.message);
+      }
+      setFieldErrors(byField);
+      if (other.length || !caught.fieldErrors.length) setError(other.join(" ") || caught.message);
+    }
   }
 
   return (
@@ -70,12 +88,32 @@ export function SingleRecordPage() {
           {savedMessage(saved)}
         </Card>
       )}
+      {error && (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      )}
       <form className={styles.form} onSubmit={submit} noValidate>
-        <BranchField branches={branches} value={record.branch} onChange={(v) => set("branch", v)} />
-        <FridgeField branch={branch} value={record.fridge} onChange={setFridge} />
-        <LoggerField branch={branch} value={record.logger} onChange={(v) => set("logger", v)} />
-        <DateTimeField label="Time" value={record.time} onChange={(v) => set("time", v)} />
-        <TemperatureField label="Temperature (number, or ERR)" value={record.temp} onChange={(v) => set("temp", v)} />
+        <BranchField
+          branches={branches}
+          value={record.branch}
+          onChange={(v) => set("branch", v)}
+          error={fieldErrors.branch}
+        />
+        <FridgeField branch={branch} value={record.fridge} onChange={setFridge} error={fieldErrors.fridge} />
+        <LoggerField
+          branch={branch}
+          value={record.logger}
+          onChange={(v) => set("logger", v)}
+          error={fieldErrors.logger}
+        />
+        <DateTimeField label="Time" value={record.time} onChange={(v) => set("time", v)} error={fieldErrors.time} />
+        <TemperatureField
+          label="Temperature (number, or ERR)"
+          value={record.temp}
+          onChange={(v) => set("temp", v)}
+          error={fieldErrors.temp}
+        />
         <Button type="submit" size="lg">
           Save reading
         </Button>

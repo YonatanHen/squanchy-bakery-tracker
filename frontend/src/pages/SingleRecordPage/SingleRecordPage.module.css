@@ -34,6 +34,12 @@
   font-weight: 600;
 }
 
+.error {
+  margin: 0;
+  font-weight: 500;
+  color: var(--urgent-text);
+}
+
 .note {
   margin: 0;
   font-size: 13px;

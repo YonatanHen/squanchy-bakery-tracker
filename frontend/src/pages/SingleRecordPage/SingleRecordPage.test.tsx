@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Branch, SaveResult } from "../../lib/endpoints";
@@ -29,6 +29,11 @@ function result(fields: Partial<SaveResult> = {}): SaveResult {
     fridge_name_mismatches: [],
     ...fields,
   };
+}
+
+/** A JSON response with a non-200 status. */
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
 /** Type into a labelled combobox and leave it. */
@@ -67,6 +72,30 @@ describe("SingleRecordPage", () => {
     await typeInto("Fridge", "Cream cakes");
 
     expect(screen.getByRole("combobox", { name: "Logger id" })).toHaveValue("TL-0388");
+  });
+
+  it("shows each rejected field's message under that field", async () => {
+    const rejected = result({
+      rejected: 1,
+      errors: [
+        { row: 1, field: "time", value: "", message: "Time is required" },
+        { row: 1, field: "temp", value: "", message: "Temperature is required" },
+      ],
+    });
+    mockApi([
+      ["GET /api/v1/branches", BRANCHES],
+      ["POST /api/v1/readings", () => json(422, rejected)],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await typeInto("Branch", "Haifa");
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+
+    const temp = screen.getByLabelText("Temperature (number, or ERR)");
+    await waitFor(() => expect(temp).toHaveAccessibleDescription("Temperature is required"));
+    expect(screen.getByLabelText("Time")).toHaveAccessibleDescription("Time is required");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("sends the typed reading, the datetime-local time as is, and shows it was saved", async () => {
