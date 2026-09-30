@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SaveResult } from "../../lib/endpoints";
-import { mockApi, renderLoggedIn } from "../../testUtils";
+import { at, mockApi, renderLoggedIn } from "../../testUtils";
 
 /** A SaveResult with the given fields over an empty result. */
 function result(fields: Partial<SaveResult> = {}): SaveResult {
@@ -53,7 +53,7 @@ describe("UploadPage", () => {
       "0duplicates skipped",
       "3rows to fix",
     ]);
-    expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
+    expect((at(fetchMock.mock.calls, 0)[1]?.body as FormData).get("file")).toBe(WEEK);
   });
 
   it("uploads a file dropped on the drop zone", async () => {
@@ -63,7 +63,7 @@ describe("UploadPage", () => {
     fireEvent.drop(screen.getByText("Drop an .xlsx file here, or click to choose"), { dataTransfer: { files: [WEEK] } });
 
     await screen.findByRole("list", { name: "Upload result" });
-    expect((fetchMock.mock.calls[0][1]?.body as FormData).get("file")).toBe(WEEK);
+    expect((at(fetchMock.mock.calls, 0)[1]?.body as FormData).get("file")).toBe(WEEK);
     expect(screen.getByText("Last file: week.xlsx")).toBeInTheDocument();
   });
 
@@ -161,7 +161,7 @@ describe("UploadPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: /Review/ }));
     await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
 
-    const resent = fetchMock.mock.calls[1][1]?.body as FormData;
+    const resent = at(fetchMock.mock.calls, 1)[1]?.body as FormData;
     expect(resent.get("file")).toBe(WEEK);
     expect(JSON.parse(resent.get("register") as string)).toEqual({ branches: [{ name: "Eilat", city: "Eilat" }], fridges: [] });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

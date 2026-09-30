@@ -149,7 +149,7 @@ describe("uploadReadings", () => {
     await uploadReadings(file);
 
     expect(calledUrl()).toBe("/api/v1/readings/upload");
-    const form = fetchMock.mock.calls[0][1].body as FormData;
+    const form = at(fetchMock.mock.calls, 0)[1].body as FormData;
     expect(form.get("file")).toBe(file);
     expect(form.has("register")).toBe(false);
   });
@@ -159,7 +159,7 @@ describe("uploadReadings", () => {
 
     await uploadReadings(new File(["x"], "week.xlsx"), register);
 
-    const form = fetchMock.mock.calls[0][1].body as FormData;
+    const form = at(fetchMock.mock.calls, 0)[1].body as FormData;
     expect(JSON.parse(form.get("register") as string)).toEqual(register);
   });
 });

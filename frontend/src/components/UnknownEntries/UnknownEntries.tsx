@@ -17,9 +17,9 @@ interface UnknownEntriesProps {
   suggestionHint: string;
   onConfirm: (registration: Registration) => void;
   onClose: () => void;
-  onPickSuggestion?: (name: string) => void;
-  errors?: string[];
-  busy?: boolean;
+  onPickSuggestion?: ((name: string) => void) | undefined;
+  errors?: string[] | undefined;
+  busy?: boolean | undefined;
 }
 
 const UNITS = [
@@ -28,15 +28,23 @@ const UNITS = [
 ] as const;
 
 interface LoggerForm {
+  logger: string;
+  branch: string;
   logger_id: string;
   fridge: string;
   metric: Metric;
 }
 
 interface BranchForm {
+  name: string;
   city: string;
   street: string;
   building_number: string;
+}
+
+/** Return a copy of `list` with the item at `index` merged with `changes`. */
+function replaceAt<T>(list: T[], index: number, changes: Partial<T>): T[] {
+  return list.map((item, i) => (i === index ? { ...item, ...changes } : item));
 }
 
 /** "Did you mean / add it?" dialog for unknown branches and loggers; confirming returns the register block. */
@@ -59,37 +67,31 @@ function EntriesForm({
   errors = [],
   busy = false,
 }: Omit<UnknownEntriesProps, "open" | "title">) {
-  const suggested = entries.branches.filter((branch) => branch.suggestion);
-  const newBranches = entries.branches.filter((branch) => !branch.suggestion);
+  const suggested = entries.branches.flatMap(({ name, suggestion }) => (suggestion ? [{ name, suggestion }] : []));
   const misspelled = new Set(suggested.map((branch) => branch.name.toLowerCase()));
   const blocked = entries.loggers.filter((logger) => misspelled.has(logger.branch.toLowerCase()));
-  const newLoggers = entries.loggers.filter((logger) => !misspelled.has(logger.branch.toLowerCase()));
-  const [branches, setBranches] = useState<Record<string, BranchForm>>(() =>
-    Object.fromEntries(newBranches.map((b) => [b.name, { city: b.name, street: "", building_number: "" }])),
+  const [branches, setBranches] = useState<BranchForm[]>(() =>
+    entries.branches
+      .filter((b) => !b.suggestion)
+      .map((b) => ({ name: b.name, city: b.name, street: "", building_number: "" })),
   );
-  const [loggers, setLoggers] = useState<Record<string, LoggerForm>>(() =>
-    Object.fromEntries(newLoggers.map((l) => [l.logger, { logger_id: l.logger, fridge: l.fridge, metric: "C" }])),
+  const [loggers, setLoggers] = useState<LoggerForm[]>(() =>
+    entries.loggers
+      .filter((l) => !misspelled.has(l.branch.toLowerCase()))
+      .map((l) => ({ logger: l.logger, branch: l.branch, logger_id: l.logger, fridge: l.fridge, metric: "C" })),
   );
-
-  /** Change one field of a new branch. */
-  function setBranch(name: string, field: keyof BranchForm, value: string) {
-    setBranches((current) => ({ ...current, [name]: { ...current[name], [field]: value } }));
-  }
-
-  /** Change one field of a new logger. */
-  function setLogger(id: string, changes: Partial<LoggerForm>) {
-    setLoggers((current) => ({ ...current, [id]: { ...current[id], ...changes } }));
-  }
 
   /** Send the register block built from the forms; empty optional fields are left out. */
   function submit(event: FormEvent) {
     event.preventDefault();
     onConfirm({
-      branches: newBranches.map(({ name }) => {
-        const { city, street, building_number } = branches[name];
-        return { name, city, ...(street && { street }), ...(building_number && { building_number }) };
-      }),
-      fridges: newLoggers.map(({ logger, branch }) => ({ ...loggers[logger], branch })),
+      branches: branches.map(({ name, city, street, building_number }) => ({
+        name,
+        city,
+        ...(street && { street }),
+        ...(building_number && { building_number }),
+      })),
+      fridges: loggers.map(({ logger_id, branch, fridge, metric }) => ({ logger_id, branch, fridge, metric })),
     });
   }
 
@@ -103,7 +105,7 @@ function EntriesForm({
           <div className={styles.suggestion}>
             <span className={styles.didYouMean}>Did you mean</span>{" "}
             {onPickSuggestion ? (
-              <button type="button" className={styles.chip} onClick={() => onPickSuggestion(branch.suggestion!)}>
+              <button type="button" className={styles.chip} onClick={() => onPickSuggestion(branch.suggestion)}>
                 {branch.suggestion}
               </button>
             ) : (
@@ -113,14 +115,18 @@ function EntriesForm({
           </div>
         </Card>
       ))}
-      {newBranches.map(({ name }) => (
-        <Card key={name} className={styles.entry}>
+      {branches.map((form, index) => (
+        <Card key={form.name} className={styles.entry}>
           <span className={styles.text}>
-            Branch <strong>“{name}”</strong> does not exist. Add it?
+            Branch <strong>“{form.name}”</strong> does not exist. Add it?
           </span>
           <Field label="City">
             {(control) => (
-              <TextInput {...control} value={branches[name].city} onChange={(e) => setBranch(name, "city", e.target.value)} />
+              <TextInput
+                {...control}
+                value={form.city}
+                onChange={(e) => setBranches((list) => replaceAt(list, index, { city: e.target.value }))}
+              />
             )}
           </Field>
           <div className={styles.address}>
@@ -130,8 +136,8 @@ function EntriesForm({
                   <TextInput
                     {...control}
                     placeholder="Street"
-                    value={branches[name].street}
-                    onChange={(e) => setBranch(name, "street", e.target.value)}
+                    value={form.street}
+                    onChange={(e) => setBranches((list) => replaceAt(list, index, { street: e.target.value }))}
                   />
                 )}
               </Field>
@@ -141,18 +147,18 @@ function EntriesForm({
                 <TextInput
                   {...control}
                   placeholder="12a"
-                  value={branches[name].building_number}
-                  onChange={(e) => setBranch(name, "building_number", e.target.value)}
+                  value={form.building_number}
+                  onChange={(e) => setBranches((list) => replaceAt(list, index, { building_number: e.target.value }))}
                 />
               )}
             </Field>
           </div>
         </Card>
       ))}
-      {newLoggers.map(({ logger }) => (
-        <Card key={logger} className={styles.entry}>
+      {loggers.map((form, index) => (
+        <Card key={form.logger} className={styles.entry}>
           <span className={styles.text}>
-            Logger <strong className={styles.mono}>{logger}</strong> does not exist. Add it, or edit before adding.
+            Logger <strong className={styles.mono}>{form.logger}</strong> does not exist. Add it, or edit before adding.
           </span>
           <div className={styles.pair}>
             <Field label="Logger id">
@@ -160,8 +166,8 @@ function EntriesForm({
                 <TextInput
                   {...control}
                   className={styles.mono}
-                  value={loggers[logger].logger_id}
-                  onChange={(e) => setLogger(logger, { logger_id: e.target.value })}
+                  value={form.logger_id}
+                  onChange={(e) => setLoggers((list) => replaceAt(list, index, { logger_id: e.target.value }))}
                 />
               )}
             </Field>
@@ -169,8 +175,8 @@ function EntriesForm({
               {(control) => (
                 <TextInput
                   {...control}
-                  value={loggers[logger].fridge}
-                  onChange={(e) => setLogger(logger, { fridge: e.target.value })}
+                  value={form.fridge}
+                  onChange={(e) => setLoggers((list) => replaceAt(list, index, { fridge: e.target.value }))}
                 />
               )}
             </Field>
@@ -180,12 +186,12 @@ function EntriesForm({
             <SegmentedToggle
               label="Unit"
               options={UNITS}
-              value={loggers[logger].metric}
-              onChange={(metric) => setLogger(logger, { metric })}
+              value={form.metric}
+              onChange={(metric) => setLoggers((list) => replaceAt(list, index, { metric }))}
             />
           </div>
           <span className={styles.hint}>
-            Thresholds: <strong>default</strong> profile (change later in Thresholds)
+            Thresholds: <strong>default</strong> threshold settings (change later in Thresholds)
           </span>
         </Card>
       ))}
@@ -209,7 +215,7 @@ function EntriesForm({
         <Button variant="secondary" size="lg" className={styles.cancel} onClick={onClose}>
           Not now
         </Button>
-        {(newBranches.length > 0 || newLoggers.length > 0) && (
+        {(branches.length > 0 || loggers.length > 0) && (
           <Button type="submit" size="lg" className={styles.confirm} disabled={busy}>
             {confirmLabel}
           </Button>

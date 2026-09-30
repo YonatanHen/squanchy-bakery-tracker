@@ -58,7 +58,7 @@ describe("apiRequest", () => {
 
     await apiRequest("/readings/upload", { method: "POST", body: form });
 
-    const [, init] = fetchMock.mock.calls[0];
+    const [, init] = at(fetchMock.mock.calls, 0);
     expect(init.body).toBe(form);
     expect(new Headers(init.headers).has("Content-Type")).toBe(false);
   });
