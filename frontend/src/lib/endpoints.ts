@@ -60,6 +60,22 @@ export type BranchChanges = Partial<Pick<Branch, "name" | "city" | "street" | "b
 
 export type FridgeChanges = Partial<{ name: string; metric: Metric; logger_id: string; threshold_settings_id: number }>;
 
+export const THRESHOLD_KEYS = [
+  "growth_non_urgent",
+  "growth_urgent",
+  "deviation_non_urgent",
+  "deviation_urgent",
+  "gap_non_urgent_minutes",
+  "gap_urgent_minutes",
+] as const;
+export type ThresholdKey = (typeof THRESHOLD_KEYS)[number];
+
+/** A threshold profile shared by fridges; °C for growth/deviation, minutes for gaps. */
+export type ThresholdProfile = { id: number; name: string; fridges: number } & Record<ThresholdKey, number>;
+
+/** Profile values as typed in the form; the backend parses and validates them. */
+export type ProfileValues = { name: string } & Record<ThresholdKey, string>;
+
 /** Reading filters as typed in the form; dates are "YYYY-MM-DD", temperatures are text. */
 export interface ReadingFilters {
   branch?: string | undefined;
@@ -217,4 +233,24 @@ export function deleteBranch(id: number): Promise<void> {
 /** Delete a fridge with its logger; the backend archives its readings and alerts. */
 export function deleteFridge(id: number): Promise<void> {
   return apiRequest<void>(`/fridges/${id}`, { method: "DELETE" });
+}
+
+/** Get the threshold profiles, ordered by name, with their fridge counts. */
+export function listProfiles(): Promise<ThresholdProfile[]> {
+  return apiRequest<ThresholdProfile[]>("/threshold-settings");
+}
+
+/** Create a threshold profile. */
+export function createProfile(values: ProfileValues): Promise<ThresholdProfile> {
+  return apiRequest<ThresholdProfile>("/threshold-settings", { method: "POST", body: values });
+}
+
+/** Replace a profile's name and values; it changes alerts for every fridge using it. */
+export function updateProfile(id: number, values: ProfileValues): Promise<ThresholdProfile> {
+  return apiRequest<ThresholdProfile>(`/threshold-settings/${id}`, { method: "PUT", body: values });
+}
+
+/** Delete a profile; the backend refuses (409) while fridges use it. */
+export function deleteProfile(id: number): Promise<void> {
+  return apiRequest<void>(`/threshold-settings/${id}`, { method: "DELETE" });
 }
