@@ -149,6 +149,31 @@ describe("SingleRecordPage", () => {
     expect(screen.getByRole("combobox", { name: "Branch" })).toHaveValue("Haifa");
   });
 
+  it("offers a branch added through the dialog on the next reading", async () => {
+    const eilat: Branch = { id: 3, name: "Eilat", fridges: [{ id: 4, name: "Display", logger_id: "TL-0700" }] };
+    let branchCalls = 0;
+    const unknown = result({ rejected: 1, unknown: { branches: [{ name: "Eilat" }], loggers: [] } });
+    mockApi([
+      ["GET /api/v1/branches", () => (branchCalls++ ? [...BRANCHES, eilat] : BRANCHES)],
+      [
+        "POST /api/v1/readings",
+        (_url: URL, init?: RequestInit) =>
+          JSON.parse(init?.body as string).register ? result({ inserted: 1 }) : json(422, unknown),
+      ],
+    ]);
+    renderLoggedIn("/readings/new");
+    await screen.findByRole("heading", { level: 1, name: "Add one reading" });
+
+    await typeInto("Branch", "Eilat");
+    await userEvent.click(screen.getByRole("button", { name: "Save reading" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add and save" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add another" }));
+    await typeInto("Branch", "Eilat");
+    await typeInto("Fridge", "Display");
+
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Logger id" })).toHaveValue("TL-0700"));
+  });
+
   it("keeps the dialog open with the backend's reason when the new entries are refused", async () => {
     const unknown = result({
       rejected: 1,

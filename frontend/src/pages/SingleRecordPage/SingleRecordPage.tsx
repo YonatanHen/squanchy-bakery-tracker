@@ -46,6 +46,9 @@ export function SingleRecordPage() {
   const [registerErrors, setRegisterErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
+  const [branchesVersion, setBranchesVersion] = useState(0);
+
+  // Reload after each save: a save can add a branch or logger, or rename a fridge
   useEffect(() => {
     let active = true;
     listBranches()
@@ -54,7 +57,7 @@ export function SingleRecordPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [branchesVersion]);
 
   const branch = branches.find((b) => b.name.toLowerCase() === record.branch.trim().toLowerCase());
 
@@ -76,6 +79,7 @@ export function SingleRecordPage() {
     try {
       const result = await addReading(record, register);
       setSaved(result);
+      setBranchesVersion((version) => version + 1);
       setFieldErrors({});
       setError("");
       setUnknown(null);
