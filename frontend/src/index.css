@@ -1,0 +1,40 @@
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --ink: #14201c;
+  --muted: #4a5a54;
+  --label: #3e4d47;
+  --border: #d5ddd9;
+  --input-border: #c9d3cf;
+  --primary: #0e5c6b;
+  --primary-hover: #0a4652;
+  --primary-soft: #ddeef0;
+  --urgent: #9a3412;
+  --urgent-bg: #fbe3d6;
+  --urgent-text: #7c2d12;
+  --warn-bg: #fff8e6;
+  --warn-border: #f0e0b4;
+  --warn-text: #5c4300;
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+}
+
+a {
+  color: var(--primary);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
