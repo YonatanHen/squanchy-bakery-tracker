@@ -3,6 +3,7 @@ from flask import request
 from app.api import api_v1
 from app.db import db
 from app.schemas.reading import ReadingFilters
+from app.services import archive as archive_service
 from app.services import readings as readings_service
 from app.services.ingest.schemas import SaveResult
 from app.services.ingest.service import ingest_file, ingest_record
@@ -42,6 +43,12 @@ def update_reading(reading_id: int):
     """Correct a reading's logger, time or temperature in place; the unit follows the fridge."""
     body = request.get_json(silent=True) or {}
     return readings_service.edit_reading(db.session, reading_id, body).model_dump(mode="json")
+
+
+@api_v1.delete("/readings/archive")
+def clean_archive():
+    """Delete all archived readings and their alerts for good; returns the counts."""
+    return archive_service.clean_archive(db.session).model_dump()
 
 
 @api_v1.delete("/readings/<int:reading_id>")

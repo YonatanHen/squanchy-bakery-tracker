@@ -82,6 +82,13 @@ class ReadingOut(BaseModel):
     archived_at: datetime | None = None
 
 
+class ArchiveCounts(BaseModel):
+    """How many archived readings and archived alerts a clean deleted."""
+
+    readings: int
+    alerts: int
+
+
 class ReadingPage(BaseModel):
     """One page of readings with the number of all matching readings."""
 
