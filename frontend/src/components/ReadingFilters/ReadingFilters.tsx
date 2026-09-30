@@ -37,7 +37,7 @@ function chips(value: Filters, unit: Metric): [keyof Filters, string][] {
 /** Readings filters: a form (always shown on desktop, opened with "+ Filter" on phones) and chips. */
 export function ReadingFilters({ branches, unit, value, errors = {}, onApply }: ReadingFiltersProps) {
   const [draft, setDraft] = useState<Filters>(value);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
 
   useEffect(() => setDraft(value), [value]);
 

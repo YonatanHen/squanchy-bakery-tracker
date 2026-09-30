@@ -88,14 +88,14 @@ function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Readi
 export function ReadingsPage() {
   const [unit, setUnit] = useState<Metric>("C");
   const [filters, setFilters] = useState<Filters>({});
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState<number>(0);
   const [page, setPage] = useState<Page<Reading> | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [alertLevels, setAlertLevels] = useState<AlertLevels>({});
   const [editing, setEditing] = useState<Reading | null>(null);
-  const [reloads, setReloads] = useState(0);
+  const [reloads, setReloads] = useState<number>(0);
 
   useEffect(() => {
     listBranches()
