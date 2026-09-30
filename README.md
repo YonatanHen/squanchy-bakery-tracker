@@ -152,10 +152,10 @@ This starts PostgreSQL on `localhost:5432` with the user `squanchy` / `squanchy`
    CREATE DATABASE squanchy_bakery OWNER squanchy;
    CREATE DATABASE squanchy_bakery_test OWNER squanchy;
    ```
-4. With these names nothing else is needed. With your own server or names, set:
+4. With these names the URLs in `backend/.env.example` work as they are. With your own server or names, change them in `backend/.env`:
    ```bash
-   export DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/DB_NAME
-   export TEST_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/TEST_DB_NAME
+   DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/DB_NAME
+   TEST_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/TEST_DB_NAME
    ```
 
 The database must be PostgreSQL; SQLite is not supported.
@@ -164,15 +164,16 @@ The database must be PostgreSQL; SQLite is not supported.
 
 ```bash
 cd backend
+cp .env.example .env                                       # then set JWT_SECRET and ADMIN_PASSWORD
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
 .venv/Scripts/python -m scripts.seed                       # creates the tables and the admin user
 .venv/Scripts/python -m flask --app app run                # API on http://127.0.0.1:5000
 ```
 
-Login: `admin` / `password`.
+Login: `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `backend/.env`.
 
-Optional environment variables: `JWT_SECRET` (set your own outside development), `JWT_EXPIRES_MINUTES` (default 480), `LOG_LEVEL` (default `INFO`).
+Settings and secrets are read from `backend/.env` (git-ignored; `backend/.env.example` lists them). Required: `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET` (at least 32 bytes), `ADMIN_USERNAME`, `ADMIN_PASSWORD`. Optional: `JWT_EXPIRES_MINUTES` (default 480), `LOG_LEVEL` (default `INFO`). Real environment variables override the file.
 
 ### 3. Run the tests
 
