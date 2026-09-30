@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { at } from "../testUtils";
 import { ApiError, apiRequest, getToken, onUnauthorized, setToken } from "./api";
 
 /** Build a fetch Response with a JSON body. */
@@ -25,7 +26,7 @@ describe("apiRequest", () => {
     const result = await apiRequest("/branches");
 
     expect(result).toEqual([{ name: "Haifa" }]);
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = at(fetchMock.mock.calls, 0);
     expect(url).toBe("/api/v1/branches");
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer abc");
   });
@@ -35,7 +36,7 @@ describe("apiRequest", () => {
 
     await apiRequest("/auth/login", { method: "POST", body: { username: "admin", password: "password" } });
 
-    const [, init] = fetchMock.mock.calls[0];
+    const [, init] = at(fetchMock.mock.calls, 0);
     expect(new Headers(init.headers).has("Authorization")).toBe(false);
   });
 
@@ -44,7 +45,7 @@ describe("apiRequest", () => {
 
     await apiRequest("/auth/login", { method: "POST", body: { username: "admin", password: "password" } });
 
-    const [, init] = fetchMock.mock.calls[0];
+    const [, init] = at(fetchMock.mock.calls, 0);
     expect(init.method).toBe("POST");
     expect(init.body).toBe(JSON.stringify({ username: "admin", password: "password" }));
     expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");

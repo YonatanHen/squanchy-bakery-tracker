@@ -12,7 +12,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 /** Provide the login state and actions; a 401 from any API call logs the user out. */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
+  const [loggedIn, setLoggedIn] = useState<boolean>(isLoggedIn);
 
   useEffect(() => onUnauthorized(() => setLoggedIn(false)), []);
 

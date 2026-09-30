@@ -28,12 +28,12 @@ function tempLabel(text: string, reading: Reading): string {
 export function EditReadingDialog({ reading, onClose, onSaved }: EditReadingDialogProps) {
   const originalTime = toDateTimeLocal(reading.time);
   const originalTemp = reading.temp === null ? "ERR" : String(reading.temp);
-  const [time, setTime] = useState(originalTime);
-  const [temp, setTemp] = useState(originalTemp);
+  const [time, setTime] = useState<string>(originalTime);
+  const [temp, setTemp] = useState<string>(originalTemp);
   const [mode, setMode] = useState<Mode>("edit");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [failure, setFailure] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string>("");
+  const [busy, setBusy] = useState<boolean>(false);
 
   const changes = {
     ...(time !== originalTime && { time }),

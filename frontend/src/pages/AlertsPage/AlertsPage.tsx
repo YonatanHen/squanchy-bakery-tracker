@@ -36,11 +36,11 @@ const COLUMNS: Column<Alert>[] = [
 
 /** Alerts screen: active or archived alerts by level, cards on phones and a table on desktop. */
 export function AlertsPage() {
-  const [archived, setArchived] = useState(false);
+  const [archived, setArchived] = useState<boolean>(false);
   const [level, setLevel] = useState<AlertLevel | "">("");
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState<number>(0);
   const [loaded, setLoaded] = useState<{ page: Page<Alert>; archived: boolean } | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     let active = true;

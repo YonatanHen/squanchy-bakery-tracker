@@ -45,7 +45,7 @@ export function onUnauthorized(listener: () => void): () => void {
 }
 
 interface RequestOptions {
-  method?: string;
+  method?: string | undefined;
   body?: unknown;
 }
 
@@ -56,11 +56,9 @@ export async function apiRequest<T = unknown>(path: string, options: RequestOpti
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  const init: RequestInit = { method: options.method ?? "GET", headers };
+  if (options.body !== undefined) init.body = JSON.stringify(options.body);
+  const response = await fetch(`${BASE_URL}${path}`, init);
 
   if (response.status === 204) return undefined as T;
   const data = await response.json().catch(() => null);

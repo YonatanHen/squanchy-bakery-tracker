@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { at } from "../testUtils";
 import { getToken } from "./api";
 import { isLoggedIn, login, logout } from "./auth";
 
@@ -19,7 +20,7 @@ describe("auth", () => {
 
     await login("admin", "password");
 
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = at(fetchMock.mock.calls, 0);
     expect(url).toBe("/api/v1/auth/login");
     expect(JSON.parse(init.body)).toEqual({ username: "admin", password: "password" });
     expect(getToken()).toBe("jwt-1");

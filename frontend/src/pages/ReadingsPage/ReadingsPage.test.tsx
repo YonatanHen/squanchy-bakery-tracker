@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Reading } from "../../lib/endpoints";
-import { mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
+import { at, mockApi, paramsOf, renderLoggedIn } from "../../testUtils";
 
 const DAIRY_OK: Reading = {
   id: 4,
@@ -47,7 +47,7 @@ describe("ReadingsPage list", () => {
 
     const table = await screen.findByRole("table", { name: "Readings" });
     const rows = within(table).getAllByRole("row");
-    expect(within(rows[1]).getAllByRole("cell").map((c) => c.textContent)).toEqual([
+    expect(within(at(rows, 1)).getAllByRole("cell").map((c) => c.textContent)).toEqual([
       "14/09 06:00",
       "3.5 °C",
       "Dairy",
@@ -63,9 +63,9 @@ describe("ReadingsPage list", () => {
     renderLoggedIn("/readings");
 
     const table = await screen.findByRole("table", { name: "Readings" });
-    const cells = within(within(table).getAllByRole("row")[2]).getAllByRole("cell");
+    const cells = within(at(within(table).getAllByRole("row"), 2)).getAllByRole("cell");
     expect(cells[1]).toHaveTextContent("—");
-    expect(within(cells[5]).getByText("ERR")).toHaveAttribute("data-level", "ERR");
+    expect(within(at(cells, 5)).getByText("ERR")).toHaveAttribute("data-level", "ERR");
   });
 
   it("shows the same readings as cards for phones", async () => {
@@ -112,13 +112,13 @@ describe("ReadingsPage alert badges", () => {
     renderLoggedIn("/readings");
 
     const table = await screen.findByRole("table", { name: "Readings" });
-    const row = within(table).getAllByRole("row")[1];
+    const row = at(within(table).getAllByRole("row"), 1);
     expect(await within(row).findByText("2 alerts")).toHaveAttribute("data-level", "URGENT");
     expect(row).toHaveAttribute("data-tone", "urgent");
     expect(within(table).getAllByRole("row")[2]).toHaveAttribute("data-tone", "default");
 
     // Only the alerts of the page's time span are asked for
-    const params = paramsOf(fetchMock, "/api/v1/alerts")[0];
+    const params = at(paramsOf(fetchMock, "/api/v1/alerts"), 0);
     expect(params.get("date_from")).toBe("2026-09-14T06:00:00");
     expect(params.get("date_to")).toBe("2026-09-14T06:30:00");
   });
@@ -164,7 +164,7 @@ describe("ReadingsPage editing", () => {
     renderLoggedIn("/readings");
     const list = await screen.findByRole("list", { name: "Readings" });
 
-    await userEvent.click(within(list).getAllByRole("button", { name: "Edit reading" })[0]);
+    await userEvent.click(at(within(list).getAllByRole("button", { name: "Edit reading" }), 0));
 
     expect(screen.getByRole("dialog", { name: "Edit reading" })).toHaveAccessibleDescription("Haifa · Dairy · TL-0231");
   });
@@ -190,8 +190,8 @@ describe("ReadingsPage paging", () => {
     mockReadings();
     renderLoggedIn("/readings");
 
-    const [link] = await screen.findAllByRole("link", { name: "+ Add a reading" });
-    await userEvent.click(link);
+    const links = await screen.findAllByRole("link", { name: "+ Add a reading" });
+    await userEvent.click(at(links, 0));
 
     expect(screen.getByRole("heading", { level: 1, name: "Add a reading" })).toBeInTheDocument();
   });
@@ -208,7 +208,7 @@ describe("ReadingsPage filters", () => {
     await userEvent.click(screen.getByRole("button", { name: "Apply" }));
 
     await waitFor(() => expect(paramsOf(fetchMock, "/api/v1/readings")).toHaveLength(2));
-    const last = paramsOf(fetchMock, "/api/v1/readings")[1];
+    const last = at(paramsOf(fetchMock, "/api/v1/readings"), 1);
     expect(last.get("branch")).toBe("Haifa");
     expect(last.get("temp_min")).toBe("5");
     expect(last.get("unit")).toBe("C");

@@ -83,4 +83,5 @@ Build the UI from small shared components. Screens compose them; they do not rep
 - Specific components extend the base ones by composition, never by copying their markup: e.g. `TemperatureField` and `DateTimeField` wrap `Field` + `TextInput`; `BranchField`, `FridgeField` and `LoggerField` wrap `Combobox`.
 - Before writing a new component, check `frontend/src/components/` for one to extend or reuse.
 - Colors, fonts, radii and spacing come only from the design-token CSS variables; no raw hex values in components.
+- TypeScript runs in strict mode with the extra checks in `tsconfig.json` (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, ...); never loosen them to make code compile. Every `useState` has an explicit type: `useState<boolean>(false)`, never `useState(false)`.
 - Accessibility is built into the base components: every control has a `<label>`, errors are linked with `aria-describedby`, touch targets are at least 44px.

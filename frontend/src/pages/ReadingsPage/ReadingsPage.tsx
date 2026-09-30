@@ -39,13 +39,15 @@ type AlertLevels = Record<number, AlertLevel[]>;
 
 /** Get the alert levels of each reading on the page, from the alerts of the page's time span. */
 async function loadAlertLevels(items: Reading[], filters: Filters): Promise<AlertLevels> {
-  if (items.length === 0) return {};
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (!first || !last) return {};
   const alerts = await listAlerts({
     archived: false,
     branch: filters.branch,
     fridge: filters.fridge,
-    dateFrom: items[0].time,
-    dateTo: items[items.length - 1].time,
+    dateFrom: first.time,
+    dateTo: last.time,
     limit: ALERTS_LIMIT,
   });
   const levels: AlertLevels = {};
@@ -86,14 +88,14 @@ function columns(unit: Metric, alertLevels: AlertLevels, onEdit: (reading: Readi
 export function ReadingsPage() {
   const [unit, setUnit] = useState<Metric>("C");
   const [filters, setFilters] = useState<Filters>({});
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState<number>(0);
   const [page, setPage] = useState<Page<Reading> | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [alertLevels, setAlertLevels] = useState<AlertLevels>({});
   const [editing, setEditing] = useState<Reading | null>(null);
-  const [reloads, setReloads] = useState(0);
+  const [reloads, setReloads] = useState<number>(0);
 
   useEffect(() => {
     listBranches()

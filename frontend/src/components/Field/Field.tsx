@@ -3,14 +3,14 @@ import styles from "./Field.module.css";
 
 export interface ControlProps {
   id: string;
-  "aria-describedby"?: string;
-  "aria-invalid"?: true;
+  "aria-describedby"?: string | undefined;
+  "aria-invalid"?: true | undefined;
 }
 
 interface FieldProps {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: string | undefined;
+  error?: string | undefined;
   children: (control: ControlProps) => ReactNode;
 }
 

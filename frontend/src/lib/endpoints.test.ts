@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { at } from "../testUtils";
 import { deleteReading, listAlerts, listReadings, updateReading } from "./endpoints";
 
 const fetchMock = vi.fn();
 
 /** Return the URL of the n-th fetch call. */
 function calledUrl(n = 0): string {
-  return fetchMock.mock.calls[n][0];
+  return at(fetchMock.mock.calls, n)[0];
 }
 
 beforeEach(() => {
@@ -58,8 +59,8 @@ describe("reading edits", () => {
     await updateReading(7, { temp: "ERR" });
 
     expect(calledUrl()).toBe("/api/v1/readings/7");
-    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ temp: "ERR" });
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("PATCH");
+    expect(JSON.parse(at(fetchMock.mock.calls, 0)[1].body)).toEqual({ temp: "ERR" });
   });
 
   it("deletes with DELETE", async () => {
@@ -68,6 +69,6 @@ describe("reading edits", () => {
     await deleteReading(7);
 
     expect(calledUrl()).toBe("/api/v1/readings/7");
-    expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+    expect(at(fetchMock.mock.calls, 0)[1].method).toBe("DELETE");
   });
 });

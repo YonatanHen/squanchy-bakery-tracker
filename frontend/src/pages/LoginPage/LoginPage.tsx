@@ -12,11 +12,11 @@ import styles from "./LoginPage.module.css";
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<boolean>(false);
 
   /** Send the credentials and show the backend's errors on failure. */
   async function handleSubmit(event: FormEvent) {
