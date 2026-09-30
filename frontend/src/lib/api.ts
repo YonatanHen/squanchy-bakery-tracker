@@ -11,13 +11,15 @@ export interface FieldError {
 export class ApiError extends Error {
   status: number;
   fieldErrors: FieldError[];
+  body: unknown;
 
   /** Create an error from the response status and parsed backend body. */
-  constructor(status: number, message: string, fieldErrors: FieldError[] = []) {
+  constructor(status: number, message: string, fieldErrors: FieldError[] = [], body: unknown = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.body = body;
   }
 }
 
@@ -54,10 +56,13 @@ export async function apiRequest<T = unknown>(path: string, options: RequestOpti
   const headers = new Headers();
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (options.body !== undefined) headers.set("Content-Type", "application/json");
+  const isForm = options.body instanceof FormData;
+  if (options.body !== undefined && !isForm) headers.set("Content-Type", "application/json");
 
   const init: RequestInit = { method: options.method ?? "GET", headers };
-  if (options.body !== undefined) init.body = JSON.stringify(options.body);
+  // FormData goes as is; the browser sets the multipart boundary
+  if (options.body instanceof FormData) init.body = options.body;
+  else if (options.body !== undefined) init.body = JSON.stringify(options.body);
   const response = await fetch(`${BASE_URL}${path}`, init);
 
   if (response.status === 204) return undefined as T;
@@ -68,5 +73,5 @@ export async function apiRequest<T = unknown>(path: string, options: RequestOpti
     clearToken();
     unauthorizedListeners.forEach((listener) => listener());
   }
-  throw new ApiError(response.status, data?.error ?? response.statusText, data?.errors ?? []);
+  throw new ApiError(response.status, data?.error ?? response.statusText, data?.errors ?? [], data);
 }

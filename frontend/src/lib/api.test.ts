@@ -51,6 +51,27 @@ describe("apiRequest", () => {
     expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
   });
 
+  it("sends a FormData body as multipart, without a JSON content type", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(201, {}));
+    const form = new FormData();
+    form.append("file", new File(["x"], "week.xlsx"));
+
+    await apiRequest("/readings/upload", { method: "POST", body: form });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.body).toBe(form);
+    expect(new Headers(init.headers).has("Content-Type")).toBe(false);
+  });
+
+  it("keeps the whole error body, for responses that carry more than errors", async () => {
+    const body = { rejected: 1, errors: [], unknown: { branches: [{ name: "Eilat" }], loggers: [] } };
+    fetchMock.mockResolvedValue(jsonResponse(422, body));
+
+    const error = (await apiRequest("/readings", { method: "POST", body: {} }).catch((e) => e)) as ApiError;
+
+    expect(error.body).toEqual(body);
+  });
+
   it("returns undefined for a 204 delete response", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
