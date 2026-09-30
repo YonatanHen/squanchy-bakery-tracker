@@ -7,9 +7,10 @@ from app.schemas.reading import LocationFilters
 
 
 class AlertFilters(LocationFilters):
-    """Alerts query: the shared location and date filters, plus the level."""
+    """Alerts query: the shared location and date filters, plus the level; archived=true lists deleted readings' alerts."""
 
     level: AlertLevel | None = None
+    archived: bool = False
 
 
 class AlertOut(BaseModel):
@@ -26,3 +27,4 @@ class AlertOut(BaseModel):
     fridge: str
     branch: str
     city: str | None
+    archived_at: datetime | None = None

@@ -3,6 +3,7 @@ import logging
 from sqlalchemy import func, select
 
 from app.models import Alert, Branch, Fridge, Logger, Reader
+from app.models.archive import AlertArchive, ReaderArchive
 from app.schemas.alert import AlertFilters
 from app.services.readings import apply_location_filters
 
@@ -32,4 +33,31 @@ def query_alerts(session, f: AlertFilters) -> tuple[list[tuple], int]:
     total = session.scalar(select(func.count()).select_from(stmt.subquery()))
     rows = session.execute(stmt.order_by(Reader.time.desc(), Alert.id).offset(f.offset).limit(f.limit)).all()
     logger.info("Alerts query matched %d alerts", total)
+    return [tuple(row) for row in rows], total
+
+
+def query_archived_alerts(session, f: AlertFilters) -> tuple[list[tuple], int]:
+    """Filter the alerts of deleted readings; only branch, fridge, logger, date and level apply (no city/address).
+
+    Args:
+        session: The SQLAlchemy session.
+        f: Validated filters.
+
+    Returns:
+        The page of (archived alert, archived reading) rows, newest reading first, and the total number of matches.
+    """
+    stmt = select(AlertArchive, ReaderArchive).join(ReaderArchive, AlertArchive.reader_id == ReaderArchive.id)
+    for name, column in (("branch", ReaderArchive.branch), ("fridge", ReaderArchive.fridge), ("logger_id", ReaderArchive.logger_id)):
+        value = getattr(f, name)
+        if value:
+            stmt = stmt.where(func.lower(column) == value.lower())
+    if f.date_from:
+        stmt = stmt.where(ReaderArchive.time >= f.date_from)
+    if f.date_to:
+        stmt = stmt.where(ReaderArchive.time <= f.date_to)
+    if f.level:
+        stmt = stmt.where(AlertArchive.level == f.level)
+    total = session.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = session.execute(stmt.order_by(ReaderArchive.time.desc(), AlertArchive.id).offset(f.offset).limit(f.limit)).all()
+    logger.info("Archived alerts query matched %d alerts", total)
     return [tuple(row) for row in rows], total
