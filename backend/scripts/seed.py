@@ -1,17 +1,19 @@
-"""Create the tables, the admin user and the 4 known branches. Run: python -m scripts.seed"""
+"""Create the tables and the admin user. Run: python -m scripts.seed
+
+Branches, fridges, loggers and readings are not seeded: upload data/sample_week.xlsx and add them from the app.
+"""
 from app import create_app
 from app.db import db
-from app.seed import seed_admin, seed_sample_fridges
+from app.seed import seed_admin
 
 
 def main() -> None:
-    """Create tables and seed the admin user and sample fridges."""
+    """Create tables and the admin user."""
     app = create_app()
     with app.app_context():
         db.create_all()
         seed_admin(db.session)
-        seed_sample_fridges(db.session)
-    print("Seeded admin user and 4 branches.")
+    print("Created tables and the admin user.")
 
 
 if __name__ == "__main__":

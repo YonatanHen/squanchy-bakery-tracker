@@ -1,9 +1,23 @@
 import io
+from pathlib import Path
 
 from openpyxl import Workbook
 from sqlalchemy import func, select
 
 from app.models import Branch, Fridge, Logger, Metric
+
+SAMPLE_FILE = Path(__file__).resolve().parents[2] / "data" / "sample_week.xlsx"
+
+# What the user confirms in the "add it?" dialog for the sample file's branches and loggers.
+SAMPLE_REGISTRATION = {
+    "branches": [{"name": name, "city": name} for name in ("Jerusalem", "Tel Aviv", "Haifa", "Rishon LeZion")],
+    "fridges": [
+        {"logger_id": "TL-0512", "branch": "Jerusalem", "fridge": "Dairy"},
+        {"logger_id": "TL-0417", "branch": "Tel Aviv", "fridge": "Walk-in"},
+        {"logger_id": "TL-0231", "branch": "Haifa", "fridge": "Dairy", "metric": "F"},
+        {"logger_id": "TL-0388", "branch": "Rishon LeZion", "fridge": "Cream cakes"},
+    ],
+}
 
 
 def xlsx_bytes(header, rows) -> bytes:
@@ -18,15 +32,11 @@ def xlsx_bytes(header, rows) -> bytes:
     return buffer.getvalue()
 
 
-def load_sample(session):
-    """Seed the 4 sample fridges and ingest the assignment's 16 rows through the Excel parser."""
-    from app.seed import SAMPLE_HEADER, SAMPLE_ROWS, seed_sample_fridges
-    from app.services.ingest.parsers.excel import ExcelParser
-    from app.services.ingest.service import ingest_rows
+def load_sample(session, register=SAMPLE_REGISTRATION):
+    """Ingest the real data/sample_week.xlsx the way an upload does, with the user's confirmed registration."""
+    from app.services.ingest.service import ingest_file
 
-    seed_sample_fridges(session)
-    rows = ExcelParser().parse(io.BytesIO(xlsx_bytes(SAMPLE_HEADER, SAMPLE_ROWS)))
-    return ingest_rows(session, rows)
+    return ingest_file(session, SAMPLE_FILE.name, SAMPLE_FILE.read_bytes(), register)
 
 
 def add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512", metric=Metric.C) -> Fridge:
