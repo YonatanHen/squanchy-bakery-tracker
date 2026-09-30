@@ -61,10 +61,10 @@ export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [fileErrors, setFileErrors] = useState<RowError[]>([]);
-  const [error, setError] = useState("");
-  const [reviewing, setReviewing] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [reviewing, setReviewing] = useState<boolean>(false);
   const [registerErrors, setRegisterErrors] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<boolean>(false);
 
   /** Upload the file and show its result, or why the whole file was rejected. */
   async function upload(chosen: File) {
