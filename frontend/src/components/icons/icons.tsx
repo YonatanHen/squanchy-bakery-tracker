@@ -21,6 +21,15 @@ export function EditIcon() {
   );
 }
 
+/** Trash can icon for the delete buttons. */
+export function TrashIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" />
+    </svg>
+  );
+}
+
 /** Wrap nav icon paths in the shared 22px outline SVG. */
 function NavIcon({ children }: { children: ReactNode }) {
   return (
