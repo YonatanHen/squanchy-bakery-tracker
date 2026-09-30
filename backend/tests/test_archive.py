@@ -16,7 +16,7 @@ def _cream_cakes_reading_with_urgent_alert(session) -> Reader:
 
 
 def test_deleting_a_branch_moves_its_readings_and_alerts_to_the_archive(session):
-    """The branch is deleted, and Summer can still answer where and when the alert happened."""
+    """The branch is deleted, and the user can still answer where and when the alert happened."""
     reading = _cream_cakes_reading_with_urgent_alert(session)
 
     session.delete(reading.logger.fridge.branch)

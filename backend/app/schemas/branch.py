@@ -18,7 +18,7 @@ class BranchOut(BaseModel):
 
 
 class BranchPatch(BaseModel):
-    """Branch fields Summer can edit; only the fields sent are changed."""
+    """Branch fields the user can edit; only the fields sent are changed."""
 
     name: Name | None = None
     city: Name | None = None

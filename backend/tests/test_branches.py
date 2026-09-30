@@ -29,7 +29,7 @@ def test_branch_list_shows_fridges_with_loggers_and_metric(client, session, auth
 
 
 def test_update_branch_city_and_address(client, session, auth_headers):
-    """Summer adds the address later; extra spaces are trimmed and "12a" is a valid building number."""
+    """The user adds the address later; extra spaces are trimmed and "12a" is a valid building number."""
     fridge = add_fridge(session, branch="Jerusalem")
 
     response = client.patch(
@@ -98,7 +98,7 @@ def test_branch_delete_impact_counts_everything_and_deletes_nothing(client, sess
 
 
 def test_delete_branch_removes_it_and_archives_its_readings_and_alerts(client, session, auth_headers):
-    """After Summer confirms, the branch is gone and its history is in the archive."""
+    """After the user confirms, the branch is gone and its history is in the archive."""
     fridge = add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
     _reading_with_alert(session, "TL-0417", 6)
 

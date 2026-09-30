@@ -20,7 +20,7 @@ class FridgeOut(BaseModel):
 
 
 class FridgePatch(BaseModel):
-    """Fridge fields Summer can edit; only the fields sent are changed."""
+    """Fridge fields the user can edit; only the fields sent are changed."""
 
     name: Name | None = None
     metric: Metric | None = None
