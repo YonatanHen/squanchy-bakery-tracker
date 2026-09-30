@@ -3,8 +3,7 @@ import io
 import logging
 from typing import BinaryIO
 
-from app.services.ingest.normalizer import collapse_spaces
-from app.services.ingest.parsers.base import REQUIRED_COLUMNS, RawRow
+from app.services.ingest.parsers.base import REQUIRED_COLUMNS, RawRow, map_columns
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +17,7 @@ class CsvParser:
         header_line = text.split("\n", 1)[0]
         delimiter = ";" if header_line.count(";") > header_line.count(",") else ","
         rows = csv.reader(io.StringIO(text, newline=""), delimiter=delimiter)
-        header = next(rows, [])
-        columns = {collapse_spaces(h).lower(): i for i, h in enumerate(header)}
+        columns = map_columns(next(rows, []))
         result = [
             RawRow(number, {c: values[columns[c]] for c in REQUIRED_COLUMNS})
             for number, values in enumerate(rows, start=2)

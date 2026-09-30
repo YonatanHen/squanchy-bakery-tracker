@@ -1,5 +1,8 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, BinaryIO, Protocol
+
+from app.services.ingest.normalizer import collapse_spaces
 
 REQUIRED_COLUMNS = ("logger", "branch", "fridge", "time", "temp")
 
@@ -35,3 +38,12 @@ class MissingColumns(Exception):
         """Keep the missing column names for the error response."""
         super().__init__(f"Missing columns: {', '.join(missing)}")
         self.missing = missing
+
+
+def map_columns(header: Sequence[Any]) -> dict[str, int]:
+    """Map each header name (spaces collapsed, lower case) to its index; raises MissingColumns."""
+    columns = {collapse_spaces(h).lower(): i for i, h in enumerate(header) if h is not None}
+    missing = [c for c in REQUIRED_COLUMNS if c not in columns]
+    if missing:
+        raise MissingColumns(missing)
+    return columns

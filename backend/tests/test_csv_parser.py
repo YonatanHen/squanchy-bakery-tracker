@@ -1,5 +1,8 @@
 import io
 
+import pytest
+
+from app.services.ingest.parsers.base import MissingColumns
 from app.services.ingest.parsers.csv import CsvParser
 
 
@@ -29,3 +32,11 @@ def test_utf8_bom_before_the_header_is_ignored():
     [row] = parse("Logger,Branch,Fridge,Time,Temp\nTL-0512,Jerusalem,Dairy,2026-09-14 06:00,3.8\n", encoding="utf-8-sig")
 
     assert row.values["logger"] == "TL-0512"
+
+
+def test_missing_columns_are_reported():
+    """A header without Logger, Branch and Fridge is rejected with those names."""
+    with pytest.raises(MissingColumns) as exc:
+        parse("Time,Temp\n2026-09-14 06:00,3.8\n")
+
+    assert exc.value.missing == ["logger", "branch", "fridge"]

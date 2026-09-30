@@ -3,8 +3,7 @@ from typing import BinaryIO
 
 from openpyxl import load_workbook
 
-from app.services.ingest.normalizer import collapse_spaces
-from app.services.ingest.parsers.base import REQUIRED_COLUMNS, MissingColumns, RawRow
+from app.services.ingest.parsers.base import REQUIRED_COLUMNS, RawRow, map_columns
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +22,7 @@ class ExcelParser:
         workbook = load_workbook(stream, read_only=True, data_only=True)
         try:
             rows = workbook.active.iter_rows(values_only=True)
-            header = next(rows, None) or ()
-            columns = {collapse_spaces(h).lower(): i for i, h in enumerate(header) if h is not None}
-            missing = [c for c in REQUIRED_COLUMNS if c not in columns]
-            if missing:
-                raise MissingColumns(missing)
+            columns = map_columns(next(rows, None) or ())
             result = []
             for number, values in enumerate(rows, start=2):
                 if all(v is None for v in values):
