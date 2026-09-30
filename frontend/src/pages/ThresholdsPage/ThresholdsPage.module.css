@@ -17,6 +17,12 @@
   font-size: 26px;
 }
 
+.header .newButton {
+  border-color: var(--primary);
+  color: var(--primary);
+  font-size: 14px;
+}
+
 .error {
   margin: 0;
   font-weight: 500;

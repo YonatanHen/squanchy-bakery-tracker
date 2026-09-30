@@ -135,3 +135,51 @@ describe("ThresholdsPage save", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Conflicts with existing data");
   });
 });
+
+describe("ThresholdsPage new profile", () => {
+  it("starts from the suggested limits and creates the profile with POST", async () => {
+    const fetchMock = mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT]],
+      ["POST /api/v1/threshold-settings", { ...DEFAULT, id: 5, name: "Dairy", fridges: 0 }],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "+ New profile" }));
+    const name = screen.getByRole("textbox", { name: "Profile name" });
+    expect(name).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Deviation urgent, degrees C" })).toHaveValue("3");
+    expect(screen.getByRole("button", { name: "default Used by 4 fridges" })).toBeInTheDocument();
+
+    await userEvent.type(name, "Dairy");
+    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByText("Used by 0 fridges")).toBeInTheDocument();
+    expect(sentBody(fetchMock, "POST", "/threshold-settings")).toEqual({
+      name: "Dairy",
+      growth_non_urgent: "0.1",
+      growth_urgent: "1",
+      deviation_non_urgent: "1.5",
+      deviation_urgent: "3",
+      gap_non_urgent_minutes: "15",
+      gap_urgent_minutes: "120",
+    });
+  });
+
+  it("shows the 422 message under the name when it is empty", async () => {
+    mockApi([
+      ["GET /api/v1/threshold-settings", [DEFAULT]],
+      [
+        "POST /api/v1/threshold-settings",
+        () => errorResponse(422, { errors: [{ field: "name", message: "String should have at least 1 character" }] }),
+      ],
+    ]);
+    renderLoggedIn("/thresholds");
+
+    await userEvent.click(await screen.findByRole("button", { name: "+ New profile" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByRole("textbox", { name: "Profile name" })).toHaveAccessibleDescription(
+      "String should have at least 1 character",
+    );
+  });
+});
