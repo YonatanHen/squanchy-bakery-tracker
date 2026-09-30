@@ -2,6 +2,8 @@ from flask import request
 
 from app.api import api_v1
 from app.db import db
+from app.schemas.reading import ReadingFilters, ReadingOut, ReadingPatch
+from app.services import readings as readings_service
 from app.services.ingest.schemas import SaveResult
 from app.services.ingest.service import ingest_file, ingest_record
 
@@ -26,3 +28,35 @@ def add_reading():
     body = request.get_json(silent=True)
     result = ingest_record(db.session, body if isinstance(body, dict) else {})
     return _body(result), 422 if result.rejected else 201
+
+
+def _reading_out(reader, fridge, branch) -> dict:
+    """A reading row as returned by the API."""
+    return ReadingOut(
+        id=reader.id, time=reader.time, temp=reader.temp, metric=reader.metric, status=reader.status,
+        logger_id=reader.logger_id, fridge=fridge.name, branch=branch.name, city=branch.city,
+    ).model_dump(mode="json")
+
+
+@api_v1.get("/readings")
+def list_readings():
+    """Query readings by location, dates and temperature range (any unit), newest last, paginated."""
+    f = ReadingFilters.model_validate(request.args.to_dict())
+    rows, total = readings_service.query_readings(db.session, f)
+    return {"items": [_reading_out(*row) for row in rows], "total": total, "offset": f.offset, "limit": f.limit}
+
+
+@api_v1.patch("/readings/<int:reading_id>")
+def update_reading(reading_id: int):
+    """Correct a reading's time or temperature in place."""
+    changes = ReadingPatch.model_validate(request.get_json(silent=True) or {}).model_dump(exclude_unset=True)
+    reader = readings_service.update_reading(db.session, reading_id, changes)
+    fridge = reader.logger.fridge
+    return _reading_out(reader, fridge, fridge.branch)
+
+
+@api_v1.delete("/readings/<int:reading_id>")
+def delete_reading(reading_id: int):
+    """Delete a reading; it is archived with its alerts."""
+    readings_service.delete_reading(db.session, reading_id)
+    return "", 204
