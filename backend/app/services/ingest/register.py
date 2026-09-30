@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from app.models import Branch, Fridge, Logger, Metric
 from app.schemas.types import BuildingNumber, LoggerId, Name
+from app.services.ingest.registry import Registry, load_registry
 
 logger = logging.getLogger(__name__)
 
@@ -28,18 +29,36 @@ class NewFridge(BaseModel):
 
 
 class Registration(BaseModel):
-    """Branches and fridges/loggers to create before the rows are validated; context holds existing branch names."""
+    """Branches and fridges/loggers to create before the rows are validated; context holds the current registry."""
 
     branches: list[NewBranch] = []
     fridges: list[NewFridge] = []
 
     @model_validator(mode="after")
-    def fridge_branches_exist(self, info: ValidationInfo):
-        """Each new fridge must be in a registered branch or one added in this block."""
-        known = info.context["branches"] | {b.name.lower() for b in self.branches}
+    def skip_applied_and_reject_conflicts(self, info: ValidationInfo):
+        """Drop entries that already exist (a re-sent block is safe); reject entries that clash with other data."""
+        registry: Registry = info.context["registry"]
+        self.branches = [b for b in self.branches if b.name.lower() not in registry.branches]
+        known = set(registry.branches) | {b.name.lower() for b in self.branches}
+        logger_of_fridge = {info_.fridge_id: logger_id for logger_id, info_ in registry.loggers.items()}
+        fridges = []
         for new in self.fridges:
-            if new.branch.lower() not in known:
+            branch = new.branch.lower()
+            if branch not in known:
                 raise ValueError(f"Branch '{new.branch}' does not exist. Add it to branches")
+            owner = registry.loggers.get(new.logger_id)
+            if owner is not None:
+                if (owner.branch.lower(), owner.fridge.lower()) == (branch, new.fridge.lower()):
+                    continue  # already registered by an earlier upload
+                raise ValueError(f"Logger {new.logger_id} already belongs to {owner.branch} / {owner.fridge}")
+            fridge_id = registry.fridges.get((branch, new.fridge.lower()))
+            if fridge_id in logger_of_fridge:
+                raise ValueError(
+                    f"Fridge '{new.fridge}' in {registry.branches[branch]} already has logger "
+                    f"{logger_of_fridge[fridge_id]}; edit the fridge's logger instead"
+                )
+            fridges.append(new)
+        self.fridges = fridges
         return self
 
 
@@ -47,7 +66,7 @@ def parse_registration(session, raw: str | dict | None) -> Registration | None:
     """Validate a register block (JSON text or dict); raises ValidationError when invalid."""
     if not raw:
         return None
-    context = {"branches": {name.lower() for name in session.scalars(select(Branch.name))}}
+    context = {"registry": load_registry(session)}
     if isinstance(raw, str):
         return Registration.model_validate_json(raw, context=context)
     return Registration.model_validate(raw, context=context)

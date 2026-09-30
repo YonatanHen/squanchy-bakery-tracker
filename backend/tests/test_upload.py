@@ -163,6 +163,43 @@ def test_registration_is_kept_when_another_row_is_still_invalid(client, session,
     assert (session.query(Branch).count(), session.query(Fridge).count()) == (1, 1)
 
 
+def test_resending_the_same_registration_is_ignored(client, session, auth_headers):
+    """A register block that was already applied is skipped; the rows are saved as usual."""
+    upload(client, auth_headers, [["TL-0600", "Eilat", "Dairy", "2026-09-14 06:00", 38.3]], register=EILAT)
+
+    second = upload(client, auth_headers, [["TL-0600", "Eilat", "Dairy", "2026-09-14 06:15", 38.4]], register=EILAT)
+
+    assert second.status_code == 201
+    assert second.get_json()["inserted"] == 1
+    assert session.query(Branch).count() == 1
+
+
+def test_new_logger_for_a_fridge_that_has_one_is_a_clear_422(client, session, auth_headers):
+    """Registering TL-0600 for Jerusalem's Dairy (which has TL-0512) asks the user to edit the fridge instead."""
+    add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
+    register = {"fridges": [{"logger_id": "TL-0600", "branch": "Jerusalem", "fridge": "Dairy"}]}
+
+    response = upload(client, auth_headers, [["TL-0600", "Jerusalem", "Dairy", "2026-09-14 06:00", 3.8]], register=register)
+
+    assert response.status_code == 422
+    assert response.get_json()["errors"][0]["message"] == (
+        "Fridge 'Dairy' in Jerusalem already has logger TL-0512; edit the fridge's logger instead"
+    )
+    assert session.query(Reader).count() == 0
+
+
+def test_registering_a_logger_that_belongs_to_another_fridge_is_a_clear_422(client, session, auth_headers):
+    """TL-0512 is already Jerusalem's Dairy logger; registering it for Tel Aviv Walk-in is refused."""
+    add_fridge(session, branch="Jerusalem", fridge="Dairy", logger="TL-0512")
+    add_fridge(session, branch="Tel Aviv", fridge="Display 1", logger="TL-0418")
+    register = {"fridges": [{"logger_id": "TL-0512", "branch": "Tel Aviv", "fridge": "Walk-in"}]}
+
+    response = upload(client, auth_headers, [["TL-0512", "Tel Aviv", "Walk-in", "2026-09-14 06:00", 4.1]], register=register)
+
+    assert response.status_code == 422
+    assert response.get_json()["errors"][0]["message"] == "Logger TL-0512 already belongs to Jerusalem / Dairy"
+
+
 def test_new_fridge_needs_a_known_or_confirmed_branch(client, auth_headers):
     """An invalid register block rejects the request, since it is the user's own form."""
     register = {"fridges": [{"logger_id": "TL-0600", "branch": "Eilat", "fridge": "Dairy"}]}
