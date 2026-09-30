@@ -219,6 +219,17 @@ export function restoreReading(id: number): Promise<Reading> {
   return apiRequest<Reading>(`/readings/archive/${id}/restore`, { method: "POST" });
 }
 
+/** Archived readings and archived alerts, counted or deleted. */
+export interface ArchiveCounts {
+  readings: number;
+  alerts: number;
+}
+
+/** Delete all archived readings and their alerts for good; returns what was deleted. */
+export function cleanArchive(): Promise<ArchiveCounts> {
+  return apiRequest<ArchiveCounts>("/readings/archive", { method: "DELETE" });
+}
+
 /** Edit a branch; send only the changed fields. */
 export function updateBranch(id: number, changes: BranchChanges): Promise<Branch> {
   return apiRequest<Branch>(`/branches/${id}`, { method: "PATCH", body: changes });
