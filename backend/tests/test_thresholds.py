@@ -58,6 +58,44 @@ def test_edit_threshold_settings_rejects_non_urgent_above_urgent(client, session
     assert good.get_json()["deviation_non_urgent"] == 1.2
 
 
+def test_non_urgent_above_urgent_is_reported_on_each_non_urgent_field(client, session, auth_headers):
+    """Each wrong pair gets its own error on its non-urgent field, so the UI shows it under that field."""
+    add_fridge(session)
+    settings_id = threshold_settings(client, auth_headers)["default"]["id"]
+    body = {**DAIRY, "growth_non_urgent": 2.0, "growth_urgent": 1.0, "gap_non_urgent_minutes": 200}
+
+    response = client.put(f"/api/v1/threshold-settings/{settings_id}", json=body, headers=auth_headers)
+
+    assert response.status_code == 422
+    errors = {e["field"]: e["message"] for e in response.get_json()["errors"]}
+    assert errors == {
+        "growth_non_urgent": "Must be lower than the urgent limit",
+        "gap_non_urgent_minutes": "Must be lower than the urgent limit",
+    }
+
+
+def test_duplicate_threshold_settings_name_returns_409_on_the_name_field(client, auth_headers):
+    """A second "dairy" (any case) is refused with an error on the name field."""
+    client.post("/api/v1/threshold-settings", json=DAIRY, headers=auth_headers)
+
+    response = client.post("/api/v1/threshold-settings", json={**DAIRY, "name": "dairy"}, headers=auth_headers)
+
+    assert response.status_code == 409
+    assert response.get_json()["errors"] == [{"field": "name", "message": "This name is already used"}]
+
+
+def test_deleting_threshold_settings_in_use_says_how_many_fridges_use_them(client, session, auth_headers):
+    """The 409 tells the user how many fridges to move first."""
+    add_fridge(session, branch="Tel Aviv", fridge="Walk-in", logger="TL-0417")
+    add_fridge(session, branch="Tel Aviv", fridge="Display 1", logger="TL-0418")
+    default_id = threshold_settings(client, auth_headers)["default"]["id"]
+
+    response = client.delete(f"/api/v1/threshold-settings/{default_id}", headers=auth_headers)
+
+    assert response.status_code == 409
+    assert response.get_json()["error"] == "Used by 2 fridges. Move them to other threshold settings first."
+
+
 def test_threshold_settings_in_use_cannot_be_deleted(client, session, auth_headers):
     """Deleting threshold settings that fridges use is refused until they are moved."""
     fridge = add_fridge(session)
