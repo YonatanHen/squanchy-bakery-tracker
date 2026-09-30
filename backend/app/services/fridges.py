@@ -1,8 +1,9 @@
 import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 
 from app.models import Alert, Fridge, Logger, Reader, ThresholdSettings
+from app.services.detection.service import detect
 from app.services.errors import get_or_raise
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,18 @@ def delete_fridge(session, fridge_id: int) -> None:
     logger.info("Deleted fridge id=%s", fridge_id)
 
 
+def _relabel_readings(session, fridge: Fridge) -> None:
+    """Mark the fridge's readings with its new unit (values unchanged), then run the alert rules on them again."""
+    reader_ids = set(session.scalars(select(Reader.id).join(Logger).where(Logger.fridge_id == fridge.id)))
+    if not reader_ids:
+        return
+    session.execute(update(Reader).where(Reader.id.in_(reader_ids)).values(metric=fridge.metric))
+    session.execute(delete(Alert).where(Alert.reader_id.in_(reader_ids)).execution_options(synchronize_session=False))
+    session.flush()
+    detect(session, {fridge.id}, reader_ids)
+    logger.info("Relabeled %d readings of fridge id=%s as %s", len(reader_ids), fridge.id, fridge.metric.value)
+
+
 def update_fridge(session, fridge_id: int, changes: dict) -> Fridge:
     """Apply field changes to a fridge; a new logger id replaces its logger and its readings follow.
 
@@ -60,6 +73,7 @@ def update_fridge(session, fridge_id: int, changes: dict) -> Fridge:
     """
     fridge = get_or_raise(session, Fridge, fridge_id)
     changes = dict(changes)
+    unit_changed = "metric" in changes and changes["metric"] != fridge.metric
     if "threshold_settings_id" in changes:
         fridge.threshold_settings = get_or_raise(session, ThresholdSettings, changes.pop("threshold_settings_id"))
     if "logger_id" in changes:
@@ -70,6 +84,8 @@ def update_fridge(session, fridge_id: int, changes: dict) -> Fridge:
             fridge.logger = Logger(id=new_id)
     for field, value in changes.items():
         setattr(fridge, field, value)
+    if unit_changed:
+        _relabel_readings(session, fridge)
     session.commit()
     logger.info("Updated fridge id=%s", fridge_id)
     return fridge
