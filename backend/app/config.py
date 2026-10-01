@@ -3,12 +3,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Real environment variables win over backend/.env.
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+# The one .env at the repo root; real environment variables win over it.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 class Config:
-    """App settings read from the environment (backend/.env)."""
+    """App settings read from the environment (.env at the repo root)."""
 
     SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URL"]
     JWT_SECRET = os.environ["JWT_SECRET"]

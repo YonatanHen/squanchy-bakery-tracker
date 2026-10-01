@@ -6,7 +6,7 @@ from sqlalchemy import text
 from app import create_app
 from app.db import db
 
-TEST_DB = os.environ["TEST_DATABASE_URL"]  # loaded from backend/.env by app.config
+TEST_DB = os.environ["TEST_DATABASE_URL"]  # loaded from the root .env by app.config
 
 
 @pytest.fixture

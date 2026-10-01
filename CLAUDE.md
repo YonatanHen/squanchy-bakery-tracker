@@ -17,7 +17,7 @@ docker compose up -d --build --wait
 # Database only, for local development (PostgreSQL on localhost:5432)
 docker compose up -d --wait db
 
-# Backend (from backend/; needs backend/.env, see backend/.env.example)
+# Backend (from backend/; needs the root .env, see .env.example)
 .venv/Scripts/python -m pip install -r requirements.txt
 .venv/Scripts/python -m scripts.seed              # creates the tables and the admin user
 .venv/Scripts/python -m flask --app app run       # API on http://127.0.0.1:5000
@@ -31,7 +31,7 @@ npx vitest run src/pages/ReadingsPage             # one file or folder
 npm run build                                     # tsc -b (strict type check) + vite build
 ```
 
-- The backend tests need PostgreSQL: `TEST_DATABASE_URL` comes from `backend/.env`. Each test drops and recreates the `public` schema (`tests/conftest.py`), so two runs on the same test database at the same time break each other. Give each parallel run (e.g. a worktree agent) its own database by setting `TEST_DATABASE_URL` in the environment.
+- The backend tests need PostgreSQL: `TEST_DATABASE_URL` comes from the root `.env`. Each test drops and recreates the `public` schema (`tests/conftest.py`), so two runs on the same test database at the same time break each other. Give each parallel run (e.g. a worktree agent) its own database by setting `TEST_DATABASE_URL` in the environment.
 - There are no migrations: `db.create_all()` builds the schema. After a model change, reset the dev database (`docker compose down -v`, then seed).
 - `backend/scripts/make_sample_xlsx.py` writes the sample upload file.
 
@@ -47,7 +47,7 @@ npm run build                                     # tsc -b (strict type check) +
 - **Threshold settings:** named sets shared by many fridges (`ThresholdSettings`); a new fridge gets the "default" set.
 - **Archive:** deleting a reading, logger, fridge or branch moves the related readings and alerts into `reader_archive` / `alert_archive` (`models/archive/`). Archived readings can be restored or cleaned.
 - **SQLAlchemy `before_flush` hooks** apply these rules globally, so code that deletes or adds objects gets them automatically: `services/archive.py` archives before a delete, and `services/thresholds.py` attaches the default settings to new fridges. `create_app` imports these modules to register the hooks.
-- Config comes from `backend/.env` through python-dotenv (`app/config.py`); real environment variables win. Required values have no defaults, so the app fails at startup when one is missing.
+- Config comes from the one `.env` at the repo root (shared with Docker Compose) through python-dotenv (`app/config.py`); `DATABASE_URL` and `TEST_DATABASE_URL` are built from the `POSTGRES_*` values in it. Real environment variables win. Required values have no defaults, so the app fails at startup when one is missing.
 
 ### Frontend (`frontend/src`)
 - `lib/api.ts` is the fetch wrapper: it adds the JWT from `lib/auth.ts`, logs out on 401, and throws `ApiError` with the body. `lib/endpoints.ts` has the typed API functions and the response types (`PAGE_SIZE = 10`).

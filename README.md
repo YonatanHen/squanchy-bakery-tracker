@@ -9,12 +9,13 @@ Prerequisites: Git and **Docker Desktop**.
 ```bash
 git clone https://github.com/YonatanHen/squanchy-bakery-tracker.git
 cd squanchy-bakery-tracker
-cp .env.example .env                   # set POSTGRES_PASSWORD
-cp backend/.env.example backend/.env   # set JWT_SECRET (at least 32 characters) and ADMIN_PASSWORD
+cp .env.example .env    # set POSTGRES_PASSWORD, JWT_SECRET (at least 32 characters) and ADMIN_PASSWORD
 docker compose up -d --build --wait
 ```
 
-Open **http://localhost:8080** and log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `backend/.env`.
+Open **http://localhost:8080** and log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`.
+
+All settings and secrets are in this one `.env` file at the repo root (git-ignored; `.env.example` lists every key). Docker Compose and the backend both read it.
 
 This starts PostgreSQL, the backend (gunicorn; it creates the tables and the admin user on start) and the frontend (nginx, which also proxies `/api` to the backend). To start again from an empty database: `docker compose down -v`.
 
@@ -165,16 +166,23 @@ Prerequisites: Git, Python 3.12+, Node 22, and either **Docker Desktop** (for th
 
 Commands are for Git Bash, macOS or Linux. On Windows, the virtualenv's Python is `.venv/Scripts/python`; on macOS/Linux it is `.venv/bin/python`.
 
+First create the settings file at the repo root:
+
+```bash
+cp .env.example .env        # set POSTGRES_PASSWORD, JWT_SECRET (at least 32 characters) and ADMIN_PASSWORD
+```
+
+Required: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_TEST_DB`, `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`. Optional: `JWT_EXPIRES_MINUTES` (default 480), `LOG_LEVEL` (default `INFO`). `DATABASE_URL` and `TEST_DATABASE_URL` are built from the `POSTGRES_*` values, so the password is written once. Real environment variables override the file.
+
 ### 1. The database
 
 **Option A — Docker, database only**
 
 ```bash
-cp .env.example .env        # then set POSTGRES_PASSWORD
 docker compose up -d --wait db
 ```
 
-This starts PostgreSQL on `localhost:5432` with the user, password and database names from the root `.env` (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `POSTGRES_TEST_DB` for the test database). Keep the same user and password in the URLs in `backend/.env`. The init script runs only when the volume is new: after changing these values, reset the volume with `docker compose down -v`.
+This starts PostgreSQL on `localhost:5432` with the user, password and database names from `.env` (`POSTGRES_TEST_DB` is the test database). The init script runs only when the volume is new: after changing these values, reset the volume with `docker compose down -v`.
 
 **Option B — a local PostgreSQL 16, without Docker**
 
@@ -186,7 +194,7 @@ This starts PostgreSQL on `localhost:5432` with the user, password and database 
    CREATE DATABASE squanchy_bakery OWNER squanchy;
    CREATE DATABASE squanchy_bakery_test OWNER squanchy;
    ```
-4. With these names the URLs in `backend/.env.example` work as they are. With your own server or names, change them in `backend/.env`:
+4. In `.env`, set `POSTGRES_PASSWORD=squanchy`; the other `POSTGRES_*` values already match these names. With your own server, host or port, change the URLs in `.env`:
    ```bash
    DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/DB_NAME
    TEST_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/TEST_DB_NAME
@@ -198,14 +206,13 @@ The database must be PostgreSQL; SQLite is not supported.
 
 ```bash
 cd backend
-cp .env.example .env                                       # then set JWT_SECRET and ADMIN_PASSWORD
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
 .venv/Scripts/python -m scripts.seed                       # creates the tables and the admin user
 .venv/Scripts/python -m flask --app app run                # API on http://127.0.0.1:5000
 ```
 
-Settings and secrets are read from `backend/.env` (git-ignored; `backend/.env.example` lists them). Required: `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET` (at least 32 bytes), `ADMIN_USERNAME`, `ADMIN_PASSWORD`. Optional: `JWT_EXPIRES_MINUTES` (default 480), `LOG_LEVEL` (default `INFO`). Real environment variables override the file.
+The backend reads the `.env` at the repo root.
 
 ### 3. The frontend
 
