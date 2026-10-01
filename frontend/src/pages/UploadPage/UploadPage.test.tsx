@@ -136,7 +136,7 @@ describe("UploadPage", () => {
     expect(within(rows).getByRole("listitem")).toHaveTextContent("Row 7“Dary” — saved to Dairy (TL-0231)");
   });
 
-  it("sums up the unknown branches and loggers, and opens the add-it dialog on Review", async () => {
+  it("sums up the unknown branches and loggers, and opens the add-it dialog on Click here to review", async () => {
     mockApi([
       [
         "POST /api/v1/readings/upload",
@@ -149,9 +149,9 @@ describe("UploadPage", () => {
 
     await uploadWeek();
 
-    const review = await screen.findByRole("button", { name: /Review/ });
+    const review = await screen.findByRole("button", { name: /Click here to review/ });
     expect(review).toHaveTextContent(
-      "1 branch and 1 logger not registeredEilat, TL-0600 — did you mean something else, or add it?Review →",
+      "1 branch and 1 logger not registeredEilat, TL-0600 — did you mean something else, or add it?Click here to review →",
     );
     await userEvent.click(review);
     expect(screen.getByRole("dialog", { name: "New in this file" })).toBeInTheDocument();
@@ -164,7 +164,7 @@ describe("UploadPage", () => {
     ]);
 
     await uploadWeek();
-    await userEvent.click(await screen.findByRole("button", { name: /Review/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /Click here to review/ }));
     await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
 
     const resent = at(fetchMock.mock.calls, 1)[1]?.body as FormData;
@@ -173,7 +173,7 @@ describe("UploadPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     const counts = screen.getByRole("list", { name: "Upload result" });
     expect(within(counts).getAllByRole("listitem")[0]).toHaveTextContent("2saved");
-    expect(screen.queryByRole("button", { name: /Review/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Click here to review/ })).not.toBeInTheDocument();
   });
 
   it("keeps the dialog open with the backend's reason when the entries are refused", async () => {
@@ -184,7 +184,7 @@ describe("UploadPage", () => {
     ]);
 
     await uploadWeek();
-    await userEvent.click(await screen.findByRole("button", { name: /Review/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /Click here to review/ }));
     await userEvent.click(screen.getByRole("button", { name: "Add and upload again" }));
 
     const dialog = screen.getByRole("dialog", { name: "New in this file" });
