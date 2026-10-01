@@ -2,7 +2,7 @@
 
 ## How long it took
 
-- About 7 hours of net work, spread over 2026-09-29 and 2026-10-01.
+- About 8 hours of net work, spread over 2026-09-29 and 2026-10-01.
 
 ## Decisions Summer didn't ask for, and why
 
