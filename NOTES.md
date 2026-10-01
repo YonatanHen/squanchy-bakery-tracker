@@ -15,7 +15,7 @@
 7. **Shared, named threshold settings** (min/max, growth, gap). One set can serve all dairy fridges. New fridges get "default" (0–5°C), and every value can be changed in the app.
 8. **A delete never loses history.** Readings and alerts move to archive tables in the same transaction, with name snapshots. They can be viewed and restored. Why: accidental deletes, and inspector questions later.
 9. **Mobile first, one responsive app.** "I mostly look at things on my phone." From 900px the same app uses a sidebar and tables. Mockups were approved before any frontend code.
-10. **Code built to grow.** Layered backend (models / services / thin API), Pydantic for all validation, a logger table and an optional branch address for future loggers and branches, reusable React components, and the whole app runs with one `docker compose up`.
+10. **Code built to grow.** Layered backend (models / services / thin API), Pydantic for all validation, a logger table and an optional branch address for future loggers and branches, reusable React components, and the whole app runs with one `docker compose up`. The readings and alerts lists are paginated (10 per page, offset pagination in the API and the UI), so the app never loads all readings at once when the readings and the branches grow.
 
 ## What I would ask Summer before this goes live
 
