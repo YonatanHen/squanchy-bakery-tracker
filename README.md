@@ -30,6 +30,30 @@ This starts PostgreSQL, the backend (gunicorn; it creates the tables and the adm
 
 The upload accepts `.xlsx` and `.csv`; see [`data/FILE_FORMAT.md`](data/FILE_FORMAT.md).
 
+## Screens
+
+With the sample week loaded. More in [`screenshots/`](screenshots/).
+
+**Phone** (mobile first)
+
+| Readings | Alerts | Upload | Add a reading |
+|---|---|---|---|
+| <img src="screenshots/phone-readings.png" width="200"> | <img src="screenshots/phone-alerts.png" width="200"> | <img src="screenshots/phone-upload.png" width="200"> | <img src="screenshots/phone-add-reading.png" width="200"> |
+
+**Desktop** (from 900px wide)
+
+| Readings | Alerts |
+|---|---|
+| ![Readings](screenshots/desktop-readings.png) | ![Alerts](screenshots/desktop-alerts.png) |
+
+| Upload: rows to fix and unregistered entries | "Add it?" for a new branch and logger |
+|---|---|
+| ![Upload](screenshots/desktop-upload.png) | ![Add it](screenshots/desktop-add-it.png) |
+
+| Branches | Thresholds |
+|---|---|
+| ![Branches](screenshots/desktop-branches.png) | ![Thresholds](screenshots/desktop-thresholds.png) |
+
 ## Approach
 
 - **One place for all readings.** Upload a file (or type one reading). Valid rows are saved; invalid rows are listed with their file row number so the user can fix the file and upload it again. Rows that were already saved are skipped as duplicates.
