@@ -25,7 +25,9 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
   const listId = useId();
   const [open, setOpen] = useState<boolean>(false);
   const [active, setActive] = useState<number>(-1);
-  const text = value.trim().toLowerCase();
+  // The arrow shows every option until the user types again
+  const [showAll, setShowAll] = useState<boolean>(false);
+  const text = showAll ? "" : value.trim().toLowerCase();
   const matches: Option[] = options.filter((o) => o.toLowerCase().includes(text)).map((o) => ({ value: o, label: o }));
   const exact = options.some((o) => o.toLowerCase() === text);
   const shown =
@@ -38,6 +40,15 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
   function pick(option: Option) {
     onChange(option.value);
     setOpen(false);
+    setShowAll(false);
+    setActive(-1);
+  }
+
+  /** Open the list with all options, or close it; keep the focus in the input. */
+  function toggleAll(inputId: string) {
+    document.getElementById(inputId)?.focus();
+    setShowAll(!expanded);
+    setOpen(!expanded);
     setActive(-1);
   }
 
@@ -76,14 +87,27 @@ export function Combobox({ label, value, options, onChange, newOptionLabel, hint
             onChange={(event) => {
               onChange(event.target.value);
               setOpen(true);
+              setShowAll(false);
               setActive(-1);
             }}
             onKeyDown={onKeyDown}
-            onBlur={() => setOpen(false)}
+            onBlur={() => {
+              setOpen(false);
+              setShowAll(false);
+            }}
           />
-          <svg className={styles.chevron} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label={`Show all ${label} options`}
+            className={styles.chevron}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => toggleAll(control.id)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
           {expanded && (
             <ul id={listId} role="listbox" aria-label={label} className={styles.list}>
               {shown.map((option, index) => (

@@ -36,11 +36,6 @@
   gap: var(--space-10);
 }
 
-.dialogText {
-  margin: 0;
-  font-size: 15px;
-  color: var(--label);
-}
 
 .error {
   margin: 0;
