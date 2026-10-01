@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/Button/Button";
 import type { Column } from "../../components/DataTable/DataTable";
-import { Dialog } from "../../components/Dialog/Dialog";
-import { DialogActions } from "../../components/DialogActions/DialogActions";
+import { CleanArchive } from "../../components/CleanArchive/CleanArchive";
 import { EditReadingDialog } from "../../components/EditReadingDialog/EditReadingDialog";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { LevelBadge } from "../../components/LevelBadge/LevelBadge";
@@ -18,11 +17,9 @@ import { ApiError } from "../../lib/api";
 import {
   listAlerts,
   listBranches,
-  cleanArchive,
   listReadings,
   restoreReading,
   type AlertLevel,
-  type ArchiveCounts,
   type Branch,
   type Page,
   type Reading,
@@ -63,17 +60,6 @@ async function loadAlertLevels(items: Reading[], filters: Filters): Promise<Aler
   const levels: AlertLevels = {};
   for (const alert of alerts?.items ?? []) (levels[alert.reading_id] ??= []).push(alert.level);
   return levels;
-}
-
-/** Count the whole archive, ignoring the filters: archived readings and archived alerts. */
-async function loadArchiveCounts(): Promise<ArchiveCounts> {
-  const [readings, alerts] = await Promise.all([listReadings({}, "C", 0, true), listAlerts({ archived: true, limit: 1 })]);
-  return { readings: readings.total, alerts: alerts.total };
-}
-
-/** "1 alert" or "3 alerts". */
-function plural(count: number, noun: string): string {
-  return `${count} ${count === 1 ? noun : `${noun}s`}`;
 }
 
 /** Show the ERR badge, the alert count badge, or OK. */
@@ -132,9 +118,6 @@ export function ReadingsPage() {
   const [alertLevels, setAlertLevels] = useState<AlertLevels>({});
   const [editing, setEditing] = useState<Reading | null>(null);
   const [reloads, setReloads] = useState<number>(0);
-  const [archiveCounts, setArchiveCounts] = useState<ArchiveCounts | null>(null);
-  const [cleaning, setCleaning] = useState<boolean>(false);
-  const [busy, setBusy] = useState<boolean>(false);
 
   useEffect(() => {
     listBranches()
@@ -168,19 +151,6 @@ export function ReadingsPage() {
     };
   }, [filters, unit, offset, archived, reloads]);
 
-  useEffect(() => {
-    let active = true;
-    setArchiveCounts(null);
-    if (archived) {
-      loadArchiveCounts()
-        .then((counts) => active && setArchiveCounts(counts))
-        .catch(() => active && setArchiveCounts(null));
-    }
-    return () => {
-      active = false;
-    };
-  }, [archived, reloads]);
-
   const items = page?.items ?? [];
   const onEdit = (reading: Reading) => setEditing(reading);
   const onSaved = () => {
@@ -191,16 +161,6 @@ export function ReadingsPage() {
     restoreReading(reading.id)
       .then(() => setReloads((n) => n + 1))
       .catch((err) => setError(err instanceof ApiError ? err.message : "Could not restore the reading. Try again."));
-  };
-  const onClean = () => {
-    setBusy(true);
-    cleanArchive()
-      .then(() => setReloads((n) => n + 1))
-      .catch(() => setError("Could not clean the archive. Try again."))
-      .finally(() => {
-        setBusy(false);
-        setCleaning(false);
-      });
   };
 
   const applyFilters = (next: Filters) => {
@@ -234,11 +194,7 @@ export function ReadingsPage() {
           }}
         />
         <SegmentedToggle label="Unit" options={UNITS} value={unit} onChange={changeUnit} />
-        {archived && (
-          <Button variant="danger" disabled={!archiveCounts || archiveCounts.readings === 0} onClick={() => setCleaning(true)}>
-            Clean archive
-          </Button>
-        )}
+        {archived && <CleanArchive reloadKey={reloads} onCleaned={() => setReloads((n) => n + 1)} onError={setError} />}
       </PageHeader>
       <ReadingFilters branches={branches} unit={unit} value={filters} errors={fieldErrors} onApply={applyFilters} />
       {page && (
@@ -282,20 +238,6 @@ export function ReadingsPage() {
           reading={editing}
           branches={branches}
           onClose={() => setEditing(null)} onSaved={onSaved} />
-      )}
-      {cleaning && archiveCounts && (
-        <Dialog open title="Clean archive" onClose={() => setCleaning(false)}>
-          <p className={styles.dialogText}>
-            {`Delete ${plural(archiveCounts.readings, "archived reading")} and ${plural(archiveCounts.alerts, "alert")} for good? This cannot be undone.`}
-          </p>
-          <DialogActions
-            confirmLabel="Delete for good"
-            variant="danger"
-            busy={busy}
-            onCancel={() => setCleaning(false)}
-            onConfirm={onClean}
-          />
-        </Dialog>
       )}
     </section>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertCard } from "../../components/AlertCard/AlertCard";
+import { CleanArchive } from "../../components/CleanArchive/CleanArchive";
 import type { Column } from "../../components/DataTable/DataTable";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { Field } from "../../components/Field/Field";
@@ -41,6 +42,7 @@ export function AlertsPage() {
   const [offset, setOffset] = useState<number>(0);
   const [loaded, setLoaded] = useState<{ page: Page<Alert>; archived: boolean } | null>(null);
   const [error, setError] = useState<string>("");
+  const [reloads, setReloads] = useState<number>(0);
 
   useEffect(() => {
     let active = true;
@@ -50,7 +52,7 @@ export function AlertsPage() {
     return () => {
       active = false;
     };
-  }, [archived, level, offset]);
+  }, [archived, level, offset, reloads]);
 
   const page = loaded?.page ?? null;
   const items = page?.items ?? [];
@@ -86,6 +88,16 @@ export function AlertsPage() {
             setOffset(0);
           }}
         />
+        {archived && (
+          <CleanArchive
+            reloadKey={reloads}
+            onCleaned={() => {
+              setOffset(0);
+              setReloads((n) => n + 1);
+            }}
+            onError={setError}
+          />
+        )}
       </PageHeader>
       {error && (
         <p role="alert" className={styles.error}>
