@@ -77,7 +77,7 @@ flowchart LR
     subgraph Backend["Flask backend (gunicorn)"]
         API["api/v1 routes<br/>(thin: validate, call, respond)"] --> SVC
         subgraph SVC["services (business logic)"]
-            ING["ingest:<br/>parser factory → Excel / CSV parser →<br/>Pydantic row validation →<br/>repository"]
+            ING["ingest:<br/>parser factory → .xlsx / .csv parser →<br/>Pydantic row validation →<br/>repository"]
             DET["detection:<br/>limit · growth · gap"]
             ARC["archive on delete, restore"]
             THR["threshold settings"]
@@ -89,7 +89,7 @@ flowchart LR
 ```
 
 - **Layers:** `app/api` (routes) → `app/services` (business logic) → `app/models` (one model per file). Request, response and file-row validation uses Pydantic models in `app/schemas` and `app/services/ingest/schemas.py`.
-- **Upload pipeline:** a parser is picked by the file's content, not only its extension (Strategy + Factory; Excel and CSV). Rows are validated against the registered branches, fridges and loggers, saved by one repository (the single write path for readings), and then the detection rules run for the affected fridges.
+- **Upload pipeline:** a parser is picked by the file's content, not only its extension (Strategy + Factory; `.xlsx` and `.csv`). Rows are validated against the registered branches, fridges and loggers, saved by one repository (the single write path for readings), and then the detection rules run for the affected fridges.
 - **Frontend:** screens are built from shared base components in `frontend/src/components/` (Field, Combobox, Button, Dialog, DataTable, ...), styled only with design tokens from `src/index.css`.
 - **Auth:** one admin user with a hashed password; every route except login and health needs a JWT.
 - **Logs:** process states and errors are logged; passwords, tokens and file contents never are.
