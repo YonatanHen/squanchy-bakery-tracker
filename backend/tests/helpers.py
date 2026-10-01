@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 
 from app.models import Branch, Fridge, Logger, Metric
 
-SAMPLE_FILE = Path(__file__).resolve().parents[2] / "data" / "sample_week.xlsx"
+SAMPLE_FILE = Path(__file__).resolve().parents[2] / "data" / "dummy_upload.xlsx"
 
 # What the user confirms in the "add it?" dialog for the sample file's branches and loggers.
 SAMPLE_REGISTRATION = {
@@ -34,14 +34,14 @@ def xlsx_bytes(header, rows) -> bytes:
 
 
 def sample_as_csv() -> bytes:
-    """Return the rows of data/sample_week.xlsx as a comma-separated CSV file."""
+    """Return the rows of data/dummy_upload.xlsx as a comma-separated CSV file."""
     buffer = io.StringIO(newline="")
     csv.writer(buffer).writerows(load_workbook(SAMPLE_FILE, read_only=True).active.iter_rows(values_only=True))
     return buffer.getvalue().encode("utf-8")
 
 
 def load_sample(session, register=SAMPLE_REGISTRATION):
-    """Ingest the real data/sample_week.xlsx the way an upload does, with the user's confirmed registration."""
+    """Ingest the real data/dummy_upload.xlsx the way an upload does, with the user's confirmed registration."""
     from app.services.ingest.service import ingest_file
 
     return ingest_file(session, SAMPLE_FILE.name, SAMPLE_FILE.read_bytes(), register)

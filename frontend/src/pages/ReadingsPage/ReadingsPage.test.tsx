@@ -271,9 +271,10 @@ describe("ReadingsPage archive", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Clean archive" }));
     const dialog = await screen.findByRole("dialog", { name: "Clean archive" });
-    expect(
-      within(dialog).getByText("Delete 2 archived readings and 3 alerts for good? This cannot be undone."),
-    ).toBeInTheDocument();
+    expect(within(dialog).getByText("Delete 2 archived readings for good?")).toBeInTheDocument();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Their 3 archived alerts will be deleted as well. This cannot be undone.",
+    );
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(deletes()).toEqual([]);

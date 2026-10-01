@@ -134,3 +134,32 @@ describe("AlertsPage filters", () => {
     expect(paramsOf(fetchMock, "/api/v1/alerts").at(-1)!.get("offset")).toBe("10");
   });
 });
+
+describe("AlertsPage archive", () => {
+  it("cleans the archive from the archived alerts, after a warning that the archived readings go too", async () => {
+    const fetchMock = mockApi([
+      [
+        "GET /api/v1/alerts",
+        (url: URL) =>
+          url.searchParams.get("archived") === "true" ? page([{ ...GAP, archived_at: "2026-09-20T10:05:00" }], 3) : page([GAP]),
+      ],
+      ["GET /api/v1/readings", { items: [], total: 2, offset: 0, limit: 10 }],
+      ["DELETE /api/v1/readings/archive", { readings: 2, alerts: 3 }],
+    ]);
+    const deletes = () => fetchMock.mock.calls.filter(([, init]) => init?.method === "DELETE").map(([input]) => input);
+    renderLoggedIn("/alerts");
+    await screen.findByRole("table", { name: "Alerts" });
+    await userEvent.click(screen.getByRole("button", { name: /Archived/ }));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Clean archive" }));
+    const dialog = await screen.findByRole("dialog", { name: "Clean archive" });
+    expect(within(dialog).getByText("Delete 2 archived readings for good?")).toBeInTheDocument();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Their 3 archived alerts will be deleted as well. This cannot be undone.",
+    );
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete for good" }));
+
+    await waitFor(() => expect(deletes()).toEqual(["/api/v1/readings/archive"]));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+});

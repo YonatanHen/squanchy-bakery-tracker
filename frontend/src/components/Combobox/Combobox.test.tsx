@@ -89,6 +89,23 @@ describe("Combobox", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
+  it("shows all options when the arrow is clicked, closes on a second click, and filters again on typing", async () => {
+    render(<Harness initial="Haifa" />);
+
+    const arrow = screen.getByRole("button", { name: "Show all Branch options" });
+    await userEvent.click(arrow);
+    expect(optionTexts()).toEqual(["Haifa", "Rishon LeZion", "Tel Aviv"]);
+    expect(screen.getByRole("combobox", { name: "Branch" })).toHaveFocus();
+
+    await userEvent.click(arrow);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+    await userEvent.click(arrow);
+    await userEvent.clear(screen.getByRole("combobox", { name: "Branch" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Branch" }), "Tel");
+    expect(optionTexts()).toEqual(["Tel Aviv", "Use “Tel” as a new branch…"]);
+  });
+
   it("closes the list on Escape and keeps the typed text", async () => {
     render(<Harness />);
 

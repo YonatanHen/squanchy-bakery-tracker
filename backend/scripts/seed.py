@@ -1,6 +1,6 @@
 """Create the tables and the admin user. Run: python -m scripts.seed
 
-Branches, fridges, loggers and readings are not seeded: upload data/sample_week.xlsx and add them from the app.
+Branches, fridges, loggers and readings are not seeded: upload data/dummy_upload.xlsx and add them from the app.
 """
 import os
 

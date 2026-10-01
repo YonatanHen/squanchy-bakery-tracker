@@ -1,0 +1,5 @@
+Logger,Branch,Fridge,Time,Temp
+TL-0512,Jerusalem,Dairy,2026-09-21 06:00,3.8
+TL-0512,Jerusalem,Dairy,2026-09-21 06:15,ERR
+TL-0231,Haifa,Dairy,21/09/2026 06:00,42.5
+TL-0231,Haifa,Dairy,21/09/2026 06:15,43.0

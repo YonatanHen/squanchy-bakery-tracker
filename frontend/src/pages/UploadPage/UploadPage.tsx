@@ -180,7 +180,7 @@ export function UploadPage() {
                 <br />
                 {unknownNames(result.unknown)} — did you mean something else, or add it?
               </span>
-              <span className={styles.review}>Review →</span>
+              <span className={styles.review}>Click here to review →</span>
             </button>
           )}
         </div>

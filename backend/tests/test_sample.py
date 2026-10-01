@@ -8,7 +8,7 @@ from tests.helpers import SAMPLE_FILE, SAMPLE_REGISTRATION, load_sample, sample_
 
 
 def test_sample_file_with_confirmed_registration_loads_with_expected_counts(session):
-    """data/sample_week.xlsx + the user's confirmations: 15 saved, 1 duplicate, 1 ERR, Walk-in renamed, Haifa in °F."""
+    """data/dummy_upload.xlsx + the user's confirmations: 15 saved, 1 duplicate, 1 ERR, Walk-in renamed, Haifa in °F."""
     result = load_sample(session)
 
     assert (result.inserted, result.duplicates, result.err_rows, result.rejected) == (15, 1, 1, 0)
@@ -28,8 +28,8 @@ def test_sample_file_without_registration_lists_all_four_branches_as_unknown(ses
 
 
 @pytest.mark.parametrize("filename, content", [
-    ("sample_week.xlsx", lambda: SAMPLE_FILE.read_bytes()),
-    ("sample_week.csv", sample_as_csv),
+    ("dummy_upload.xlsx", lambda: SAMPLE_FILE.read_bytes()),
+    ("dummy_upload.csv", sample_as_csv),
 ])
 def test_sample_rows_uploaded_as_csv_give_the_same_counts_as_xlsx(client, auth_headers, filename, content):
     """The sample rows saved as CSV give the same inserted, duplicate, ERR and alert counts as the .xlsx file."""

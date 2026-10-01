@@ -1,6 +1,6 @@
 # Upload file format
 
-The Upload page (currently) accepts **`.xlsx`** (Excel) and **`.csv`** files. Both use the same five columns and the same rules. `sample_week.xlsx` in this folder is a valid example.
+The Upload page (currently) accepts **`.xlsx`** (Excel) and **`.csv`** files. Both use the same five columns and the same rules. `dummy_upload.xlsx` in this folder is a valid example.
 
 ## Columns
 
