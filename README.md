@@ -76,21 +76,28 @@ flowchart LR
     UI["Web app<br/>(React, mobile first;<br/>nginx in Docker)"] -->|"JSON over HTTP<br/>JWT"| API
     subgraph Backend["Flask backend (gunicorn)"]
         subgraph API["api/v1 routes (thin: validate, call, respond)"]
-            POST["POST<br/>/readings/upload · /readings"]
+            UPL["POST /readings/upload<br/>(.xlsx / .csv file)"]
+            ONE["POST /readings<br/>(one reading from the<br/>Add a reading form, JSON)"]
             GET["GET<br/>/readings · /alerts · /branches ·<br/>/threshold-settings"]
             EDIT["PATCH · PUT · DELETE<br/>readings, branches, fridges,<br/>threshold settings · restore"]
         end
         subgraph SVC["services (business logic)"]
-            ING["ingest:<br/>parser factory → .xlsx / .csv parser →<br/>Pydantic row validation →<br/>repository"]
+            subgraph ING["ingest"]
+                PARSE["parser factory →<br/>.xlsx / .csv parser"]
+                VAL["Pydantic row validation<br/>(known branches, fridges, loggers)"]
+                REPO["repository<br/>(single write path)"]
+                PARSE --> VAL --> REPO
+            end
             QRY["queries:<br/>filters (location, dates, temperature<br/>in any unit) · 10 per page"]
             CHG["edits: readings, branches,<br/>fridges, threshold settings"]
             DET["detection:<br/>limit · growth · gap"]
             ARC["archive on delete, restore"]
         end
-        POST --> ING
+        UPL --> PARSE
+        ONE -->|"no file to parse"| VAL
         GET --> QRY
         EDIT --> CHG
-        ING --> DET
+        REPO --> DET
         CHG --> DET
         CHG --> ARC
         SVC --> MOD["models (SQLAlchemy)"]
@@ -100,7 +107,7 @@ flowchart LR
 
 - **Layers:** `app/api` (routes) → `app/services` (business logic) → `app/models` (one model per file). Request, response and file-row validation uses Pydantic models in `app/schemas` and `app/services/ingest/schemas.py`.
 - **Reads (`GET`):** readings and alerts are filtered in the database (branch, city, fridge, logger, date range; readings also by temperature range in any unit, alerts by level) and returned 10 per page with the total count. `?archived=true` reads the archive tables.
-- **Writes (`POST`):** a file upload and a single reading take the same ingest path below, so both get the same validation, duplicate check and alert detection.
+- **Writes (`POST`):** a reading enters in one of two ways. `POST /readings/upload` takes an `.xlsx` or `.csv` file, which is parsed into rows first. `POST /readings` takes one reading as JSON from the "Add a reading" form, with no file; it skips the parser. From the row validation on, both use the same path, so both get the same checks, duplicate handling, "add it?" registration and alert detection.
 - **Edits (`PATCH` / `PUT` / `DELETE`):** a changed reading or threshold settings re-runs detection for the affected fridges; a delete archives the readings and alerts first.
 - **Upload pipeline:** a parser is picked by the file's content, not only its extension (Strategy + Factory; `.xlsx` and `.csv`). Rows are validated against the registered branches, fridges and loggers, saved by one repository (the single write path for readings), and then the detection rules run for the affected fridges.
 - **Frontend:** screens are built from shared base components in `frontend/src/components/` (Field, Combobox, Button, Dialog, DataTable, ...), styled only with design tokens from `src/index.css`.
