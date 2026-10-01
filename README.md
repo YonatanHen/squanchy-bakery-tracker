@@ -9,7 +9,7 @@ Prerequisites: Git and **Docker Desktop**.
 ```bash
 git clone https://github.com/YonatanHen/squanchy-bakery-tracker.git
 cd squanchy-bakery-tracker
-cp .env.example .env    # set POSTGRES_PASSWORD, JWT_SECRET (at least 32 characters) and ADMIN_PASSWORD
+cp .env.example .env    # POSTGRES_PASSWORD, JWT_SECRET and ADMIN_PASSWORD must have a value
 docker compose up -d --build --wait
 ```
 
@@ -213,7 +213,7 @@ Commands are for Git Bash, macOS or Linux. On Windows, the virtualenv's Python i
 First create the settings file at the repo root:
 
 ```bash
-cp .env.example .env        # set POSTGRES_PASSWORD, JWT_SECRET (at least 32 characters) and ADMIN_PASSWORD
+cp .env.example .env        # POSTGRES_PASSWORD, JWT_SECRET and ADMIN_PASSWORD must have a value
 ```
 
 Required: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_TEST_DB`, `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`. Optional: `JWT_EXPIRES_MINUTES` (default 480), `LOG_LEVEL` (default `INFO`). `DATABASE_URL` and `TEST_DATABASE_URL` are built from the `POSTGRES_*` values, so the password is written once. Real environment variables override the file.
