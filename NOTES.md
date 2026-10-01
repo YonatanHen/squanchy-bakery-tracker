@@ -35,6 +35,7 @@ warming) and gap (checked in the data, not against the clock). Why: reproducible
 - Does the Haifa logger record in Fahrenheit? Any others? _Now: Haifa °F, all others °C._
 - Does every logger record every 15 minutes? Are the times Israel local time or UTC? _Daylight saving can create a false gap or a false duplicate._
 - Do the loggers record door or battery state? That would explain gaps and spikes.
+- The Tel Aviv logger TL-0417 moved "into the new display fridge". Is the Walk-in still in use with another logger, or was it replaced by the display fridge? _Now: the app treats it as a rename (Walk-in → Display 2), so the Walk-in's older readings show under Display 2. If it was a real move, each reading must keep the fridge it was recorded in (a logger–fridge history with dates)._
 
 **Rules and records**
 - Which limits does the inspector use? Are they different per product (dairy, cream cakes)? _Now: 0–5°C by default, editable per threshold settings._
