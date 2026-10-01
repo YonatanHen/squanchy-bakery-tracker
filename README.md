@@ -21,7 +21,7 @@ This starts PostgreSQL, the backend (gunicorn; it creates the tables and the adm
 
 ### Try it
 
-1. **Upload** → choose `data/sample_week.xlsx` (the 16 sample rows from Summer's email).
+1. **Upload** → choose `data/dummy_upload.xlsx` (the 16 sample rows from Summer's email).
 2. The database is empty, so the app lists the 4 branches and 4 loggers as unknown. **Add them**: give each branch its city, and set the Haifa logger (TL-0231) to **°F**.
 3. The result: 15 readings saved, 1 duplicate skipped, 1 `ERR` reading, 5 alerts, and Tel Aviv *Walk-in* renamed to *Display 2* (the logger moved to the new display fridge).
 4. **Alerts** → Rishon LeZion *Cream cakes* above 5°C, with the period and its duration; the Tel Aviv one-reading jump as non-urgent.
@@ -284,7 +284,7 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:5000/api/v1/auth/login \
 
 # 1) Upload: 16 rows rejected, "unknown" lists the branches and loggers to add
 curl -s -X POST http://127.0.0.1:5000/api/v1/readings/upload \
-  -H "Authorization: Bearer $TOKEN" -F "file=@data/sample_week.xlsx"
+  -H "Authorization: Bearer $TOKEN" -F "file=@data/dummy_upload.xlsx"
 ```
 
 Save the confirmation as `register.json`:
@@ -310,7 +310,7 @@ Save the confirmation as `register.json`:
 # 2) Upload again with the confirmation: 15 inserted, 1 duplicate, 1 ERR, 5 alerts,
 #    and "Tel Aviv: Walk-in -> Display 2" (the logger moved to a new display fridge)
 curl -s -X POST http://127.0.0.1:5000/api/v1/readings/upload \
-  -H "Authorization: Bearer $TOKEN" -F "file=@data/sample_week.xlsx" -F "register=<register.json"
+  -H "Authorization: Bearer $TOKEN" -F "file=@data/dummy_upload.xlsx" -F "register=<register.json"
 ```
 
 On PowerShell use `curl.exe` instead of `curl`. With the whole app in Docker, use `http://localhost:8080` instead of `http://127.0.0.1:5000`.

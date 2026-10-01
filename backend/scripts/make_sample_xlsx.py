@@ -1,4 +1,4 @@
-"""Write data/sample_week.xlsx from the assignment's sample rows. Run: python -m scripts.make_sample_xlsx"""
+"""Write data/dummy_upload.xlsx from the assignment's sample rows. Run: python -m scripts.make_sample_xlsx"""
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -27,8 +27,8 @@ ROWS = [
 
 
 def main() -> None:
-    """Write the 16 sample rows to data/sample_week.xlsx at the repository root."""
-    target = Path(__file__).resolve().parents[2] / "data" / "sample_week.xlsx"
+    """Write the 16 sample rows to data/dummy_upload.xlsx at the repository root."""
+    target = Path(__file__).resolve().parents[2] / "data" / "dummy_upload.xlsx"
     target.parent.mkdir(exist_ok=True)
     workbook = Workbook()
     workbook.active.append(HEADER)
